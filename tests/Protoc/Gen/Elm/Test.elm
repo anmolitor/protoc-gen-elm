@@ -11,7 +11,7 @@ module Protoc.Gen.Elm.Test exposing
 
 This module was generated automatically using
 
-  - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) 1.0.0-beta
+  - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) 1.0.0-beta-1
   - [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/1.0.0) 1.0.0
   - `protoc` 3.6.1
   - the following specification file:
