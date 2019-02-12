@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package protoc.gen.elm.test;
+
+message Message {
+  float float_value = 1;
+  double double_value = 2;
+  string string_value = 3;
+  repeated bool bool_values = 4;
+  map<string, Enum> map_value = 5;
+  bytes bytes_value = 16;
+  reserved 900 to 999;
+
+  enum Enum {
+    ENUM_A = 0;
+    ENUM_B = 1;
+    ENUM_C = 2;
+  }
+}
+
+message Integers {
+  int32 int32_value = 1;
+  int64 int64_value = 11;
+  uint32 uint32_value = 2;
+  uint64 uint64_value = 12;
+  sint32 sint32_value = 3;
+  sint64 sint64_value = 13;
+  fixed32 fixed32_value = 4;
+  fixed64 fixed64_value = 14;
+  sfixed32 sfixed32_value = 5;
+  sfixed64 sfixed64_value = 15;
+}
+
+message OneOf {
+  oneof kind {
+    float float_value = 1;
+    double double_value = 2;
+    string string_value = 3;
+    Integers integers_value = 99;
+  }
+  Value value = 1000;
+}
+
+enum Value {
+  NO_VALUE = 0;
+  VALUE = 1;
+}

@@ -1,0 +1,34 @@
+{
+  "name": "protoc-gen-elm",
+  "version": "1.0.0-beta",
+  "description": "Elm protoc plugin",
+  "main": "index.js",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "through2": "~3.0.0"
+  },
+  "devDependencies": {
+    "assert": "^1.4.1",
+    "http": "0.0.0",
+    "path": "^0.12.7",
+    "protobufjs": "^6.8.8",
+    "uglify-js": "~3.4.9"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "preferGlobal": "true",
+  "bin": {
+    "protoc-gen-elm": "./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/eriktim/protoc-gen-elm.git"
+  },
+  "author": "Erik Timmers",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/eriktim/protoc-gen-elm/issues"
+  },
+  "homepage": "https://github.com/eriktim/protoc-gen-elm#readme"
+}
