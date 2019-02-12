@@ -1,6 +1,6 @@
 {
   "name": "protoc-gen-elm",
-  "version": "1.0.0-beta",
+  "version": "1.0.0-beta-1",
   "description": "Elm protoc plugin",
   "main": "index.js",
   "dependencies": {
