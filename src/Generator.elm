@@ -480,7 +480,19 @@ recordField ( fieldName, field ) =
                     fieldTypeDataType cardinality fieldType
 
                 MapField _ { key, value } ->
-                    "Dict.Dict " ++ fieldTypeDataType Optional key ++ " " ++ fieldTypeDataType Optional value
+                    let
+                        valueDataType_ =
+                            fieldTypeDataType Optional value
+
+                        valueDataType =
+                            case value of
+                                Embedded _ ->
+                                    "(" ++ valueDataType_ ++ ")"
+
+                                _ ->
+                                    valueDataType_
+                    in
+                    "Dict.Dict " ++ fieldTypeDataType Optional key ++ " " ++ valueDataType
 
                 OneOfField dataType _ ->
                     "Maybe " ++ dataType
@@ -554,25 +566,25 @@ fieldTypeDataType cardinality fieldType =
 
 fieldDecoder : EnumDefaults -> ( FieldName, Field ) -> String
 fieldDecoder enumDefaults ( fieldName, field ) =
+    let
+        fieldDecoder_ cardinality fieldType =
+            case fieldType of
+                Embedded _ ->
+                    if cardinality == Repeated then
+                        decoder fieldType
+
+                    else
+                        "(Decode.map Just " ++ decoder fieldType ++ ")"
+
+                _ ->
+                    decoder fieldType
+    in
     case field of
         Field fieldNumber cardinality fieldType ->
-            let
-                fieldDecoder_ =
-                    case fieldType of
-                        Embedded _ ->
-                            if cardinality == Repeated then
-                                decoder fieldType
-
-                            else
-                                "(Decode.map Just " ++ decoder fieldType ++ ")"
-
-                        _ ->
-                            decoder fieldType
-            in
             "Decode.{{ cardinality }} {{ fieldNumber }} {{ fieldDecoder }}{{ getter }} {{ setter }}"
                 |> interpolate "cardinality" (cardinalityCoder cardinality)
                 |> interpolate "fieldNumber" (String.fromInt fieldNumber)
-                |> interpolate "fieldDecoder" fieldDecoder_
+                |> interpolate "fieldDecoder" (fieldDecoder_ cardinality fieldType)
                 |> interpolate "setter" ("set" ++ String.Extra.toSentenceCase fieldName)
                 |> interpolate "getter"
                     (case cardinality of
@@ -589,7 +601,7 @@ fieldDecoder enumDefaults ( fieldName, field ) =
                 |> interpolate "defaultKey" (fieldTypeDefault enumDefaults key)
                 |> interpolate "defaultValue" (fieldTypeDefault enumDefaults value)
                 |> interpolate "keyDecoder" (decoder key)
-                |> interpolate "valueDecoder" (decoder value)
+                |> interpolate "valueDecoder" (fieldDecoder_ Optional value)
                 |> interpolate "setter" ("set" ++ String.Extra.toSentenceCase fieldName)
                 |> interpolate "getter" ("." ++ fieldName)
 
