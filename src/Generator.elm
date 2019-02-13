@@ -106,9 +106,10 @@ module {{ name }} exposing
 This module was generated automatically using
 
   - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) {{ pluginVersion }}
-  - [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/{{ libraryVersion }}) {{ libraryVersion }}
   - `protoc` {{ compilerVersion }}
-  - the following specification file{{ filesPlural }}:{{ files }}
+  - the following specification file{{ files }}
+
+To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/{{ libraryVersion }}) version {{ libraryVersion }} or higher.
 
 
 # Model
@@ -162,8 +163,7 @@ This module was generated automatically using
         |> interpolate "pluginVersion" version.plugin
         |> interpolate "libraryVersion" version.library
         |> interpolate "compilerVersion" version.compiler
-        |> interpolate "filesPlural" (filesPlural package.files)
-        |> interpolate "files" (String.join "" <| List.map (\f -> "\n      - `" ++ f ++ "`") package.files)
+        |> interpolate "files" (usedFiles package.files)
         |> interpolate "imports" (String.join "\n" <| Set.toList imports)
         |> interpolate "exposedTypes" (String.join ", " struct.exposedTypes)
         |> interpolate "exposedTypesDocs" (String.join ", " struct.exposedTypesDocs)
@@ -175,13 +175,14 @@ This module was generated automatically using
         |> interpolate "setters" (String.join "\n\n\n" <| List.map setter (List.Extra.unique struct.setters))
 
 
-filesPlural : List String -> String
-filesPlural files =
-    if List.length files == 1 then
-        ""
+usedFiles : List String -> String
+usedFiles files =
+    case files of
+        file :: [] ->
+            ": `" ++ file ++ "`"
 
-    else
-        "s"
+        files_ ->
+            "s:" ++ String.join "" (List.map (\file -> "\n      - `" ++ file ++ "`") files_)
 
 
 
