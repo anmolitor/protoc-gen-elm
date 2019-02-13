@@ -202,21 +202,21 @@ enum value =
 
         variants =
             if value.withUnrecognized then
-                Tuple.second default :: List.map Tuple.second fields ++ [ "Unrecognized" ++ value.dataType ++ "_ Int" ]
+                Tuple.second default :: List.map Tuple.second fields ++ [ value.dataType ++ "Unrecognized_ Int" ]
 
             else
                 Tuple.second default :: List.map Tuple.second fields
 
         decoderFields =
             if value.withUnrecognized then
-                default :: fields ++ [ ( "v", "Unrecognized" ++ value.dataType ++ "_ v" ) ]
+                default :: fields ++ [ ( "v", value.dataType ++ "Unrecognized_ v" ) ]
 
             else
                 default :: fields ++ [ ( "_", Tuple.second default ) ]
 
         encoderFields =
             if value.withUnrecognized then
-                default :: fields ++ [ ( "v", "Unrecognized" ++ value.dataType ++ "_ v" ) ]
+                default :: fields ++ [ ( "v", value.dataType ++ "Unrecognized_ v" ) ]
 
             else
                 default :: fields

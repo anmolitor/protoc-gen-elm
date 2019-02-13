@@ -49,7 +49,7 @@ import Protobuf.Encode as Encode
 type Value
     = NoValue
     | Value
-    | UnrecognizedValue_ Int
+    | ValueUnrecognized_ Int
 
 
 {-| MessageEnum
@@ -58,7 +58,7 @@ type MessageEnum
     = EnumA
     | EnumB
     | EnumC
-    | UnrecognizedMessageEnum_ Int
+    | MessageEnumUnrecognized_ Int
 
 
 {-| Message
@@ -123,7 +123,7 @@ valueDecoder =
                         Value
 
                     v ->
-                        UnrecognizedValue_ v
+                        ValueUnrecognized_ v
             )
 
 
@@ -143,7 +143,7 @@ messageEnumDecoder =
                         EnumC
 
                     v ->
-                        UnrecognizedMessageEnum_ v
+                        MessageEnumUnrecognized_ v
             )
 
 
@@ -203,7 +203,7 @@ toValueEncoder value =
             Value ->
                 1
 
-            UnrecognizedValue_ v ->
+            ValueUnrecognized_ v ->
                 v
 
 
@@ -220,7 +220,7 @@ toMessageEnumEncoder value =
             EnumC ->
                 2
 
-            UnrecognizedMessageEnum_ v ->
+            MessageEnumUnrecognized_ v ->
                 v
 
 
