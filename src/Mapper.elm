@@ -444,7 +444,7 @@ classify =
 
 typeName : String -> String
 typeName =
-    String.Extra.classify
+    escapeType << String.Extra.classify
 
 
 enumTypeName : String -> String
@@ -493,12 +493,58 @@ packageType descriptor =
 
 escape : String -> String
 escape word =
-    -- TODO escape all reserved words
-    if word == "type" then
+    if List.member word reservedWords then
         word ++ "_"
 
     else
         word
+
+
+reservedWords : List String
+reservedWords =
+    [ "if"
+    , "then"
+    , "else"
+    , "case"
+    , "of"
+    , "let"
+    , "in"
+    , "type"
+    , "module"
+    , "where"
+    , "import"
+    , "exposing"
+    , "as"
+    , "port"
+    ]
+
+
+escapeType : String -> String
+escapeType type_ =
+    if List.member type_ reservedWords then
+        type_ ++ "_"
+
+    else
+        type_
+
+
+reservedTypes : List String
+reservedTypes =
+    {- https://package.elm-lang.org/packages/elm/core/1.0.2/ -}
+    [ "List"
+    , "Maybe"
+    , "Result"
+    , "String"
+    , "Char"
+    , "Program"
+    , "Cmd"
+    , "Sub"
+    , "Int"
+    , "Float"
+    , "Order"
+    , "Bool"
+    , "Never"
+    ]
 
 
 maybe : b -> (a -> b) -> Maybe a -> b
