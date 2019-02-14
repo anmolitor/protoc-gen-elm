@@ -1,3 +1,5 @@
+sudo: enabled
+
 language: elm
 
 elm:
@@ -5,14 +7,14 @@ elm:
   
 install:
   - curl -L https://github.com/google/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip -o /tmp/protoc.zip
-  - unzip /tmp/protoc.zip -d $HOME/protoc
+  - unzip /tmp/protoc.zip -d /tmp/protoc
+  - sudo mv /tmp/protoc/bin/* /usr/local/bin/
+  - sudo mv /tmp/protoc/include/* /usr/local/include/
   - npm install
 
 script:
   - ./build.sh
-  - $HOME/protoc/bin/protoc --plugin="protoc-gen-elm=index.js" --elm_out=src google/protobuf/compiler/plugin.proto google/protobuf/descriptor.proto
-  - sed -i "s/ setOneofIndex/ (setOneofIndex << (+) 1)/" src/Google/Protobuf.elm # we cannot distinquish between 0 and the default (0) - upstream bug or proto2 limitation?
-  - $HOME/protoc/bin/protoc --plugin="protoc-gen-elm=index.js" --elm_out=tests tests/test.proto
+  - protoc --plugin="protoc-gen-elm=index.js" --elm_out=tests tests/test.proto
   - elm-format --validate .
   - elm make --output=/dev/null tests/Protoc/Gen/Elm/Test.elm
   - git diff
