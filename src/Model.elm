@@ -64,7 +64,6 @@ type Field
     = Field FieldNumber Cardinality FieldType
     | MapField FieldNumber Map
     | OneOfField DataType OneOf
-    | RecursiveField DataType Field
 
 
 type Cardinality

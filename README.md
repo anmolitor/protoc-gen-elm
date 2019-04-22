@@ -73,4 +73,3 @@ elm reactor
 ## Limitations
 * All limitations of  [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest#known-limitations) apply;
 * This is still a **beta** release. Please report any issues you have generating your Elm modules;
-* Currently, only self-referencing recursive fields are being detected, e.g. `message Foo { repeated Foo foo = 1; }`. Support for all cyclic dependent types is still a work-in-progress. 

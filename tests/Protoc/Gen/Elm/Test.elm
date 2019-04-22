@@ -2,7 +2,7 @@
 
 
 module Protoc.Gen.Elm.Test exposing
-    ( Value(..), MessageEnum(..), Message, Integers, OneOf, Kind(..)
+    ( Value(..), MessageEnum(..), Message, Integers, Kind(..), OneOf
     , messageDecoder, integersDecoder, oneOfDecoder
     , toMessageEncoder, toIntegersEncoder, toOneOfEncoder
     )
@@ -20,7 +20,7 @@ To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eri
 
 # Model
 
-@docs Value, MessageEnum, Message, Integers, OneOf, Kind
+@docs Value, MessageEnum, Message, Integers, Kind, OneOf
 
 
 # Decoder
@@ -44,7 +44,7 @@ import Protobuf.Encode as Encode
 -- MODEL
 
 
-{-| Value
+{-| `Value` enumeration
 -}
 type Value
     = NoValue
@@ -52,7 +52,7 @@ type Value
     | ValueUnrecognized_ Int
 
 
-{-| MessageEnum
+{-| `MessageEnum` enumeration
 -}
 type MessageEnum
     = EnumA
@@ -61,7 +61,7 @@ type MessageEnum
     | MessageEnumUnrecognized_ Int
 
 
-{-| Message
+{-| `Message` message
 -}
 type alias Message =
     { floatValue : Float
@@ -73,7 +73,7 @@ type alias Message =
     }
 
 
-{-| Integers
+{-| `Integers` message
 -}
 type alias Integers =
     { int32Value : Int
@@ -89,14 +89,6 @@ type alias Integers =
     }
 
 
-{-| OneOf
--}
-type alias OneOf =
-    { kind : Maybe Kind
-    , value : Value
-    }
-
-
 {-| Kind
 -}
 type Kind
@@ -104,6 +96,14 @@ type Kind
     | KindDoubleValue Float
     | KindStringValue String
     | KindIntegersValue Integers
+
+
+{-| `OneOf` message
+-}
+type alias OneOf =
+    { kind : Maybe Kind
+    , value : Value
+    }
 
 
 
@@ -147,6 +147,8 @@ messageEnumDecoder =
             )
 
 
+{-| `Message` decoder
+-}
 messageDecoder : Decode.Decoder Message
 messageDecoder =
     Decode.message (Message 0 0 "" [] Dict.empty (Encode.encode <| Encode.string ""))
@@ -159,6 +161,8 @@ messageDecoder =
         ]
 
 
+{-| `Integers` decoder
+-}
 integersDecoder : Decode.Decoder Integers
 integersDecoder =
     Decode.message (Integers 0 0 0 0 0 0 0 0 0 0)
@@ -175,6 +179,8 @@ integersDecoder =
         ]
 
 
+{-| `OneOf` decoder
+-}
 oneOfDecoder : Decode.Decoder OneOf
 oneOfDecoder =
     Decode.message (OneOf Nothing NoValue)
@@ -224,6 +230,8 @@ toMessageEnumEncoder value =
                 v
 
 
+{-| `Message` encoder
+-}
 toMessageEncoder : Message -> Encode.Encoder
 toMessageEncoder model =
     Encode.message
@@ -236,6 +244,8 @@ toMessageEncoder model =
         ]
 
 
+{-| `Integers` encoder
+-}
 toIntegersEncoder : Integers -> Encode.Encoder
 toIntegersEncoder model =
     Encode.message
@@ -249,14 +259,6 @@ toIntegersEncoder model =
         , ( 14, Encode.fixed32 model.fixed64Value )
         , ( 5, Encode.sfixed32 model.sfixed32Value )
         , ( 15, Encode.sfixed32 model.sfixed64Value )
-        ]
-
-
-toOneOfEncoder : OneOf -> Encode.Encoder
-toOneOfEncoder model =
-    Encode.message
-        [ Maybe.withDefault ( 0, Encode.none ) <| Maybe.map toKindEncoder model.kind
-        , ( 1000, toValueEncoder model.value )
         ]
 
 
@@ -274,6 +276,16 @@ toKindEncoder model =
 
         KindIntegersValue value ->
             ( 99, toIntegersEncoder value )
+
+
+{-| `OneOf` encoder
+-}
+toOneOfEncoder : OneOf -> Encode.Encoder
+toOneOfEncoder model =
+    Encode.message
+        [ Maybe.withDefault ( 0, Encode.none ) <| Maybe.map toKindEncoder model.kind
+        , ( 1000, toValueEncoder model.value )
+        ]
 
 
 

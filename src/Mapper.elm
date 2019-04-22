@@ -1,10 +1,10 @@
 module Mapper exposing (map)
 
-import Dict
+import Dict exposing (Dict)
 import Google.Protobuf exposing (DescriptorProto, DescriptorProtoNestedType(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProtoLabel(..), FieldDescriptorProtoType(..), FileDescriptorProto)
 import List.Extra
 import Model exposing (..)
-import Set
+import Set exposing (Set)
 import String.Extra
 
 
@@ -41,7 +41,7 @@ map files descriptors =
                                         { messages = []
                                         , enums = List.map (enum syntax Nothing) descriptor.enumType
                                         , maps = []
-                                        , imports = dependencies fileDict descriptor.dependency
+                                        , imports = List.filter ((/=) pkg) <| dependencies fileDict descriptor.dependency
                                         }
                                     |> append (concatMap (message syntax pkg Nothing) descriptor.messageType)
                             )
@@ -214,24 +214,8 @@ messageFieldMeta pkg name descriptor =
         ( type_, importedPackage ) =
             fieldType pkg descriptor
 
-        isRecursive =
-            -- TODO detect deeper recursion as well
-            case type_ of
-                Embedded t ->
-                    t == name
-
-                _ ->
-                    False
-
-        baseField =
-            Field descriptor.number (cardinality descriptor.label) type_
-
         field =
-            if isRecursive then
-                RecursiveField (typeName <| name ++ "_" ++ descriptor.name) baseField
-
-            else
-                baseField
+            Field descriptor.number (cardinality descriptor.label) type_
     in
     { field = ( valueName descriptor.name, field )
     , oneOfIndex = descriptor.oneofIndex
@@ -420,7 +404,7 @@ cardinality value =
             Repeated
 
 
-dependencies : Dict.Dict String String -> List String -> List String
+dependencies : Dict String String -> List String -> List String
 dependencies fileDict =
     List.filterMap (\file -> Dict.get file fileDict)
 

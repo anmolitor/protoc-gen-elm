@@ -1,9 +1,9 @@
 module Generator exposing (generate)
 
-import Dict
+import Dict exposing (Dict)
 import List.Extra
 import Model exposing (..)
-import Set
+import Set exposing (Set)
 import String.Extra
 
 
@@ -24,7 +24,15 @@ type alias Version =
 
 
 type alias EnumDefaults =
-    Dict.Dict String String
+    Dict String String
+
+
+type alias CyclicMessageMap =
+    Dict String CyclicFieldMap
+
+
+type alias CyclicFieldMap =
+    Dict String String
 
 
 type alias Struct =
@@ -80,9 +88,12 @@ generatePackage version package =
         enumDefaults =
             Dict.fromList <| List.map (\e -> ( e.dataType, Tuple.second <| Tuple.first e.fields )) package.enums
 
+        cyclicMessageMap =
+            buildCyclicMessageMap package.messages
+
         struct =
             append
-                (concatMap (message enumDefaults) package.messages)
+                (concatMap (message enumDefaults cyclicMessageMap) package.messages)
                 (concatMap enum package.enums)
 
         imports =
@@ -227,9 +238,9 @@ enum value =
     , exposedDecoders = []
     , exposedEncoders = []
     , models =
-        [ "{-| "
+        [ "{-| `"
             ++ value.dataType
-            ++ "\n-}"
+            ++ "` enumeration\n-}"
             ++ "\ntype "
             ++ value.dataType
             ++ "\n    = "
@@ -290,8 +301,8 @@ enum value =
 -- MESSAGE
 
 
-message : EnumDefaults -> Message -> Struct
-message enumDefaults value =
+message : EnumDefaults -> CyclicMessageMap -> Message -> Struct
+message enumDefaults cyclicMessageMap value =
     let
         decoder_ =
             decoderName value.dataType
@@ -305,54 +316,99 @@ message enumDefaults value =
 
             else
                 ( [], [] )
+
+        cyclicFields =
+            Dict.get value.dataType cyclicMessageMap
+                |> Maybe.withDefault Dict.empty
     in
-    { exposedTypes = [ value.dataType ]
-    , exposedTypesDocs = [ value.dataType ]
-    , exposedDecoders = exposedDecoders
-    , exposedEncoders = exposedEncoder
-    , models =
-        [ """
-{-| {{ dataType }}
+    append
+        (concatMap identity <| List.filterMap (oneOf << Tuple.second) value.fields)
+        (concatMap identity <| List.filterMap (recursive cyclicFields) value.fields)
+        |> append
+            { exposedTypes = [ value.dataType ]
+            , exposedTypesDocs = [ value.dataType ]
+            , exposedDecoders = exposedDecoders
+            , exposedEncoders = exposedEncoder
+            , models =
+                [ """
+{-| `{{ dataType }}` message
 -}
 type alias {{ dataType }} =
-    { {{ fields }}
-    }
+    {{ fields }}
     """
-            |> String.trim
-            |> interpolate "dataType" value.dataType
-            |> interpolate "fields" (String.join "\n    , " <| List.map recordField value.fields)
-        ]
-    , decoders =
-        [ """
-{{ decoder }} : Decode.Decoder {{ dataType }}
+                    |> String.trim
+                    |> interpolate "dataType" value.dataType
+                    |> interpolate "fields"
+                        (case value.fields of
+                            [] ->
+                                "{}"
+
+                            fields ->
+                                "{ " ++ (String.join "\n    , " <| List.map (recordField cyclicFields) fields) ++ "\n    }"
+                        )
+                ]
+            , decoders =
+                [ """
+{{ header }}{{ decoder }} : Decode.Decoder {{ dataType }}
 {{ decoder }} =
-    Decode.message ({{ dataType }} {{ defaults }})
-        [ {{ fields }}
-        ]
+    Decode.message {{ default }}
+        {{ fields }}
             """
-            |> String.trim
-            |> interpolate "decoder" decoder_
-            |> interpolate "dataType" value.dataType
-            |> interpolate "defaults" (String.join " " <| List.map (fieldDefault enumDefaults << Tuple.second) value.fields)
-            |> interpolate "fields" (String.join "\n        , " <| List.map (fieldDecoder enumDefaults) value.fields)
-        ]
-    , encoders =
-        [ """
-{{ encoder }} : {{ dataType }} -> Encode.Encoder
+                    |> String.trim
+                    |> interpolate "header"
+                        (if value.isTopLevel then
+                            "{-| `" ++ value.dataType ++ "` decoder\n-}\n"
+
+                         else
+                            ""
+                        )
+                    |> interpolate "decoder" decoder_
+                    |> interpolate "dataType" value.dataType
+                    |> interpolate "default"
+                        (case value.fields of
+                            [] ->
+                                value.dataType
+
+                            fields ->
+                                "(" ++ value.dataType ++ " " ++ (String.join " " <| List.map (fieldDefault enumDefaults cyclicFields) fields) ++ ")"
+                        )
+                    |> interpolate "fields"
+                        (case value.fields of
+                            [] ->
+                                "[]"
+
+                            fields ->
+                                "[ " ++ (String.join "\n        , " <| List.map (fieldDecoder enumDefaults cyclicFields) fields) ++ "\n        ]"
+                        )
+                ]
+            , encoders =
+                [ """
+{{ header }}{{ encoder }} : {{ dataType }} -> Encode.Encoder
 {{ encoder }} model =
     Encode.message
-        [ {{ fields }}
-        ]
+        {{ fields }}
             """
-            |> String.trim
-            |> interpolate "encoder" encoder_
-            |> interpolate "dataType" value.dataType
-            |> interpolate "fields" (String.join "\n        , " <| List.map fieldEncoder value.fields)
-        ]
-    , setters = List.map Tuple.first value.fields
-    }
-        |> append (concatMap identity <| List.filterMap (oneOf << Tuple.second) value.fields)
-        |> append (concatMap identity <| List.filterMap (recursive << Tuple.second) value.fields)
+                    |> String.trim
+                    |> interpolate "header"
+                        (if value.isTopLevel then
+                            "{-| `" ++ value.dataType ++ "` encoder\n-}\n"
+
+                         else
+                            ""
+                        )
+                    |> interpolate "encoder" encoder_
+                    |> interpolate "dataType" value.dataType
+                    |> interpolate "fields"
+                        (case value.fields of
+                            [] ->
+                                "[]"
+
+                            fields ->
+                                "[ " ++ (String.join "\n        , " <| List.map (fieldEncoder cyclicFields) fields) ++ "\n        ]"
+                        )
+                ]
+            , setters = List.map Tuple.first value.fields
+            }
 
 
 oneOf : Field -> Maybe Struct
@@ -420,49 +476,52 @@ oneOf field =
             Nothing
 
 
-recursive : Field -> Maybe Struct
-recursive field =
-    case field of
-        RecursiveField dataType recursiveField ->
-            case recursiveField of
-                Field _ cardinality fieldType ->
-                    let
-                        fieldDataType =
+recursive : CyclicFieldMap -> ( String, Field ) -> Maybe Struct
+recursive cyclicFieldMap ( fieldName, field ) =
+    case Dict.get fieldName cyclicFieldMap of
+        Just dataType ->
+            let
+                fieldDataType =
+                    case field of
+                        Field _ cardinality fieldType ->
                             fieldTypeDataType cardinality fieldType
-                    in
-                    Just
-                        { exposedTypes = [ dataType ++ "(..)" ]
-                        , exposedTypesDocs = [ dataType ]
-                        , exposedDecoders = []
-                        , exposedEncoders = []
-                        , models =
-                            [ "{-| "
-                                ++ dataType
-                                ++ "\n-}"
-                                ++ "\ntype "
-                                ++ dataType
-                                ++ "\n    = "
-                                ++ dataType
-                                ++ " ("
-                                ++ fieldDataType
-                                ++ ")"
-                            ]
-                        , decoders =
-                            [ """
+
+                        MapField _ { value } ->
+                            fieldTypeDataType Optional value
+
+                        OneOfField oneOfType _ ->
+                            "Maybe " ++ oneOfType
+            in
+            Just
+                { exposedTypes = [ dataType ++ "(..)" ]
+                , exposedTypesDocs = [ dataType ]
+                , exposedDecoders = []
+                , exposedEncoders = []
+                , models =
+                    [ "{-| "
+                        ++ dataType
+                        ++ "\n-}"
+                        ++ "\ntype "
+                        ++ dataType
+                        ++ "\n    = "
+                        ++ dataType
+                        ++ " ("
+                        ++ fieldDataType
+                        ++ ")"
+                    ]
+                , decoders =
+                    [ """
 unwrap{{ dataType }} : {{ dataType }} -> {{ fieldDataType }}
 unwrap{{ dataType }} ({{ dataType }} value) =
     value
-                        """
-                                |> String.trim
-                                |> interpolate "dataType" dataType
-                                |> interpolate "fieldDataType" fieldDataType
-                            ]
-                        , encoders = []
-                        , setters = []
-                        }
-
-                _ ->
-                    Nothing
+                               """
+                        |> String.trim
+                        |> interpolate "dataType" dataType
+                        |> interpolate "fieldDataType" fieldDataType
+                    ]
+                , encoders = []
+                , setters = []
+                }
 
         _ ->
             Nothing
@@ -472,57 +531,65 @@ unwrap{{ dataType }} ({{ dataType }} value) =
 -- FIELD
 
 
-recordField : ( FieldName, Field ) -> String
-recordField ( fieldName, field ) =
+recordField : CyclicFieldMap -> ( FieldName, Field ) -> String
+recordField cyclicFieldMap ( fieldName, field ) =
     let
-        type_ =
+        dataType =
+            case Dict.get fieldName cyclicFieldMap of
+                Just dataType_ ->
+                    dataType_
+
+                Nothing ->
+                    case field of
+                        Field _ cardinality fieldType ->
+                            fieldTypeDataType cardinality fieldType
+
+                        MapField _ { key, value } ->
+                            let
+                                valueDataType_ =
+                                    fieldTypeDataType Optional value
+
+                                valueDataType =
+                                    case value of
+                                        Embedded _ ->
+                                            "(" ++ valueDataType_ ++ ")"
+
+                                        _ ->
+                                            valueDataType_
+                            in
+                            "Dict.Dict " ++ fieldTypeDataType Optional key ++ " " ++ valueDataType
+
+                        OneOfField dataType_ _ ->
+                            "Maybe " ++ dataType_
+    in
+    fieldName ++ " : " ++ dataType
+
+
+fieldDefault : EnumDefaults -> CyclicFieldMap -> ( String, Field ) -> String
+fieldDefault enumDefaults cyclicFieldMap ( fieldName, field ) =
+    let
+        fieldDefault_ =
             case field of
                 Field _ cardinality fieldType ->
-                    fieldTypeDataType cardinality fieldType
+                    case cardinality of
+                        Repeated ->
+                            "[]"
 
-                MapField _ { key, value } ->
-                    let
-                        valueDataType_ =
-                            fieldTypeDataType Optional value
+                        _ ->
+                            fieldTypeDefault enumDefaults fieldType
 
-                        valueDataType =
-                            case value of
-                                Embedded _ ->
-                                    "(" ++ valueDataType_ ++ ")"
+                MapField _ _ ->
+                    "Dict.empty"
 
-                                _ ->
-                                    valueDataType_
-                    in
-                    "Dict.Dict " ++ fieldTypeDataType Optional key ++ " " ++ valueDataType
-
-                OneOfField dataType _ ->
-                    "Maybe " ++ dataType
-
-                RecursiveField dataType field_ ->
-                    dataType
+                OneOfField _ _ ->
+                    "Nothing"
     in
-    fieldName ++ " : " ++ type_
+    case Dict.get fieldName cyclicFieldMap of
+        Just dataType ->
+            "(" ++ dataType ++ " " ++ fieldDefault_ ++ ")"
 
-
-fieldDefault : EnumDefaults -> Field -> String
-fieldDefault enumDefaults field =
-    case field of
-        Field _ cardinality fieldType ->
-            case cardinality of
-                Repeated ->
-                    "[]"
-
-                _ ->
-                    fieldTypeDefault enumDefaults fieldType
-
-        MapField _ _ ->
-            "Dict.empty"
-
-        OneOfField _ _ ->
-            "Nothing"
-
-        RecursiveField name field_ ->
-            "(" ++ name ++ " " ++ fieldDefault enumDefaults field_ ++ ")"
+        Nothing ->
+            fieldDefault_
 
 
 fieldTypeDefault : EnumDefaults -> FieldType -> String
@@ -565,20 +632,56 @@ fieldTypeDataType cardinality fieldType =
                     fieldDataType
 
 
-fieldDecoder : EnumDefaults -> ( FieldName, Field ) -> String
-fieldDecoder enumDefaults ( fieldName, field ) =
+fieldDecoder : EnumDefaults -> CyclicFieldMap -> ( FieldName, Field ) -> String
+fieldDecoder enumDefaults cyclicFieldMap ( fieldName, field ) =
     let
+        lazy =
+            case Dict.get fieldName cyclicFieldMap of
+                Just _ ->
+                    True
+
+                Nothing ->
+                    False
+
+        toDecoder name =
+            if lazy then
+                "(Decode.lazy (\\_ -> " ++ name ++ "))"
+
+            else
+                name
+
         fieldDecoder_ cardinality fieldType =
             case fieldType of
                 Embedded _ ->
                     if cardinality == Repeated then
-                        decoder fieldType
+                        toDecoder <| decoder fieldType
 
                     else
-                        "(Decode.map Just " ++ decoder fieldType ++ ")"
+                        toDecoder <| "(Decode.map Just " ++ decoder fieldType ++ ")"
 
                 _ ->
-                    decoder fieldType
+                    toDecoder <| decoder fieldType
+
+        setter_ =
+            case Dict.get fieldName cyclicFieldMap of
+                Just dataType ->
+                    "(set" ++ String.Extra.toSentenceCase fieldName ++ " << " ++ dataType ++ ")"
+
+                Nothing ->
+                    "set" ++ String.Extra.toSentenceCase fieldName
+
+        getter cardinality =
+            case cardinality of
+                Repeated ->
+                    case Dict.get fieldName cyclicFieldMap of
+                        Just dataType ->
+                            " (unwrap" ++ dataType ++ " << ." ++ fieldName ++ ")"
+
+                        Nothing ->
+                            " ." ++ fieldName
+
+                _ ->
+                    ""
     in
     case field of
         Field fieldNumber cardinality fieldType ->
@@ -586,25 +689,18 @@ fieldDecoder enumDefaults ( fieldName, field ) =
                 |> interpolate "cardinality" (cardinalityCoder cardinality)
                 |> interpolate "fieldNumber" (String.fromInt fieldNumber)
                 |> interpolate "fieldDecoder" (fieldDecoder_ cardinality fieldType)
-                |> interpolate "setter" ("set" ++ String.Extra.toSentenceCase fieldName)
-                |> interpolate "getter"
-                    (case cardinality of
-                        Repeated ->
-                            " ." ++ fieldName
-
-                        _ ->
-                            ""
-                    )
+                |> interpolate "setter" setter_
+                |> interpolate "getter" (getter cardinality)
 
         MapField fieldNumber { key, value } ->
-            "Decode.mapped {{ fieldNumber }} ( {{ defaultKey }}, {{ defaultValue }} ) {{ keyDecoder }} {{ valueDecoder }} {{ getter }} {{ setter }}"
+            "Decode.mapped {{ fieldNumber }} ( {{ defaultKey }}, {{ defaultValue }} ) {{ keyDecoder }} {{ valueDecoder }}{{ getter }} {{ setter }}"
                 |> interpolate "fieldNumber" (String.fromInt fieldNumber)
                 |> interpolate "defaultKey" (fieldTypeDefault enumDefaults key)
                 |> interpolate "defaultValue" (fieldTypeDefault enumDefaults value)
                 |> interpolate "keyDecoder" (decoder key)
                 |> interpolate "valueDecoder" (fieldDecoder_ Optional value)
-                |> interpolate "setter" ("set" ++ String.Extra.toSentenceCase fieldName)
-                |> interpolate "getter" ("." ++ fieldName)
+                |> interpolate "setter" setter_
+                |> interpolate "getter" (getter Repeated)
 
         OneOfField _ fields ->
             """
@@ -614,33 +710,22 @@ fieldDecoder enumDefaults ( fieldName, field ) =
             {{ setter }}
             """
                 |> String.trim
-                |> interpolate "fields" (String.join "\n            , " <| List.map oneOfFieldDecoder fields)
-                |> interpolate "setter" ("set" ++ String.Extra.toSentenceCase fieldName)
-
-        RecursiveField dataType field_ ->
-            case field_ of
-                Field fieldNumber cardinality fieldType ->
-                    "Decode.{{ cardinality }} {{ fieldNumber }} (Decode.lazy (\\_ -> {{ fieldDecoder }})){{ getter }} {{ setter }}"
-                        |> interpolate "cardinality" (cardinalityCoder cardinality)
-                        |> interpolate "fieldNumber" (String.fromInt fieldNumber)
-                        |> interpolate "fieldDecoder" (decoder fieldType)
-                        |> interpolate "setter" ("(set" ++ String.Extra.toSentenceCase fieldName ++ " << " ++ dataType ++ ")")
-                        |> interpolate "getter"
-                            (case cardinality of
-                                Repeated ->
-                                    " (unwrap" ++ dataType ++ " << ." ++ fieldName ++ ")"
-
-                                _ ->
-                                    ""
-                            )
-
-                _ ->
-                    ""
+                |> interpolate "fields" (String.join "\n            , " <| List.map (oneOfFieldDecoder lazy) fields)
+                |> interpolate "setter" setter_
 
 
-oneOfFieldDecoder : ( FieldNumber, DataType, FieldType ) -> String
-oneOfFieldDecoder ( fieldNumber, dataType, fieldType ) =
-    "( {{ fieldNumber }}, Decode.map {{ dataType }} {{ fieldDecoder }} )"
+oneOfFieldDecoder : Bool -> ( FieldNumber, DataType, FieldType ) -> String
+oneOfFieldDecoder lazy ( fieldNumber, dataType, fieldType ) =
+    let
+        decoderTemplate =
+            if lazy then
+                "Decode.lazy (\\_ -> Decode.map {{ dataType }} {{ fieldDecoder }})"
+
+            else
+                "Decode.map {{ dataType }} {{ fieldDecoder }}"
+    in
+    "( {{ fieldNumber }}, {{ decoderTemplate }} )"
+        |> interpolate "decoderTemplate" decoderTemplate
         |> interpolate "fieldNumber" (String.fromInt fieldNumber)
         |> interpolate "dataType" dataType
         |> interpolate "fieldDecoder" (decoder fieldType)
@@ -659,8 +744,30 @@ decoder fieldType =
             decoderName dataType
 
 
-fieldEncoder : ( FieldName, Field ) -> String
-fieldEncoder ( fieldName, field ) =
+fieldEncoder : CyclicFieldMap -> ( FieldName, Field ) -> String
+fieldEncoder cyclicFieldMap ( fieldName, field ) =
+    let
+        getter_ =
+            case Dict.get fieldName cyclicFieldMap of
+                Just dataType ->
+                    "(unwrap" ++ dataType ++ " model." ++ fieldName ++ ")"
+
+                Nothing ->
+                    "model." ++ fieldName
+
+        fieldEncoder_ cardinality fieldType =
+            case cardinality of
+                Repeated ->
+                    "Encode.list " ++ encoder fieldType
+
+                _ ->
+                    case fieldType of
+                        Embedded _ ->
+                            "(Maybe.withDefault Encode.none << Maybe.map " ++ encoder fieldType ++ ")"
+
+                        _ ->
+                            encoder fieldType
+    in
     case field of
         Field fieldNumber cardinality fieldType ->
             let
@@ -677,44 +784,22 @@ fieldEncoder ( fieldName, field ) =
                                 _ ->
                                     ""
             in
-            "( {{ fieldNumber }}, {{ prefix }}{{ fieldEncoder }} model.{{ fieldName }} )"
+            "( {{ fieldNumber }}, {{ fieldEncoder }} {{ getter }} )"
                 |> interpolate "fieldNumber" (String.fromInt fieldNumber)
-                |> interpolate "prefix" prefix
-                |> interpolate "fieldEncoder" (encoder fieldType)
-                |> interpolate "fieldName" fieldName
+                |> interpolate "fieldEncoder" (fieldEncoder_ cardinality fieldType)
+                |> interpolate "getter" getter_
 
         MapField fieldNumber { key, value } ->
-            "( {{ fieldNumber }}, Encode.dict {{ keyEncoder }} {{ valueEncoder }} model.{{ fieldName }} )"
+            "( {{ fieldNumber }}, Encode.dict {{ keyEncoder }} {{ valueEncoder }} {{ getter }} )"
                 |> interpolate "fieldNumber" (String.fromInt fieldNumber)
                 |> interpolate "keyEncoder" (encoder key)
-                |> interpolate "valueEncoder" (encoder value)
-                |> interpolate "fieldName" fieldName
+                |> interpolate "valueEncoder" (fieldEncoder_ Optional value)
+                |> interpolate "getter" getter_
 
         OneOfField dataType fields ->
-            "Maybe.withDefault ( 0, Encode.none ) <| Maybe.map {{ fieldEncoder }} model.{{ fieldName }}"
+            "Maybe.withDefault ( 0, Encode.none ) <| Maybe.map {{ fieldEncoder }} {{ getter }}"
                 |> interpolate "fieldEncoder" (encoderName dataType)
-                |> interpolate "fieldName" fieldName
-
-        RecursiveField dataType field_ ->
-            case field_ of
-                Field fieldNumber cardinality fieldType ->
-                    let
-                        prefix =
-                            case cardinality of
-                                Repeated ->
-                                    "Encode.list "
-
-                                _ ->
-                                    ""
-                    in
-                    "( {{ fieldNumber }}, {{ prefix }}{{ fieldEncoder }} {{ getField }} )"
-                        |> interpolate "fieldNumber" (String.fromInt fieldNumber)
-                        |> interpolate "prefix" prefix
-                        |> interpolate "fieldEncoder" (encoder fieldType)
-                        |> interpolate "getField" ("<| unwrap" ++ dataType ++ " model." ++ fieldName)
-
-                _ ->
-                    ""
+                |> interpolate "getter" getter_
 
 
 encoder : FieldType -> String
@@ -757,6 +842,161 @@ setter fieldName =
         |> String.trim
         |> interpolate "setter" ("set" ++ String.Extra.toSentenceCase fieldName)
         |> interpolate "fieldName" fieldName
+
+
+
+-- RECURSION
+
+
+buildCyclicMessageMap : List Message -> CyclicMessageMap
+buildCyclicMessageMap messages =
+    let
+        graph =
+            buildDependencyGraph messages
+
+        types =
+            Dict.keys graph
+    in
+    types
+        |> List.map (\type_ -> ( type_, findCyclicFields type_ graph ))
+        |> Dict.fromList
+        |> foldCyclicMessageMap graph
+
+
+buildDependencyGraph : List Message -> Dict String (List ( String, String ))
+buildDependencyGraph =
+    Dict.fromList << List.map messageDependencies
+
+
+messageDependencies : Message -> ( String, List ( String, String ) )
+messageDependencies msg =
+    ( msg.dataType, List.concatMap messageFieldDependencies msg.fields )
+
+
+messageFieldDependencies : ( String, Field ) -> List ( String, String )
+messageFieldDependencies ( fieldName, field ) =
+    let
+        fieldType_ fieldType =
+            case fieldType of
+                Primitive _ _ _ ->
+                    Nothing
+
+                Embedded dataType ->
+                    Just ( fieldName, dataType )
+
+                Enumeration _ _ ->
+                    Nothing
+    in
+    case field of
+        Field _ _ fieldType ->
+            Maybe.withDefault [] <| Maybe.map List.singleton (fieldType_ fieldType)
+
+        MapField _ { value } ->
+            Maybe.withDefault [] <| Maybe.map List.singleton (fieldType_ value)
+
+        OneOfField _ fields ->
+            List.filterMap (\( _, _, fieldType ) -> fieldType_ fieldType) fields
+
+
+findCyclicFields : String -> Dict String (List ( String, String )) -> List String
+findCyclicFields root graph =
+    let
+        fields =
+            Dict.get root graph
+                |> Maybe.withDefault []
+
+        graph_ =
+            Dict.map (always <| List.map Tuple.second) graph
+    in
+    List.filterMap
+        (\( fieldName, field ) ->
+            if findCyclicFieldsHelp root Set.empty [ field ] graph_ then
+                Just fieldName
+
+            else
+                Nothing
+        )
+        fields
+
+
+findCyclicFieldsHelp : String -> Set String -> List String -> Dict String (List String) -> Bool
+findCyclicFieldsHelp root visited unvisited graph =
+    case unvisited of
+        [] ->
+            False
+
+        next :: rest ->
+            if Set.member next visited then
+                if next == root then
+                    True
+
+                else
+                    findCyclicFieldsHelp root visited rest graph
+
+            else
+                let
+                    newVisited =
+                        Set.insert next visited
+
+                    nextDeps =
+                        Maybe.withDefault [] (Dict.get next graph)
+
+                    newUnvisited =
+                        nextDeps ++ rest
+                in
+                findCyclicFieldsHelp root newVisited newUnvisited graph
+
+
+foldCyclicMessageMap : Dict String (List ( String, String )) -> Dict String (List String) -> CyclicMessageMap
+foldCyclicMessageMap graph dict =
+    let
+        types =
+            Dict.toList dict
+                |> List.sortBy (List.length << Tuple.second)
+                |> List.map Tuple.first
+    in
+    List.foldr
+        (\dataType fold ->
+            let
+                fieldNames =
+                    Maybe.withDefault [] <| Dict.get dataType fold
+
+                dependencies =
+                    List.concatMap
+                        (\fieldName ->
+                            Dict.get dataType graph
+                                |> Maybe.map (List.filter ((==) fieldName << Tuple.first))
+                                |> Maybe.map (List.map Tuple.second)
+                                |> Maybe.withDefault []
+                        )
+                        fieldNames
+                        |> Set.fromList
+
+                backDependencies type_ =
+                    Dict.get type_ graph
+                        |> Maybe.map (List.filter ((==) dataType << Tuple.second))
+                        |> Maybe.map (List.map Tuple.first)
+                        |> Maybe.withDefault []
+                        |> Set.fromList
+            in
+            Dict.map
+                (\type_ cyclicFields ->
+                    if Set.member type_ dependencies then
+                        List.filter (\f -> Set.member f (backDependencies type_)) cyclicFields
+
+                    else
+                        cyclicFields
+                )
+                fold
+        )
+        dict
+        types
+        |> Dict.map
+            (\type_ names ->
+                names
+                    |> List.map (\name -> ( name, String.Extra.classify <| type_ ++ "_" ++ name ))
+                    |> Dict.fromList
+            )
 
 
 

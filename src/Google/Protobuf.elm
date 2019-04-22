@@ -2,7 +2,7 @@
 
 
 module Google.Protobuf exposing
-    ( FieldDescriptorProtoType(..), FieldDescriptorProtoLabel(..), FileOptionsOptimizeMode(..), FieldOptionsCType(..), FieldOptionsJSType(..), MethodOptionsIdempotencyLevel(..), FileDescriptorSet, FileDescriptorProto, DescriptorProto, DescriptorProtoNestedType(..), DescriptorProtoExtensionRange, DescriptorProtoReservedRange, ExtensionRangeOptions, FieldDescriptorProto, OneofDescriptorProto, EnumDescriptorProto, EnumDescriptorProtoEnumReservedRange, EnumValueDescriptorProto, ServiceDescriptorProto, MethodDescriptorProto, FileOptions, MessageOptions, FieldOptions, OneofOptions, EnumOptions, EnumValueOptions, ServiceOptions, MethodOptions, UninterpretedOption, UninterpretedOptionNamePart, SourceCodeInfo, SourceCodeInfoLocation, GeneratedCodeInfo, GeneratedCodeInfoAnnotation
+    ( FieldDescriptorProtoType(..), FieldDescriptorProtoLabel(..), FileOptionsOptimizeMode(..), FieldOptionsCType(..), FieldOptionsJSType(..), MethodOptionsIdempotencyLevel(..), FileDescriptorSet, FileDescriptorProto, DescriptorProtoNestedType(..), DescriptorProto, DescriptorProtoExtensionRange, DescriptorProtoReservedRange, ExtensionRangeOptions, FieldDescriptorProto, OneofDescriptorProto, EnumDescriptorProto, EnumDescriptorProtoEnumReservedRange, EnumValueDescriptorProto, ServiceDescriptorProto, MethodDescriptorProto, FileOptions, MessageOptions, FieldOptions, OneofOptions, EnumOptions, EnumValueOptions, ServiceOptions, MethodOptions, UninterpretedOption, UninterpretedOptionNamePart, SourceCodeInfo, SourceCodeInfoLocation, GeneratedCodeInfo, GeneratedCodeInfoAnnotation
     , fileDescriptorSetDecoder, fileDescriptorProtoDecoder, descriptorProtoDecoder, extensionRangeOptionsDecoder, fieldDescriptorProtoDecoder, oneofDescriptorProtoDecoder, enumDescriptorProtoDecoder, enumValueDescriptorProtoDecoder, serviceDescriptorProtoDecoder, methodDescriptorProtoDecoder, fileOptionsDecoder, messageOptionsDecoder, fieldOptionsDecoder, oneofOptionsDecoder, enumOptionsDecoder, enumValueOptionsDecoder, serviceOptionsDecoder, methodOptionsDecoder, uninterpretedOptionDecoder, sourceCodeInfoDecoder, generatedCodeInfoDecoder
     , toFileDescriptorSetEncoder, toFileDescriptorProtoEncoder, toDescriptorProtoEncoder, toExtensionRangeOptionsEncoder, toFieldDescriptorProtoEncoder, toOneofDescriptorProtoEncoder, toEnumDescriptorProtoEncoder, toEnumValueDescriptorProtoEncoder, toServiceDescriptorProtoEncoder, toMethodDescriptorProtoEncoder, toFileOptionsEncoder, toMessageOptionsEncoder, toFieldOptionsEncoder, toOneofOptionsEncoder, toEnumOptionsEncoder, toEnumValueOptionsEncoder, toServiceOptionsEncoder, toMethodOptionsEncoder, toUninterpretedOptionEncoder, toSourceCodeInfoEncoder, toGeneratedCodeInfoEncoder
     )
@@ -20,7 +20,7 @@ To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eri
 
 # Model
 
-@docs FieldDescriptorProtoType, FieldDescriptorProtoLabel, FileOptionsOptimizeMode, FieldOptionsCType, FieldOptionsJSType, MethodOptionsIdempotencyLevel, FileDescriptorSet, FileDescriptorProto, DescriptorProto, DescriptorProtoNestedType, DescriptorProtoExtensionRange, DescriptorProtoReservedRange, ExtensionRangeOptions, FieldDescriptorProto, OneofDescriptorProto, EnumDescriptorProto, EnumDescriptorProtoEnumReservedRange, EnumValueDescriptorProto, ServiceDescriptorProto, MethodDescriptorProto, FileOptions, MessageOptions, FieldOptions, OneofOptions, EnumOptions, EnumValueOptions, ServiceOptions, MethodOptions, UninterpretedOption, UninterpretedOptionNamePart, SourceCodeInfo, SourceCodeInfoLocation, GeneratedCodeInfo, GeneratedCodeInfoAnnotation
+@docs FieldDescriptorProtoType, FieldDescriptorProtoLabel, FileOptionsOptimizeMode, FieldOptionsCType, FieldOptionsJSType, MethodOptionsIdempotencyLevel, FileDescriptorSet, FileDescriptorProto, DescriptorProtoNestedType, DescriptorProto, DescriptorProtoExtensionRange, DescriptorProtoReservedRange, ExtensionRangeOptions, FieldDescriptorProto, OneofDescriptorProto, EnumDescriptorProto, EnumDescriptorProtoEnumReservedRange, EnumValueDescriptorProto, ServiceDescriptorProto, MethodDescriptorProto, FileOptions, MessageOptions, FieldOptions, OneofOptions, EnumOptions, EnumValueOptions, ServiceOptions, MethodOptions, UninterpretedOption, UninterpretedOptionNamePart, SourceCodeInfo, SourceCodeInfoLocation, GeneratedCodeInfo, GeneratedCodeInfoAnnotation
 
 
 # Decoder
@@ -43,7 +43,7 @@ import Protobuf.Encode as Encode
 -- MODEL
 
 
-{-| FieldDescriptorProtoType
+{-| `FieldDescriptorProtoType` enumeration
 -}
 type FieldDescriptorProtoType
     = TypeDouble
@@ -66,7 +66,7 @@ type FieldDescriptorProtoType
     | TypeSint64
 
 
-{-| FieldDescriptorProtoLabel
+{-| `FieldDescriptorProtoLabel` enumeration
 -}
 type FieldDescriptorProtoLabel
     = LabelOptional
@@ -74,7 +74,7 @@ type FieldDescriptorProtoLabel
     | LabelRepeated
 
 
-{-| FileOptionsOptimizeMode
+{-| `FileOptionsOptimizeMode` enumeration
 -}
 type FileOptionsOptimizeMode
     = Speed
@@ -82,7 +82,7 @@ type FileOptionsOptimizeMode
     | LiteRuntime
 
 
-{-| FieldOptionsCType
+{-| `FieldOptionsCType` enumeration
 -}
 type FieldOptionsCType
     = String
@@ -90,7 +90,7 @@ type FieldOptionsCType
     | StringPiece
 
 
-{-| FieldOptionsJSType
+{-| `FieldOptionsJSType` enumeration
 -}
 type FieldOptionsJSType
     = JsNormal
@@ -98,7 +98,7 @@ type FieldOptionsJSType
     | JsNumber
 
 
-{-| MethodOptionsIdempotencyLevel
+{-| `MethodOptionsIdempotencyLevel` enumeration
 -}
 type MethodOptionsIdempotencyLevel
     = IdempotencyUnknown
@@ -106,14 +106,14 @@ type MethodOptionsIdempotencyLevel
     | Idempotent
 
 
-{-| FileDescriptorSet
+{-| `FileDescriptorSet` message
 -}
 type alias FileDescriptorSet =
     { file : List FileDescriptorProto
     }
 
 
-{-| FileDescriptorProto
+{-| `FileDescriptorProto` message
 -}
 type alias FileDescriptorProto =
     { name : String
@@ -131,7 +131,13 @@ type alias FileDescriptorProto =
     }
 
 
-{-| DescriptorProto
+{-| DescriptorProtoNestedType
+-}
+type DescriptorProtoNestedType
+    = DescriptorProtoNestedType (List DescriptorProto)
+
+
+{-| `DescriptorProto` message
 -}
 type alias DescriptorProto =
     { name : String
@@ -147,13 +153,7 @@ type alias DescriptorProto =
     }
 
 
-{-| DescriptorProtoNestedType
--}
-type DescriptorProtoNestedType
-    = DescriptorProtoNestedType (List DescriptorProto)
-
-
-{-| DescriptorProtoExtensionRange
+{-| `DescriptorProtoExtensionRange` message
 -}
 type alias DescriptorProtoExtensionRange =
     { start : Int
@@ -162,7 +162,7 @@ type alias DescriptorProtoExtensionRange =
     }
 
 
-{-| DescriptorProtoReservedRange
+{-| `DescriptorProtoReservedRange` message
 -}
 type alias DescriptorProtoReservedRange =
     { start : Int
@@ -170,14 +170,14 @@ type alias DescriptorProtoReservedRange =
     }
 
 
-{-| ExtensionRangeOptions
+{-| `ExtensionRangeOptions` message
 -}
 type alias ExtensionRangeOptions =
     { uninterpretedOption : List UninterpretedOption
     }
 
 
-{-| FieldDescriptorProto
+{-| `FieldDescriptorProto` message
 -}
 type alias FieldDescriptorProto =
     { name : String
@@ -193,7 +193,7 @@ type alias FieldDescriptorProto =
     }
 
 
-{-| OneofDescriptorProto
+{-| `OneofDescriptorProto` message
 -}
 type alias OneofDescriptorProto =
     { name : String
@@ -201,7 +201,7 @@ type alias OneofDescriptorProto =
     }
 
 
-{-| EnumDescriptorProto
+{-| `EnumDescriptorProto` message
 -}
 type alias EnumDescriptorProto =
     { name : String
@@ -212,7 +212,7 @@ type alias EnumDescriptorProto =
     }
 
 
-{-| EnumDescriptorProtoEnumReservedRange
+{-| `EnumDescriptorProtoEnumReservedRange` message
 -}
 type alias EnumDescriptorProtoEnumReservedRange =
     { start : Int
@@ -220,7 +220,7 @@ type alias EnumDescriptorProtoEnumReservedRange =
     }
 
 
-{-| EnumValueDescriptorProto
+{-| `EnumValueDescriptorProto` message
 -}
 type alias EnumValueDescriptorProto =
     { name : String
@@ -229,7 +229,7 @@ type alias EnumValueDescriptorProto =
     }
 
 
-{-| ServiceDescriptorProto
+{-| `ServiceDescriptorProto` message
 -}
 type alias ServiceDescriptorProto =
     { name : String
@@ -238,7 +238,7 @@ type alias ServiceDescriptorProto =
     }
 
 
-{-| MethodDescriptorProto
+{-| `MethodDescriptorProto` message
 -}
 type alias MethodDescriptorProto =
     { name : String
@@ -250,7 +250,7 @@ type alias MethodDescriptorProto =
     }
 
 
-{-| FileOptions
+{-| `FileOptions` message
 -}
 type alias FileOptions =
     { javaPackage : String
@@ -277,7 +277,7 @@ type alias FileOptions =
     }
 
 
-{-| MessageOptions
+{-| `MessageOptions` message
 -}
 type alias MessageOptions =
     { messageSetWireFormat : Bool
@@ -288,7 +288,7 @@ type alias MessageOptions =
     }
 
 
-{-| FieldOptions
+{-| `FieldOptions` message
 -}
 type alias FieldOptions =
     { ctype : FieldOptionsCType
@@ -301,14 +301,14 @@ type alias FieldOptions =
     }
 
 
-{-| OneofOptions
+{-| `OneofOptions` message
 -}
 type alias OneofOptions =
     { uninterpretedOption : List UninterpretedOption
     }
 
 
-{-| EnumOptions
+{-| `EnumOptions` message
 -}
 type alias EnumOptions =
     { allowAlias : Bool
@@ -317,7 +317,7 @@ type alias EnumOptions =
     }
 
 
-{-| EnumValueOptions
+{-| `EnumValueOptions` message
 -}
 type alias EnumValueOptions =
     { deprecated : Bool
@@ -325,7 +325,7 @@ type alias EnumValueOptions =
     }
 
 
-{-| ServiceOptions
+{-| `ServiceOptions` message
 -}
 type alias ServiceOptions =
     { deprecated : Bool
@@ -333,7 +333,7 @@ type alias ServiceOptions =
     }
 
 
-{-| MethodOptions
+{-| `MethodOptions` message
 -}
 type alias MethodOptions =
     { deprecated : Bool
@@ -342,7 +342,7 @@ type alias MethodOptions =
     }
 
 
-{-| UninterpretedOption
+{-| `UninterpretedOption` message
 -}
 type alias UninterpretedOption =
     { name : List UninterpretedOptionNamePart
@@ -355,7 +355,7 @@ type alias UninterpretedOption =
     }
 
 
-{-| UninterpretedOptionNamePart
+{-| `UninterpretedOptionNamePart` message
 -}
 type alias UninterpretedOptionNamePart =
     { namePart : String
@@ -363,14 +363,14 @@ type alias UninterpretedOptionNamePart =
     }
 
 
-{-| SourceCodeInfo
+{-| `SourceCodeInfo` message
 -}
 type alias SourceCodeInfo =
     { location : List SourceCodeInfoLocation
     }
 
 
-{-| SourceCodeInfoLocation
+{-| `SourceCodeInfoLocation` message
 -}
 type alias SourceCodeInfoLocation =
     { path : List Int
@@ -381,14 +381,14 @@ type alias SourceCodeInfoLocation =
     }
 
 
-{-| GeneratedCodeInfo
+{-| `GeneratedCodeInfo` message
 -}
 type alias GeneratedCodeInfo =
     { annotation : List GeneratedCodeInfoAnnotation
     }
 
 
-{-| GeneratedCodeInfoAnnotation
+{-| `GeneratedCodeInfoAnnotation` message
 -}
 type alias GeneratedCodeInfoAnnotation =
     { path : List Int
@@ -567,6 +567,8 @@ methodOptionsIdempotencyLevelDecoder =
             )
 
 
+{-| `FileDescriptorSet` decoder
+-}
 fileDescriptorSetDecoder : Decode.Decoder FileDescriptorSet
 fileDescriptorSetDecoder =
     Decode.message (FileDescriptorSet [])
@@ -574,6 +576,8 @@ fileDescriptorSetDecoder =
         ]
 
 
+{-| `FileDescriptorProto` decoder
+-}
 fileDescriptorProtoDecoder : Decode.Decoder FileDescriptorProto
 fileDescriptorProtoDecoder =
     Decode.message (FileDescriptorProto "" "" [] [] [] [] [] [] [] Nothing Nothing "")
@@ -592,6 +596,13 @@ fileDescriptorProtoDecoder =
         ]
 
 
+unwrapDescriptorProtoNestedType : DescriptorProtoNestedType -> List DescriptorProto
+unwrapDescriptorProtoNestedType (DescriptorProtoNestedType value) =
+    value
+
+
+{-| `DescriptorProto` decoder
+-}
 descriptorProtoDecoder : Decode.Decoder DescriptorProto
 descriptorProtoDecoder =
     Decode.message (DescriptorProto "" [] [] (DescriptorProtoNestedType []) [] [] [] Nothing [] [])
@@ -606,11 +617,6 @@ descriptorProtoDecoder =
         , Decode.repeated 9 descriptorProtoReservedRangeDecoder .reservedRange setReservedRange
         , Decode.repeated 10 Decode.string .reservedName setReservedName
         ]
-
-
-unwrapDescriptorProtoNestedType : DescriptorProtoNestedType -> List DescriptorProto
-unwrapDescriptorProtoNestedType (DescriptorProtoNestedType value) =
-    value
 
 
 descriptorProtoExtensionRangeDecoder : Decode.Decoder DescriptorProtoExtensionRange
@@ -630,6 +636,8 @@ descriptorProtoReservedRangeDecoder =
         ]
 
 
+{-| `ExtensionRangeOptions` decoder
+-}
 extensionRangeOptionsDecoder : Decode.Decoder ExtensionRangeOptions
 extensionRangeOptionsDecoder =
     Decode.message (ExtensionRangeOptions [])
@@ -637,6 +645,8 @@ extensionRangeOptionsDecoder =
         ]
 
 
+{-| `FieldDescriptorProto` decoder
+-}
 fieldDescriptorProtoDecoder : Decode.Decoder FieldDescriptorProto
 fieldDescriptorProtoDecoder =
     Decode.message (FieldDescriptorProto "" 0 LabelOptional TypeDouble "" "" "" 0 "" Nothing)
@@ -653,6 +663,8 @@ fieldDescriptorProtoDecoder =
         ]
 
 
+{-| `OneofDescriptorProto` decoder
+-}
 oneofDescriptorProtoDecoder : Decode.Decoder OneofDescriptorProto
 oneofDescriptorProtoDecoder =
     Decode.message (OneofDescriptorProto "" Nothing)
@@ -661,6 +673,8 @@ oneofDescriptorProtoDecoder =
         ]
 
 
+{-| `EnumDescriptorProto` decoder
+-}
 enumDescriptorProtoDecoder : Decode.Decoder EnumDescriptorProto
 enumDescriptorProtoDecoder =
     Decode.message (EnumDescriptorProto "" [] Nothing [] [])
@@ -680,6 +694,8 @@ enumDescriptorProtoEnumReservedRangeDecoder =
         ]
 
 
+{-| `EnumValueDescriptorProto` decoder
+-}
 enumValueDescriptorProtoDecoder : Decode.Decoder EnumValueDescriptorProto
 enumValueDescriptorProtoDecoder =
     Decode.message (EnumValueDescriptorProto "" 0 Nothing)
@@ -689,6 +705,8 @@ enumValueDescriptorProtoDecoder =
         ]
 
 
+{-| `ServiceDescriptorProto` decoder
+-}
 serviceDescriptorProtoDecoder : Decode.Decoder ServiceDescriptorProto
 serviceDescriptorProtoDecoder =
     Decode.message (ServiceDescriptorProto "" [] Nothing)
@@ -698,6 +716,8 @@ serviceDescriptorProtoDecoder =
         ]
 
 
+{-| `MethodDescriptorProto` decoder
+-}
 methodDescriptorProtoDecoder : Decode.Decoder MethodDescriptorProto
 methodDescriptorProtoDecoder =
     Decode.message (MethodDescriptorProto "" "" "" Nothing False False)
@@ -710,6 +730,8 @@ methodDescriptorProtoDecoder =
         ]
 
 
+{-| `FileOptions` decoder
+-}
 fileOptionsDecoder : Decode.Decoder FileOptions
 fileOptionsDecoder =
     Decode.message (FileOptions "" "" False False False Speed "" False False False False False False "" "" "" "" "" "" "" [])
@@ -737,6 +759,8 @@ fileOptionsDecoder =
         ]
 
 
+{-| `MessageOptions` decoder
+-}
 messageOptionsDecoder : Decode.Decoder MessageOptions
 messageOptionsDecoder =
     Decode.message (MessageOptions False False False False [])
@@ -748,6 +772,8 @@ messageOptionsDecoder =
         ]
 
 
+{-| `FieldOptions` decoder
+-}
 fieldOptionsDecoder : Decode.Decoder FieldOptions
 fieldOptionsDecoder =
     Decode.message (FieldOptions String False JsNormal False False False [])
@@ -761,6 +787,8 @@ fieldOptionsDecoder =
         ]
 
 
+{-| `OneofOptions` decoder
+-}
 oneofOptionsDecoder : Decode.Decoder OneofOptions
 oneofOptionsDecoder =
     Decode.message (OneofOptions [])
@@ -768,6 +796,8 @@ oneofOptionsDecoder =
         ]
 
 
+{-| `EnumOptions` decoder
+-}
 enumOptionsDecoder : Decode.Decoder EnumOptions
 enumOptionsDecoder =
     Decode.message (EnumOptions False False [])
@@ -777,6 +807,8 @@ enumOptionsDecoder =
         ]
 
 
+{-| `EnumValueOptions` decoder
+-}
 enumValueOptionsDecoder : Decode.Decoder EnumValueOptions
 enumValueOptionsDecoder =
     Decode.message (EnumValueOptions False [])
@@ -785,6 +817,8 @@ enumValueOptionsDecoder =
         ]
 
 
+{-| `ServiceOptions` decoder
+-}
 serviceOptionsDecoder : Decode.Decoder ServiceOptions
 serviceOptionsDecoder =
     Decode.message (ServiceOptions False [])
@@ -793,6 +827,8 @@ serviceOptionsDecoder =
         ]
 
 
+{-| `MethodOptions` decoder
+-}
 methodOptionsDecoder : Decode.Decoder MethodOptions
 methodOptionsDecoder =
     Decode.message (MethodOptions False IdempotencyUnknown [])
@@ -802,6 +838,8 @@ methodOptionsDecoder =
         ]
 
 
+{-| `UninterpretedOption` decoder
+-}
 uninterpretedOptionDecoder : Decode.Decoder UninterpretedOption
 uninterpretedOptionDecoder =
     Decode.message (UninterpretedOption [] "" 0 0 0 (Encode.encode <| Encode.string "") "")
@@ -823,6 +861,8 @@ uninterpretedOptionNamePartDecoder =
         ]
 
 
+{-| `SourceCodeInfo` decoder
+-}
 sourceCodeInfoDecoder : Decode.Decoder SourceCodeInfo
 sourceCodeInfoDecoder =
     Decode.message (SourceCodeInfo [])
@@ -841,6 +881,8 @@ sourceCodeInfoLocationDecoder =
         ]
 
 
+{-| `GeneratedCodeInfo` decoder
+-}
 generatedCodeInfoDecoder : Decode.Decoder GeneratedCodeInfo
 generatedCodeInfoDecoder =
     Decode.message (GeneratedCodeInfo [])
@@ -991,6 +1033,8 @@ toMethodOptionsIdempotencyLevelEncoder value =
                 2
 
 
+{-| `FileDescriptorSet` encoder
+-}
 toFileDescriptorSetEncoder : FileDescriptorSet -> Encode.Encoder
 toFileDescriptorSetEncoder model =
     Encode.message
@@ -998,6 +1042,8 @@ toFileDescriptorSetEncoder model =
         ]
 
 
+{-| `FileDescriptorProto` encoder
+-}
 toFileDescriptorProtoEncoder : FileDescriptorProto -> Encode.Encoder
 toFileDescriptorProtoEncoder model =
     Encode.message
@@ -1010,23 +1056,25 @@ toFileDescriptorProtoEncoder model =
         , ( 5, Encode.list toEnumDescriptorProtoEncoder model.enumType )
         , ( 6, Encode.list toServiceDescriptorProtoEncoder model.service )
         , ( 7, Encode.list toFieldDescriptorProtoEncoder model.extension )
-        , ( 8, Maybe.withDefault Encode.none <| Maybe.map toFileOptionsEncoder model.options )
-        , ( 9, Maybe.withDefault Encode.none <| Maybe.map toSourceCodeInfoEncoder model.sourceCodeInfo )
+        , ( 8, (Maybe.withDefault Encode.none << Maybe.map toFileOptionsEncoder) model.options )
+        , ( 9, (Maybe.withDefault Encode.none << Maybe.map toSourceCodeInfoEncoder) model.sourceCodeInfo )
         , ( 12, Encode.string model.syntax )
         ]
 
 
+{-| `DescriptorProto` encoder
+-}
 toDescriptorProtoEncoder : DescriptorProto -> Encode.Encoder
 toDescriptorProtoEncoder model =
     Encode.message
         [ ( 1, Encode.string model.name )
         , ( 2, Encode.list toFieldDescriptorProtoEncoder model.field )
         , ( 6, Encode.list toFieldDescriptorProtoEncoder model.extension )
-        , ( 3, Encode.list toDescriptorProtoEncoder <| unwrapDescriptorProtoNestedType model.nestedType )
+        , ( 3, Encode.list toDescriptorProtoEncoder (unwrapDescriptorProtoNestedType model.nestedType) )
         , ( 4, Encode.list toEnumDescriptorProtoEncoder model.enumType )
         , ( 5, Encode.list toDescriptorProtoExtensionRangeEncoder model.extensionRange )
         , ( 8, Encode.list toOneofDescriptorProtoEncoder model.oneofDecl )
-        , ( 7, Maybe.withDefault Encode.none <| Maybe.map toMessageOptionsEncoder model.options )
+        , ( 7, (Maybe.withDefault Encode.none << Maybe.map toMessageOptionsEncoder) model.options )
         , ( 9, Encode.list toDescriptorProtoReservedRangeEncoder model.reservedRange )
         , ( 10, Encode.list Encode.string model.reservedName )
         ]
@@ -1037,7 +1085,7 @@ toDescriptorProtoExtensionRangeEncoder model =
     Encode.message
         [ ( 1, Encode.int32 model.start )
         , ( 2, Encode.int32 model.end )
-        , ( 3, Maybe.withDefault Encode.none <| Maybe.map toExtensionRangeOptionsEncoder model.options )
+        , ( 3, (Maybe.withDefault Encode.none << Maybe.map toExtensionRangeOptionsEncoder) model.options )
         ]
 
 
@@ -1049,6 +1097,8 @@ toDescriptorProtoReservedRangeEncoder model =
         ]
 
 
+{-| `ExtensionRangeOptions` encoder
+-}
 toExtensionRangeOptionsEncoder : ExtensionRangeOptions -> Encode.Encoder
 toExtensionRangeOptionsEncoder model =
     Encode.message
@@ -1056,6 +1106,8 @@ toExtensionRangeOptionsEncoder model =
         ]
 
 
+{-| `FieldDescriptorProto` encoder
+-}
 toFieldDescriptorProtoEncoder : FieldDescriptorProto -> Encode.Encoder
 toFieldDescriptorProtoEncoder model =
     Encode.message
@@ -1068,24 +1120,28 @@ toFieldDescriptorProtoEncoder model =
         , ( 7, Encode.string model.defaultValue )
         , ( 9, Encode.int32 model.oneofIndex )
         , ( 10, Encode.string model.jsonName )
-        , ( 8, Maybe.withDefault Encode.none <| Maybe.map toFieldOptionsEncoder model.options )
+        , ( 8, (Maybe.withDefault Encode.none << Maybe.map toFieldOptionsEncoder) model.options )
         ]
 
 
+{-| `OneofDescriptorProto` encoder
+-}
 toOneofDescriptorProtoEncoder : OneofDescriptorProto -> Encode.Encoder
 toOneofDescriptorProtoEncoder model =
     Encode.message
         [ ( 1, Encode.string model.name )
-        , ( 2, Maybe.withDefault Encode.none <| Maybe.map toOneofOptionsEncoder model.options )
+        , ( 2, (Maybe.withDefault Encode.none << Maybe.map toOneofOptionsEncoder) model.options )
         ]
 
 
+{-| `EnumDescriptorProto` encoder
+-}
 toEnumDescriptorProtoEncoder : EnumDescriptorProto -> Encode.Encoder
 toEnumDescriptorProtoEncoder model =
     Encode.message
         [ ( 1, Encode.string model.name )
         , ( 2, Encode.list toEnumValueDescriptorProtoEncoder model.value )
-        , ( 3, Maybe.withDefault Encode.none <| Maybe.map toEnumOptionsEncoder model.options )
+        , ( 3, (Maybe.withDefault Encode.none << Maybe.map toEnumOptionsEncoder) model.options )
         , ( 4, Encode.list toEnumDescriptorProtoEnumReservedRangeEncoder model.reservedRange )
         , ( 5, Encode.list Encode.string model.reservedName )
         ]
@@ -1099,36 +1155,44 @@ toEnumDescriptorProtoEnumReservedRangeEncoder model =
         ]
 
 
+{-| `EnumValueDescriptorProto` encoder
+-}
 toEnumValueDescriptorProtoEncoder : EnumValueDescriptorProto -> Encode.Encoder
 toEnumValueDescriptorProtoEncoder model =
     Encode.message
         [ ( 1, Encode.string model.name )
         , ( 2, Encode.int32 model.number )
-        , ( 3, Maybe.withDefault Encode.none <| Maybe.map toEnumValueOptionsEncoder model.options )
+        , ( 3, (Maybe.withDefault Encode.none << Maybe.map toEnumValueOptionsEncoder) model.options )
         ]
 
 
+{-| `ServiceDescriptorProto` encoder
+-}
 toServiceDescriptorProtoEncoder : ServiceDescriptorProto -> Encode.Encoder
 toServiceDescriptorProtoEncoder model =
     Encode.message
         [ ( 1, Encode.string model.name )
         , ( 2, Encode.list toMethodDescriptorProtoEncoder model.method )
-        , ( 3, Maybe.withDefault Encode.none <| Maybe.map toServiceOptionsEncoder model.options )
+        , ( 3, (Maybe.withDefault Encode.none << Maybe.map toServiceOptionsEncoder) model.options )
         ]
 
 
+{-| `MethodDescriptorProto` encoder
+-}
 toMethodDescriptorProtoEncoder : MethodDescriptorProto -> Encode.Encoder
 toMethodDescriptorProtoEncoder model =
     Encode.message
         [ ( 1, Encode.string model.name )
         , ( 2, Encode.string model.inputType )
         , ( 3, Encode.string model.outputType )
-        , ( 4, Maybe.withDefault Encode.none <| Maybe.map toMethodOptionsEncoder model.options )
+        , ( 4, (Maybe.withDefault Encode.none << Maybe.map toMethodOptionsEncoder) model.options )
         , ( 5, Encode.bool model.clientStreaming )
         , ( 6, Encode.bool model.serverStreaming )
         ]
 
 
+{-| `FileOptions` encoder
+-}
 toFileOptionsEncoder : FileOptions -> Encode.Encoder
 toFileOptionsEncoder model =
     Encode.message
@@ -1156,6 +1220,8 @@ toFileOptionsEncoder model =
         ]
 
 
+{-| `MessageOptions` encoder
+-}
 toMessageOptionsEncoder : MessageOptions -> Encode.Encoder
 toMessageOptionsEncoder model =
     Encode.message
@@ -1167,6 +1233,8 @@ toMessageOptionsEncoder model =
         ]
 
 
+{-| `FieldOptions` encoder
+-}
 toFieldOptionsEncoder : FieldOptions -> Encode.Encoder
 toFieldOptionsEncoder model =
     Encode.message
@@ -1180,6 +1248,8 @@ toFieldOptionsEncoder model =
         ]
 
 
+{-| `OneofOptions` encoder
+-}
 toOneofOptionsEncoder : OneofOptions -> Encode.Encoder
 toOneofOptionsEncoder model =
     Encode.message
@@ -1187,6 +1257,8 @@ toOneofOptionsEncoder model =
         ]
 
 
+{-| `EnumOptions` encoder
+-}
 toEnumOptionsEncoder : EnumOptions -> Encode.Encoder
 toEnumOptionsEncoder model =
     Encode.message
@@ -1196,6 +1268,8 @@ toEnumOptionsEncoder model =
         ]
 
 
+{-| `EnumValueOptions` encoder
+-}
 toEnumValueOptionsEncoder : EnumValueOptions -> Encode.Encoder
 toEnumValueOptionsEncoder model =
     Encode.message
@@ -1204,6 +1278,8 @@ toEnumValueOptionsEncoder model =
         ]
 
 
+{-| `ServiceOptions` encoder
+-}
 toServiceOptionsEncoder : ServiceOptions -> Encode.Encoder
 toServiceOptionsEncoder model =
     Encode.message
@@ -1212,6 +1288,8 @@ toServiceOptionsEncoder model =
         ]
 
 
+{-| `MethodOptions` encoder
+-}
 toMethodOptionsEncoder : MethodOptions -> Encode.Encoder
 toMethodOptionsEncoder model =
     Encode.message
@@ -1221,6 +1299,8 @@ toMethodOptionsEncoder model =
         ]
 
 
+{-| `UninterpretedOption` encoder
+-}
 toUninterpretedOptionEncoder : UninterpretedOption -> Encode.Encoder
 toUninterpretedOptionEncoder model =
     Encode.message
@@ -1242,6 +1322,8 @@ toUninterpretedOptionNamePartEncoder model =
         ]
 
 
+{-| `SourceCodeInfo` encoder
+-}
 toSourceCodeInfoEncoder : SourceCodeInfo -> Encode.Encoder
 toSourceCodeInfoEncoder model =
     Encode.message
@@ -1260,6 +1342,8 @@ toSourceCodeInfoLocationEncoder model =
         ]
 
 
+{-| `GeneratedCodeInfo` encoder
+-}
 toGeneratedCodeInfoEncoder : GeneratedCodeInfo -> Encode.Encoder
 toGeneratedCodeInfoEncoder model =
     Encode.message

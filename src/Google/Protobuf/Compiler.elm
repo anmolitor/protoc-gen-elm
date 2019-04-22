@@ -43,7 +43,7 @@ import Protobuf.Encode as Encode
 -- MODEL
 
 
-{-| Version
+{-| `Version` message
 -}
 type alias Version =
     { major : Int
@@ -53,7 +53,7 @@ type alias Version =
     }
 
 
-{-| CodeGeneratorRequest
+{-| `CodeGeneratorRequest` message
 -}
 type alias CodeGeneratorRequest =
     { fileToGenerate : List String
@@ -63,7 +63,7 @@ type alias CodeGeneratorRequest =
     }
 
 
-{-| CodeGeneratorResponse
+{-| `CodeGeneratorResponse` message
 -}
 type alias CodeGeneratorResponse =
     { error : String
@@ -71,7 +71,7 @@ type alias CodeGeneratorResponse =
     }
 
 
-{-| CodeGeneratorResponseFile
+{-| `CodeGeneratorResponseFile` message
 -}
 type alias CodeGeneratorResponseFile =
     { name : String
@@ -84,6 +84,8 @@ type alias CodeGeneratorResponseFile =
 -- DECODER
 
 
+{-| `Version` decoder
+-}
 versionDecoder : Decode.Decoder Version
 versionDecoder =
     Decode.message (Version 0 0 0 "")
@@ -94,6 +96,8 @@ versionDecoder =
         ]
 
 
+{-| `CodeGeneratorRequest` decoder
+-}
 codeGeneratorRequestDecoder : Decode.Decoder CodeGeneratorRequest
 codeGeneratorRequestDecoder =
     Decode.message (CodeGeneratorRequest [] "" [] Nothing)
@@ -104,6 +108,8 @@ codeGeneratorRequestDecoder =
         ]
 
 
+{-| `CodeGeneratorResponse` decoder
+-}
 codeGeneratorResponseDecoder : Decode.Decoder CodeGeneratorResponse
 codeGeneratorResponseDecoder =
     Decode.message (CodeGeneratorResponse "" [])
@@ -125,6 +131,8 @@ codeGeneratorResponseFileDecoder =
 -- ENCODER
 
 
+{-| `Version` encoder
+-}
 toVersionEncoder : Version -> Encode.Encoder
 toVersionEncoder model =
     Encode.message
@@ -135,16 +143,20 @@ toVersionEncoder model =
         ]
 
 
+{-| `CodeGeneratorRequest` encoder
+-}
 toCodeGeneratorRequestEncoder : CodeGeneratorRequest -> Encode.Encoder
 toCodeGeneratorRequestEncoder model =
     Encode.message
         [ ( 1, Encode.list Encode.string model.fileToGenerate )
         , ( 2, Encode.string model.parameter )
         , ( 15, Encode.list Google.Protobuf.toFileDescriptorProtoEncoder model.protoFile )
-        , ( 3, Maybe.withDefault Encode.none <| Maybe.map toVersionEncoder model.compilerVersion )
+        , ( 3, (Maybe.withDefault Encode.none << Maybe.map toVersionEncoder) model.compilerVersion )
         ]
 
 
+{-| `CodeGeneratorResponse` encoder
+-}
 toCodeGeneratorResponseEncoder : CodeGeneratorResponse -> Encode.Encoder
 toCodeGeneratorResponseEncoder model =
     Encode.message
