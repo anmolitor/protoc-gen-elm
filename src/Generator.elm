@@ -98,6 +98,7 @@ generatePackage version package =
 
         imports =
             package.imports
+                |> Set.remove package.name
                 |> Set.map (String.append "import ")
                 |> Set.insert "import Protobuf.Decode as Decode"
                 |> Set.insert "import Protobuf.Encode as Encode"
