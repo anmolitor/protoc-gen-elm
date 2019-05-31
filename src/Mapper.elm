@@ -411,14 +411,11 @@ dependencies fileDict =
 
 packageName : FileDescriptorProto -> String
 packageName descriptor =
-    classify <|
-        if descriptor.package == "" then
-            descriptor.name
-                |> String.Extra.leftOfBack ".proto"
-                |> String.replace "/" "."
+    if descriptor.package == "" then
+        "Main"
 
-        else
-            descriptor.package
+    else
+        classify descriptor.package
 
 
 classify : String -> String
