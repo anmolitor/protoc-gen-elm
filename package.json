@@ -14,8 +14,7 @@
   ],
   "main": "index.js",
   "dependencies": {
-    "fs": "0.0.1-security",
-    "through2": "~3.0.0"
+    "fs": "0.0.1-security"
   },
   "devDependencies": {
     "assert": "^1.4.1",

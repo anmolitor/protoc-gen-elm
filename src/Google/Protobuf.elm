@@ -12,10 +12,10 @@ module Google.Protobuf exposing
 This module was generated automatically using
 
   - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) 1.0.0-beta-1
-  - `protoc` 3.6.1
+  - `protoc` 3.7.0
   - the following specification file: `google/protobuf/descriptor.proto`
 
-To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/1.0.0) version 1.0.0 or higher.
+To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/1.0.1) version 1.0.1 or higher.
 
 
 # Model

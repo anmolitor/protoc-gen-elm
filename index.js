@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const through2 = require('through2');
 const path = require('path');
 const Elm = require('./elm.min.js').Elm;
 
@@ -27,13 +26,23 @@ const pluginVersion = getPluginVersion();
 const libraryVersion = getLibraryVersion();
 const app = Elm.Main.init({flags: {plugin: pluginVersion, library: libraryVersion}});
 
-const generator = through2((data, enc, cb) => {
-  const responseHandler = (response) => {
-    cb(null, Buffer.from(response, 'base64'));
-    app.ports.response.unsubscribe(responseHandler);
-  };
-  app.ports.response.subscribe(responseHandler);
-  app.ports.request.send(data.toString('base64'));
-});
+function sendToGenerator(request) {
+  return new Promise((resolve) => {
+    const responseHandler = (response) => {
+      resolve(Buffer.from(response, 'base64'));
+      app.ports.response.unsubscribe(responseHandler);
+    };
+    app.ports.response.subscribe(responseHandler);
+    app.ports.request.send(request.toString('base64'));
+  });
+}
 
-process.stdin.pipe(generator).pipe(process.stdout);
+const chunks = [];
+process.stdin.on('data', (chunk) => {
+  chunks.push(chunk);
+});
+process.stdin.on('end', () => {
+  const request = Buffer.concat(chunks);
+  sendToGenerator(request)
+    .then(response => process.stdout.write(response));
+});

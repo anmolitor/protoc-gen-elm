@@ -6,7 +6,7 @@ elm:
   - "0.19.0"
   
 install:
-  - curl -L https://github.com/google/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip -o /tmp/protoc.zip
+  - curl -L https://github.com/google/protobuf/releases/download/v3.7.0/protoc-3.7.0-linux-x86_64.zip -o /tmp/protoc.zip
   - unzip /tmp/protoc.zip -d /tmp/protoc
   - sudo mv /tmp/protoc/bin/* /usr/local/bin/
   - sudo mv /tmp/protoc/include/* /usr/local/include/
