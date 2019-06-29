@@ -412,7 +412,7 @@ dependencies fileDict =
 packageName : FileDescriptorProto -> String
 packageName descriptor =
     if descriptor.package == "" then
-        "Main"
+        "Proto"
 
     else
         classify descriptor.package

@@ -488,7 +488,7 @@ recursive cyclicFieldMap ( fieldName, field ) =
                             fieldTypeDataType cardinality fieldType
 
                         MapField _ { value } ->
-                            fieldTypeDataType Optional value
+                            "Dict.Dict String (" ++ fieldTypeDataType Optional value ++ ")"
 
                         OneOfField oneOfType _ ->
                             "Maybe " ++ oneOfType
@@ -924,15 +924,11 @@ findCyclicFieldsHelp : String -> Set String -> List String -> Dict String (List 
 findCyclicFieldsHelp root visited unvisited graph =
     case unvisited of
         [] ->
-            False
+            Set.member root visited
 
         next :: rest ->
             if Set.member next visited then
-                if next == root then
-                    True
-
-                else
-                    findCyclicFieldsHelp root visited rest graph
+                findCyclicFieldsHelp root visited rest graph
 
             else
                 let
