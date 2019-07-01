@@ -1,4 +1,5 @@
 elm-stuff/
+google/
 node_modules/
 /example/src/Greeter.elm
 /elm.min.js

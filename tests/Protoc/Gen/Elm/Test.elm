@@ -15,7 +15,7 @@ This module was generated automatically using
   - `protoc` 3.7.0
   - the following specification file: `tests/test.proto`
 
-To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/1.0.1) version 1.0.1 or higher.
+To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/1.1.0) version 1.1.0 or higher.
 
 
 # Model

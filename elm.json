@@ -14,7 +14,7 @@
             "elm/regex": "1.0.0",
             "elm-community/list-extra": "8.1.0",
             "elm-community/string-extra": "4.0.0",
-            "eriktim/elm-protocol-buffers": "1.0.1"
+            "eriktim/elm-protocol-buffers": "1.1.0"
         },
         "indirect": {
             "elm/file": "1.0.3",

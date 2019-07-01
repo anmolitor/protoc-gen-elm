@@ -4,6 +4,9 @@ language: elm
 
 elm:
   - "0.19.0"
+
+env:
+  - PROTO_HOME=/usr/local/include
   
 install:
   - curl -L https://github.com/google/protobuf/releases/download/v3.7.0/protoc-3.7.0-linux-x86_64.zip -o /tmp/protoc.zip
