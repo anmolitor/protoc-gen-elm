@@ -4,7 +4,7 @@ import Base64
 import Bytes exposing (Bytes)
 import Bytes.Decode
 import Generator
-import Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, codeGeneratorRequestDecoder, toCodeGeneratorResponseEncoder)
+import Internal.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, codeGeneratorRequestDecoder, toCodeGeneratorResponseEncoder)
 import Mapper
 import Platform
 import Ports
