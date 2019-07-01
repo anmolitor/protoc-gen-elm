@@ -1,6 +1,6 @@
 {
   "name": "protoc-gen-elm",
-  "version": "1.0.0-beta-1",
+  "version": "1.0.0-beta-2",
   "description": "Elm protoc plugin",
   "keywords": [
     "elm",

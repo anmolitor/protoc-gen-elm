@@ -11,7 +11,7 @@ module Internal.Google.Protobuf.Compiler exposing
 
 This module was generated automatically using
 
-  - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) 1.0.0-beta-1
+  - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) 1.0.0-beta-2
   - `protoc` 3.7.0
   - the following specification file: `google/protobuf/compiler/plugin.proto`
 
