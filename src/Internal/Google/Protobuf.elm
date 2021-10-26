@@ -12,7 +12,7 @@ module Internal.Google.Protobuf exposing
 This module was generated automatically using
 
   - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) 1.0.0-beta-2
-  - `protoc` 3.7.0
+  - `protoc` 3.14.0
   - the following specification file: `google/protobuf/descriptor.proto`
 
 To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/1.1.0) version 1.1.0 or higher.
@@ -190,6 +190,7 @@ type alias FieldDescriptorProto =
     , oneofIndex : Int
     , jsonName : String
     , options : Maybe FieldOptions
+    , proto3Optional : Bool
     }
 
 
@@ -649,7 +650,7 @@ extensionRangeOptionsDecoder =
 -}
 fieldDescriptorProtoDecoder : Decode.Decoder FieldDescriptorProto
 fieldDescriptorProtoDecoder =
-    Decode.message (FieldDescriptorProto "" 0 LabelOptional TypeDouble "" "" "" 0 "" Nothing)
+    Decode.message (FieldDescriptorProto "" 0 LabelOptional TypeDouble "" "" "" 0 "" Nothing False)
         [ Decode.optional 1 Decode.string setName
         , Decode.optional 3 Decode.int32 setNumber
         , Decode.optional 4 fieldDescriptorProtoLabelDecoder setLabel
@@ -660,6 +661,7 @@ fieldDescriptorProtoDecoder =
         , Decode.optional 9 Decode.int32 (setOneofIndex << (+) 1)
         , Decode.optional 10 Decode.string setJsonName
         , Decode.optional 8 (Decode.map Just fieldOptionsDecoder) setOptions
+        , Decode.optional 17 Decode.bool setProto3Optional
         ]
 
 
@@ -734,7 +736,7 @@ methodDescriptorProtoDecoder =
 -}
 fileOptionsDecoder : Decode.Decoder FileOptions
 fileOptionsDecoder =
-    Decode.message (FileOptions "" "" False False False Speed "" False False False False False False "" "" "" "" "" "" "" [])
+    Decode.message (FileOptions "" "" False False False Speed "" False False False False False True "" "" "" "" "" "" "" [])
         [ Decode.optional 1 Decode.string setJavaPackage
         , Decode.optional 8 Decode.string setJavaOuterClassname
         , Decode.optional 10 Decode.bool setJavaMultipleFiles
@@ -1121,6 +1123,7 @@ toFieldDescriptorProtoEncoder model =
         , ( 9, Encode.int32 model.oneofIndex )
         , ( 10, Encode.string model.jsonName )
         , ( 8, (Maybe.withDefault Encode.none << Maybe.map toFieldOptionsEncoder) model.options )
+        , ( 17, Encode.bool model.proto3Optional )
         ]
 
 
@@ -1513,6 +1516,11 @@ setOneofIndex value model =
 setJsonName : a -> { b | jsonName : a } -> { b | jsonName : a }
 setJsonName value model =
     { model | jsonName = value }
+
+
+setProto3Optional : a -> { b | proto3Optional : a } -> { b | proto3Optional : a }
+setProto3Optional value model =
+    { model | proto3Optional = value }
 
 
 setValue : a -> { b | value : a } -> { b | value : a }

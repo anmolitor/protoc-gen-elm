@@ -2,7 +2,7 @@
 
 
 module Internal.Google.Protobuf.Compiler exposing
-    ( Version, CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile
+    ( CodeGeneratorResponseFeature(..), Version, CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile
     , versionDecoder, codeGeneratorRequestDecoder, codeGeneratorResponseDecoder
     , toVersionEncoder, toCodeGeneratorRequestEncoder, toCodeGeneratorResponseEncoder
     )
@@ -12,7 +12,7 @@ module Internal.Google.Protobuf.Compiler exposing
 This module was generated automatically using
 
   - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) 1.0.0-beta-2
-  - `protoc` 3.7.0
+  - `protoc` 3.14.0
   - the following specification file: `google/protobuf/compiler/plugin.proto`
 
 To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/1.1.0) version 1.1.0 or higher.
@@ -20,7 +20,7 @@ To run it use [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eri
 
 # Model
 
-@docs Version, CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile
+@docs CodeGeneratorResponseFeature, Version, CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile
 
 
 # Decoder
@@ -41,6 +41,13 @@ import Protobuf.Encode as Encode
 
 
 -- MODEL
+
+
+{-| `CodeGeneratorResponseFeature` enumeration
+-}
+type CodeGeneratorResponseFeature
+    = FeatureNone
+    | FeatureProto3Optional
 
 
 {-| `Version` message
@@ -67,6 +74,7 @@ type alias CodeGeneratorRequest =
 -}
 type alias CodeGeneratorResponse =
     { error : String
+    , supportedFeatures : Int
     , file : List CodeGeneratorResponseFile
     }
 
@@ -77,11 +85,29 @@ type alias CodeGeneratorResponseFile =
     { name : String
     , insertionPoint : String
     , content : String
+    , generatedCodeInfo : Maybe Internal.Google.Protobuf.GeneratedCodeInfo
     }
 
 
 
 -- DECODER
+
+
+codeGeneratorResponseFeatureDecoder : Decode.Decoder CodeGeneratorResponseFeature
+codeGeneratorResponseFeatureDecoder =
+    Decode.int32
+        |> Decode.map
+            (\value ->
+                case value of
+                    0 ->
+                        FeatureNone
+
+                    1 ->
+                        FeatureProto3Optional
+
+                    _ ->
+                        FeatureNone
+            )
 
 
 {-| `Version` decoder
@@ -112,23 +138,36 @@ codeGeneratorRequestDecoder =
 -}
 codeGeneratorResponseDecoder : Decode.Decoder CodeGeneratorResponse
 codeGeneratorResponseDecoder =
-    Decode.message (CodeGeneratorResponse "" [])
+    Decode.message (CodeGeneratorResponse "" 0 [])
         [ Decode.optional 1 Decode.string setError
+        , Decode.optional 2 Decode.uint32 setSupportedFeatures
         , Decode.repeated 15 codeGeneratorResponseFileDecoder .file setFile
         ]
 
 
 codeGeneratorResponseFileDecoder : Decode.Decoder CodeGeneratorResponseFile
 codeGeneratorResponseFileDecoder =
-    Decode.message (CodeGeneratorResponseFile "" "" "")
+    Decode.message (CodeGeneratorResponseFile "" "" "" Nothing)
         [ Decode.optional 1 Decode.string setName
         , Decode.optional 2 Decode.string setInsertionPoint
         , Decode.optional 15 Decode.string setContent
+        , Decode.optional 16 (Decode.map Just Internal.Google.Protobuf.generatedCodeInfoDecoder) setGeneratedCodeInfo
         ]
 
 
 
 -- ENCODER
+
+
+toCodeGeneratorResponseFeatureEncoder : CodeGeneratorResponseFeature -> Encode.Encoder
+toCodeGeneratorResponseFeatureEncoder value =
+    Encode.int32 <|
+        case value of
+            FeatureNone ->
+                0
+
+            FeatureProto3Optional ->
+                1
 
 
 {-| `Version` encoder
@@ -161,6 +200,7 @@ toCodeGeneratorResponseEncoder : CodeGeneratorResponse -> Encode.Encoder
 toCodeGeneratorResponseEncoder model =
     Encode.message
         [ ( 1, Encode.string model.error )
+        , ( 2, Encode.uint32 model.supportedFeatures )
         , ( 15, Encode.list toCodeGeneratorResponseFileEncoder model.file )
         ]
 
@@ -171,6 +211,7 @@ toCodeGeneratorResponseFileEncoder model =
         [ ( 1, Encode.string model.name )
         , ( 2, Encode.string model.insertionPoint )
         , ( 15, Encode.string model.content )
+        , ( 16, (Maybe.withDefault Encode.none << Maybe.map Internal.Google.Protobuf.toGeneratedCodeInfoEncoder) model.generatedCodeInfo )
         ]
 
 
@@ -223,6 +264,11 @@ setError value model =
     { model | error = value }
 
 
+setSupportedFeatures : a -> { b | supportedFeatures : a } -> { b | supportedFeatures : a }
+setSupportedFeatures value model =
+    { model | supportedFeatures = value }
+
+
 setFile : a -> { b | file : a } -> { b | file : a }
 setFile value model =
     { model | file = value }
@@ -241,3 +287,8 @@ setInsertionPoint value model =
 setContent : a -> { b | content : a } -> { b | content : a }
 setContent value model =
     { model | content = value }
+
+
+setGeneratedCodeInfo : a -> { b | generatedCodeInfo : a } -> { b | generatedCodeInfo : a }
+setGeneratedCodeInfo value model =
+    { model | generatedCodeInfo = value }

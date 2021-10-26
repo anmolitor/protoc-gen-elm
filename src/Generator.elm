@@ -236,8 +236,18 @@ enum value =
     in
     { exposedTypes = [ value.dataType ++ "(..)" ]
     , exposedTypesDocs = [ value.dataType ]
-    , exposedDecoders = []
-    , exposedEncoders = []
+    , exposedDecoders =
+        if value.isTopLevel then
+            [ decoder_ ]
+
+        else
+            []
+    , exposedEncoders =
+        if value.isTopLevel then
+            [ encoder_ ]
+
+        else
+            []
     , models =
         [ "{-| `"
             ++ value.dataType
@@ -311,7 +321,7 @@ message enumDefaults cyclicMessageMap value =
         encoder_ =
             encoderName value.dataType
 
-        ( exposedDecoders, exposedEncoder ) =
+        ( exposedDecoders, exposedEncoders ) =
             if value.isTopLevel then
                 ( [ decoder_ ], [ encoder_ ] )
 
@@ -329,7 +339,7 @@ message enumDefaults cyclicMessageMap value =
             { exposedTypes = [ value.dataType ]
             , exposedTypesDocs = [ value.dataType ]
             , exposedDecoders = exposedDecoders
-            , exposedEncoders = exposedEncoder
+            , exposedEncoders = exposedEncoders
             , models =
                 [ """
 {-| `{{ dataType }}` message

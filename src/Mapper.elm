@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 import Internal.Google.Protobuf exposing (DescriptorProto, DescriptorProtoNestedType(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProtoLabel(..), FieldDescriptorProtoType(..), FileDescriptorProto)
 import List.Extra
 import Model exposing (..)
-import Set exposing (Set)
+import Set
 import String.Extra
 
 
@@ -149,7 +149,7 @@ message syntax pkg prefix descriptor =
                 { messages =
                     [ { dataType = name
                       , isTopLevel = maybe True (always False) prefix
-                      , fields = messageFields oneOfFieldNames nested.maps fieldsMeta
+                      , fields = messageFields oneOfFieldNames nested.maps fieldsMeta descriptor
                       }
                     ]
                 , enums = []
@@ -157,6 +157,7 @@ message syntax pkg prefix descriptor =
                 , imports = []
                 }
 
+        oneOfFieldNames : List String
         oneOfFieldNames =
             List.map .name descriptor.oneofDecl
     in
@@ -172,11 +173,11 @@ message syntax pkg prefix descriptor =
 -- FIELD
 
 
-messageFields : List String -> List Map -> List { field : ( FieldName, Field ), oneOfIndex : Int, importedPackage : Maybe String } -> List ( FieldName, Field )
-messageFields oneOfFieldNames maps fieldsMeta =
+messageFields : List String -> List Map -> List { field : ( FieldName, Field ), oneOfIndex : Int, importedPackage : Maybe String } -> DescriptorProto -> List ( FieldName, Field )
+messageFields oneOfFieldNames maps fieldsMeta parentDescriptor =
     let
         oneOfFields =
-            List.indexedMap (oneOfField fieldsMeta) oneOfFieldNames
+            List.indexedMap (oneOfField fieldsMeta parentDescriptor) oneOfFieldNames
 
         maybeMapField field =
             case field of
@@ -254,8 +255,8 @@ mapField pkg name descriptor =
             field2
 
 
-oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int, importedPackage : Maybe String } -> Int -> String -> ( FieldName, Field )
-oneOfField fields index name =
+oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int, importedPackage : Maybe String } -> DescriptorProto -> Int -> String -> ( FieldName, Field )
+oneOfField fields parentDescriptor index name =
     List.filter ((==) index << (-) 1 << .oneOfIndex) fields
         |> List.map .field
         |> List.filterMap
@@ -267,7 +268,7 @@ oneOfField fields index name =
                     _ ->
                         Nothing
             )
-        |> OneOfField (typeName name)
+        |> OneOfField (parentDescriptor.name ++ typeName name)
         |> Tuple.pair (valueName name)
 
 
@@ -411,11 +412,24 @@ dependencies fileDict =
 
 packageName : FileDescriptorProto -> String
 packageName descriptor =
-    if descriptor.package == "" then
+    (if descriptor.package == "" then
         "Proto"
 
-    else
+     else
         classify descriptor.package
+    )
+        ++ "."
+        ++ nameFromPath descriptor.name
+
+
+nameFromPath : String -> String
+nameFromPath =
+    String.split "/"
+        >> List.Extra.last
+        >> Maybe.andThen (String.split "." >> List.Extra.init)
+        >> Maybe.withDefault []
+        >> String.join "."
+        >> String.Extra.classify
 
 
 classify : String -> String
@@ -430,7 +444,7 @@ typeName =
 
 enumTypeName : String -> String
 enumTypeName =
-    typeName << String.toLower
+    typeName << String.Extra.classify
 
 
 valueName : String -> String
@@ -502,7 +516,7 @@ reservedWords =
 
 escapeType : String -> String
 escapeType type_ =
-    if List.member type_ reservedWords then
+    if List.member type_ reservedTypes then
         type_ ++ "_"
 
     else

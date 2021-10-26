@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+message BasicMessage {
+  string stringProperty = 1;
+  int32 intProperty = 2;
+  float floatProperty = 3;
+  bool boolProperty = 4;
+}

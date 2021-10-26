@@ -1,10 +1,9 @@
 module Main exposing (main)
 
 import Base64
-import Bytes exposing (Bytes)
-import Bytes.Decode
+import Bytes
 import Generator
-import Internal.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, codeGeneratorRequestDecoder, toCodeGeneratorResponseEncoder)
+import Internal.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile, Version, codeGeneratorRequestDecoder, toCodeGeneratorResponseEncoder)
 import Mapper
 import Platform
 import Ports
@@ -85,6 +84,7 @@ map versions request =
             , compiler = Maybe.withDefault "unknown version" (Maybe.map version request.compilerVersion)
             }
 
+        files : List CodeGeneratorResponseFile
         files =
             Mapper.map request.fileToGenerate request.protoFile
                 |> List.map
@@ -92,10 +92,11 @@ map versions request =
                         { name = packageFile pkg.name
                         , insertionPoint = ""
                         , content = Generator.generate allVersions pkg
+                        , generatedCodeInfo = Nothing
                         }
                     )
     in
-    CodeGeneratorResponse "" files
+    CodeGeneratorResponse "" 3 files
 
 
 version : Version -> String
@@ -110,4 +111,4 @@ packageFile =
 
 fail : String -> CodeGeneratorResponse
 fail err =
-    CodeGeneratorResponse err []
+    CodeGeneratorResponse err 3 []

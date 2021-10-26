@@ -1,0 +1,9 @@
+syntax="proto3";
+
+message OneOf {
+  oneof msg {
+    string aString = 1;
+    int32 anInt = 2;
+    bool aBool = 3;
+  }
+}

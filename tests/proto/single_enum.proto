@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+enum AnEnum {
+  OptionA = 0;
+  Option_B = 1;
+  OPTION_C = 2;
+}
