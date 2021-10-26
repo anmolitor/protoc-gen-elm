@@ -33,7 +33,7 @@ jobs:
           version: 3.14.0
       - run: echo "${PWD}" >> $GITHUB_PATH
       - run: echo $PATH
-      - run: echo $GITHUB_PATH
+      - run: cat "${PWD}/index.js"
       - run: npm ci
       - run: npm run build --if-present
       - run: npm test
