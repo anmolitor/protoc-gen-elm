@@ -4,12 +4,18 @@ const fs = require("fs");
 const { promisify } = require("util");
 
 const protoPath = path.join(__dirname, "proto");
-const generatedPath = path.join(__dirname, "generated");
+const generatedPath = path.join(__dirname, "..", "generated");
 
 const cases = [
   { input: "single_enum.proto", output: "Proto/SingleEnum.elm" },
   { input: "basic_message.proto", output: "Proto/BasicMessage.elm" },
   { input: "oneof.proto", output: "Proto/Oneof.elm" },
+  {
+    input: ["imported.proto", "importing.proto"],
+    output: ["Proto/Importing.elm", "Proto/Imported.elm"],
+  },
+  { input: "multiple_oneof.proto", output: "Proto/MultipleOneof.elm" },
+  { input: "package.proto", output: "Any/Package.elm" },
 ];
 
 const exec = (command) =>
@@ -28,24 +34,39 @@ const readFile = (filePath) =>
 
 describe("protoc-plugin-elm", () => {
   beforeAll((done) => {
-    fs.mkdir(generatedPath, { recursive: true }, done);
+    fs.rm(generatedPath, { recursive: true, force: true }, () => {
+      fs.mkdir(generatedPath, { recursive: true }, done);
+    });
   });
 
-  afterAll((done) => {
-    fs.rm(generatedPath, { recursive: true, force: true }, done);
-  });
+  // afterAll((done) => {
+  //   fs.rm(generatedPath, { recursive: true, force: true }, done);
+  // });
 
   test.each(cases)(
     "generates expected code for $input",
     async ({ input, output }) => {
       console.log(`Starting ${input} generation`);
+      const args = Array.isArray(input) ? input.join(" ") : input;
       await exec(
-        `protoc --plugin="protoc-gen-elm=index.js" --proto_path=${protoPath} --elm_out=tests/generated ${input}`
+        `protoc --plugin="protoc-gen-elm=index.js" --proto_path=${protoPath} --elm_out=generated ${args}`
       );
-      const expectedPath = path.join(generatedPath, output);
-      await exec(`elm make ${expectedPath}`);
-      const fileContent = await readFile(expectedPath);
-      expect(fileContent).toMatchSnapshot();
+
+      const outputFilenames = Array.isArray(output) ? output : [output];
+      // check that the generated files compile
+      await exec(
+        `elm make ${outputFilenames
+          .map((filename) => path.join(generatedPath, filename))
+          .join(" ")}`
+      );
+
+      outputFilenames.forEach(async (filename) => {
+        const outputPath = path.join(generatedPath, filename);
+
+        // compare with previously generated file as a regression test
+        const fileContent = await readFile(outputPath);
+        expect(fileContent).toMatchSnapshot(filename);
+      });
     }
   );
 });

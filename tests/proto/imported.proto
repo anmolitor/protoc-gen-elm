@@ -1,0 +1,6 @@
+syntax="proto3";
+
+message Imported {
+  string first = 1;
+  bool second = 2;
+}

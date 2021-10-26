@@ -1,7 +1,6 @@
 module Main exposing (main)
 
 import Base64
-import Bytes
 import Generator
 import Internal.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile, Version, codeGeneratorRequestDecoder, toCodeGeneratorResponseEncoder)
 import Mapper
@@ -11,6 +10,7 @@ import Protobuf.Decode as Decode
 import Protobuf.Encode as Encode
 
 
+main : Program Versions Model Msg
 main =
     Platform.worker
         { init = init

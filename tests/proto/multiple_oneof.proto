@@ -1,0 +1,15 @@
+syntax="proto3";
+
+message Oneof1 {
+  oneof msg {
+    string OptionA = 1;
+    string OptionB = 2; 
+  }
+}
+
+message Oneof2 {
+  oneof msg {
+    string OptionC = 1;
+    string OptionD = 2; 
+  }
+}

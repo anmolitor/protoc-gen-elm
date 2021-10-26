@@ -99,7 +99,7 @@ generatePackage version package =
         imports =
             package.imports
                 |> Set.remove package.name
-                |> Set.map (String.append "import ")
+                |> Set.map (\pkg -> "import " ++ pkg ++ " exposing (..)")
                 |> Set.insert "import Protobuf.Decode as Decode"
                 |> Set.insert "import Protobuf.Encode as Encode"
     in
@@ -395,7 +395,7 @@ type alias {{ dataType }} =
             , encoders =
                 [ """
 {{ header }}{{ encoder }} : {{ dataType }} -> Encode.Encoder
-{{ encoder }} model =
+{{ encoder }} {{ model }} =
     Encode.message
         {{ fields }}
             """
@@ -409,13 +409,19 @@ type alias {{ dataType }} =
                         )
                     |> interpolate "encoder" encoder_
                     |> interpolate "dataType" value.dataType
-                    |> interpolate "fields"
-                        (case value.fields of
-                            [] ->
-                                "[]"
+                    |> interpolate "model"
+                        (if value.fields == [] then
+                            "_"
 
-                            fields ->
-                                "[ " ++ (String.join "\n        , " <| List.map (fieldEncoder cyclicFields) fields) ++ "\n        ]"
+                         else
+                            "model"
+                        )
+                    |> interpolate "fields"
+                        (if value.fields == [] then
+                            "[]"
+
+                         else
+                            "[ " ++ (String.join "\n        , " <| List.map (fieldEncoder cyclicFields) value.fields) ++ "\n        ]"
                         )
                 ]
             , setters = List.map Tuple.first value.fields
