@@ -49,7 +49,7 @@ describe("protoc-plugin-elm", () => {
       console.log(`Starting ${input} generation`);
       const args = Array.isArray(input) ? input.join(" ") : input;
       await exec(
-        `protoc --plugin="protoc-gen-elm=index.js" --proto_path=${protoPath} --elm_out=generated ${args}`
+        `protoc --plugin="protoc-gen-elm=${path.resolve(__dirname, '..', 'index.js')}" --proto_path=${protoPath} --elm_out=generated ${args}`
       );
 
       const outputFilenames = Array.isArray(output) ? output : [output];
