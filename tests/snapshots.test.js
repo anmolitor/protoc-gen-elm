@@ -39,6 +39,16 @@ describe("protoc-plugin-elm", () => {
     });
   });
 
+  afterAll((done) => {
+    fs.readdir(generatedPath, (err, contents) => {
+      console.log(err, contents);
+      fs.readdir(generatedPath + "/Proto", (err, contents) => {
+        console.log(err, contents);
+        done();
+      });
+    });
+  });
+
   test.each(cases)(
     "generates expected code for $input",
     async ({ input, output }) => {
