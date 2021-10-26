@@ -39,17 +39,17 @@ describe("protoc-plugin-elm", () => {
     });
   });
 
-  // afterAll((done) => {
-  //   fs.rm(generatedPath, { recursive: true, force: true }, done);
-  // });
-
   test.each(cases)(
     "generates expected code for $input",
     async ({ input, output }) => {
       console.log(`Starting ${input} generation`);
       const args = Array.isArray(input) ? input.join(" ") : input;
       await exec(
-        `protoc --plugin="protoc-gen-elm=${path.resolve(__dirname, '..', 'index.js')}" --proto_path=${protoPath} --elm_out=generated ${args}`
+        `protoc --plugin="protoc-gen-elm=${path.resolve(
+          __dirname,
+          "..",
+          "index.js"
+        )}" --proto_path=${protoPath} --elm_out=generated ${args}`
       );
 
       const outputFilenames = Array.isArray(output) ? output : [output];

@@ -31,8 +31,7 @@ jobs:
       - uses: arduino/setup-protoc@v1.1.2
         with:
           version: 3.14.0
-      - run: echo "${PWD}" >> $GITHUB_PATH
-      - run: echo $PATH
+      - run: which node
       - run: cat "${PWD}/index.js"
       - run: npm ci
       - run: npm run build --if-present
