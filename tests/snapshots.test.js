@@ -59,7 +59,7 @@ describe("protoc-plugin-elm", () => {
           __dirname,
           "..",
           "index.js"
-        )}" --proto_path=${protoPath} --elm_out=generated ${args}`
+        )}" --proto_path=${protoPath} --elm_out=${generatedPath} ${args}`
       );
 
       const outputFilenames = Array.isArray(output) ? output : [output];

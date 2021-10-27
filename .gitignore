@@ -1,6 +1,5 @@
 elm-stuff/
-generated/**
-!generated/.gitkeep
+generated/
 google/
 node_modules/
 /example/src/Greeter.elm
