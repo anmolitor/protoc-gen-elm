@@ -4,7 +4,7 @@ import fs from "fs";
 import { promisify } from "util";
 
 const protoPath = path.join(__dirname, "proto");
-const generatedPath = path.join(__dirname, "..", "generated");
+export const generatedPath = path.join(__dirname, "..", "generated");
 
 const exec = (command: string): Promise<void> =>
   new Promise((resolve, reject) => {
