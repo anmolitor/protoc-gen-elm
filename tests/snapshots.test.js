@@ -39,16 +39,6 @@ describe("protoc-plugin-elm", () => {
     });
   });
 
-  afterAll((done) => {
-    fs.readdir(generatedPath, (err, contents) => {
-      console.log(err, contents);
-      fs.readdir(generatedPath + "/Proto", (err, contents) => {
-        console.log(err, contents);
-        done();
-      });
-    });
-  });
-
   test.each(cases)(
     "generates expected code for $input",
     async ({ input, output }) => {
@@ -70,13 +60,14 @@ describe("protoc-plugin-elm", () => {
           .join(" ")}`
       );
 
-      outputFilenames.forEach(async (filename) => {
-        const outputPath = path.join(generatedPath, filename);
-
-        // compare with previously generated file as a regression test
-        const fileContent = await readFile(outputPath);
-        expect(fileContent).toMatchSnapshot(filename);
-      });
+      // compare with previously generated file as a regression test
+      const generatedContent = await Promise.all(
+        outputFilenames.map(async (filename) => {
+          const outputPath = path.join(generatedPath, filename);
+          return readFile(outputPath);
+        })
+      );
+      expect(generatedContent.join("\n")).toMatchSnapshot();
     }
   );
 });
