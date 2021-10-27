@@ -1,8 +1,8 @@
-const {
+import {
   runPlugin,
   compileElm,
   getGeneratedFileContents,
-} = require("./snapshot_test_base");
+} from "./snapshot_test_base";
 
 describe("protoc-gen-elm", () => {
   beforeAll(() => runPlugin("package.proto"));
