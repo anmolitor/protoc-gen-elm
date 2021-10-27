@@ -5,7 +5,7 @@ const path = require("path");
 const Elm = require("./elm.min.js").Elm;
 const ProtoBuf = require("protobufjs");
 
-writeToLog("hello world");
+// writeToLog("hello world");
 
 function getPluginVersion() {
   const file = path.resolve(__dirname, "package.json");
@@ -39,12 +39,12 @@ function sendToGenerator(request) {
       app.ports.response.unsubscribe(responseHandler);
     };
     app.ports.response.subscribe(responseHandler);
-    const Api = ProtoBuf.loadSync([
-      path.join(__dirname, "google/protobuf/compiler/plugin.proto"),
-      path.join(__dirname, "google/protobuf/descriptor.proto"),
-    ]);
-    const decodedReq = Api.lookupType("CodeGeneratorRequest").decode(request);
-    writeToLog(JSON.stringify(decodedReq, null, 2));
+    // const Api = ProtoBuf.loadSync([
+    //   path.join(__dirname, "google/protobuf/compiler/plugin.proto"),
+    //   path.join(__dirname, "google/protobuf/descriptor.proto"),
+    // ]);
+    // const decodedReq = Api.lookupType("CodeGeneratorRequest").decode(request);
+    // writeToLog(JSON.stringify(decodedReq, null, 2));
     app.ports.request.send(request.toString("base64"));
   });
 }
