@@ -5,8 +5,6 @@ const path = require("path");
 const Elm = require("./elm.min.js").Elm;
 const ProtoBuf = require("protobufjs");
 
-// writeToLog("hello world");
-
 function getPluginVersion() {
   const file = path.resolve(__dirname, "package.json");
   const nodeJson = JSON.parse(fs.readFileSync(file, "utf8"));

@@ -425,11 +425,15 @@ packageName descriptor =
 nameFromPath : String -> String
 nameFromPath =
     String.split "/"
-        >> List.Extra.last
-        >> Maybe.andThen (String.split "." >> List.Extra.init)
-        >> Maybe.withDefault []
-        >> String.join "."
-        >> String.Extra.classify
+        >> List.Extra.unconsLast
+        -- now we have something like ("file.ext.txt", ["path", "to"])
+        >> Maybe.map (String.split "." >> List.Extra.init >> Maybe.withDefault [] |> Tuple.mapFirst)
+        -- this will then be (["file", "ext"], ["path", "to"])
+        >> Maybe.withDefault ( [], [] )
+        >> (\( lastWithoutExtension, init ) ->
+                -- result: "Path.To.File.Ext"
+                List.map String.Extra.classify (init ++ lastWithoutExtension) |> String.join "."
+           )
 
 
 classify : String -> String
