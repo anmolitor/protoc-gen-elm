@@ -1,4 +1,4 @@
-# Elm Plugin for Protocol Buffers [example workflow](https://github.com/andreasewering/protoc-gen-elm/actions/workflows/build_and_test.yml/badge.svg)
+# Elm Plugin for Protocol Buffers [![build status](https://github.com/andreasewering/protoc-gen-elm/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/andreasewering/protoc-gen-elm/actions)
 
 This [`protoc`](https://developers.google.com/protocol-buffers/) plug-in generates [Elm](https://elm-lang.org/) modules from `.proto` specification files. The generated modules make use of the [elm-protocol-buffers](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest/) library to handle the (de)serialization. They can be used to transmit bytes over HTTP(S) or via web-sockets. However, this plug-in itself does **not** implement or generate any Remote Procedure Call (RPC) logic.
 
