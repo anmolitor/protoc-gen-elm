@@ -2,8 +2,10 @@ module Main exposing (main)
 
 import Base64
 import Generator
+import GeneratorNew
 import Internal.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile, Version, codeGeneratorRequestDecoder, toCodeGeneratorResponseEncoder)
 import Mapper
+import MapperNew
 import Platform
 import Ports
 import Protobuf.Decode as Decode
@@ -66,7 +68,7 @@ process model base64 =
 
         response =
             Maybe.map (map model.versions) request
-                |> Maybe.withDefault (fail "Failed parsing request from protoc")
+                |> Maybe.withDefault (fail <| "Failed parsing request from protoc. Here is the request in base64: " ++ base64)
     in
     toCodeGeneratorResponseEncoder response
         |> Encode.encode
@@ -84,19 +86,25 @@ map versions request =
             , compiler = Maybe.withDefault "unknown version" (Maybe.map version request.compilerVersion)
             }
 
-        files : List CodeGeneratorResponseFile
-        files =
-            Mapper.map request.fileToGenerate request.protoFile
-                |> List.map
-                    (\pkg ->
-                        { name = packageFile pkg.name
-                        , insertionPoint = ""
-                        , content = Generator.generate allVersions pkg
-                        , generatedCodeInfo = Nothing
-                        }
-                    )
+        filesNew : List CodeGeneratorResponseFile
+        filesNew =
+            request.protoFile
+                |> MapperNew.convert request.fileToGenerate
+                |> List.map GeneratorNew.generate
+
+        -- files : List CodeGeneratorResponseFile
+        -- files =
+        --     Mapper.map request.fileToGenerate request.protoFile
+        --         |> List.map
+        --             (\pkg ->
+        --                 { name = packageFile pkg.name
+        --                 , insertionPoint = ""
+        --                 , content = Generator.generate allVersions pkg
+        --                 , generatedCodeInfo = Nothing
+        --                 }
+        --             )
     in
-    CodeGeneratorResponse "" 3 files
+    CodeGeneratorResponse "" 3 filesNew
 
 
 version : Version -> String

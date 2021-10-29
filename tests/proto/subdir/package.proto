@@ -1,0 +1,10 @@
+syntax="proto3";
+
+package pkg;
+
+import "package.proto";
+
+message Something {
+  Any.Test sub = 1;
+  bool other = 2;
+}

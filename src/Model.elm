@@ -1,6 +1,7 @@
-module Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldNumber, FieldType(..), Map, Message, OneOf, Package)
+module Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldNumber, FieldType(..), Map, Message, OneOf, Package, Primitive(..))
 
-import Set
+import List.NonEmpty exposing (NonEmpty)
+import Set exposing (Set)
 
 
 type alias Package =
@@ -8,7 +9,7 @@ type alias Package =
     , files : List String
     , messages : List Message
     , enums : List Enum
-    , imports : Set.Set String
+    , imports : Set String
     }
 
 
@@ -23,7 +24,7 @@ type alias Enum =
     { dataType : DataType
     , isTopLevel : Bool
     , withUnrecognized : Bool
-    , fields : ( ( Int, String ), List ( Int, String ) )
+    , fields : NonEmpty ( Int, String )
     }
 
 
@@ -55,9 +56,17 @@ type alias Default =
 
 
 type FieldType
-    = Primitive DataType String Default
+    = Primitive Primitive String Default
     | Embedded DataType
     | Enumeration (Maybe Default) DataType
+
+
+type Primitive
+    = Prim_String
+    | Prim_Int
+    | Prim_Float
+    | Prim_Bool
+    | Prim_Bytes
 
 
 type Field

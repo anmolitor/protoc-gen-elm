@@ -276,31 +276,31 @@ fieldType : String -> FieldDescriptorProto -> ( FieldType, Maybe String )
 fieldType pkg descriptor =
     case descriptor.type_ of
         TypeDouble ->
-            ( Primitive "Float" "double" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Float "double" <| defaultNumber descriptor, Nothing )
 
         TypeFloat ->
-            ( Primitive "Float" "float" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Float "float" <| defaultNumber descriptor, Nothing )
 
         TypeInt64 ->
-            ( Primitive "Int" "int32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "int32" <| defaultNumber descriptor, Nothing )
 
         TypeUint64 ->
-            ( Primitive "Int" "uint32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "uint32" <| defaultNumber descriptor, Nothing )
 
         TypeInt32 ->
-            ( Primitive "Int" "int32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "int32" <| defaultNumber descriptor, Nothing )
 
         TypeFixed64 ->
-            ( Primitive "Int" "fixed32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "fixed32" <| defaultNumber descriptor, Nothing )
 
         TypeFixed32 ->
-            ( Primitive "Int" "fixed32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "fixed32" <| defaultNumber descriptor, Nothing )
 
         TypeBool ->
-            ( Primitive "Bool" "bool" <| defaultBool descriptor, Nothing )
+            ( Primitive Prim_Bool "bool" <| defaultBool descriptor, Nothing )
 
         TypeString ->
-            ( Primitive "String" "string" <| defaultString descriptor, Nothing )
+            ( Primitive Prim_String "string" <| defaultString descriptor, Nothing )
 
         TypeGroup ->
             complexFieldType Embedded pkg descriptor
@@ -309,25 +309,25 @@ fieldType pkg descriptor =
             complexFieldType Embedded pkg descriptor
 
         TypeBytes ->
-            ( Primitive "Bytes.Bytes" "bytes" <| defaultBytes descriptor, Just "Bytes" )
+            ( Primitive Prim_Bytes "bytes" <| defaultBytes descriptor, Just "Bytes" )
 
         TypeUint32 ->
-            ( Primitive "Int" "uint32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "uint32" <| defaultNumber descriptor, Nothing )
 
         TypeEnum ->
             complexFieldType (Enumeration <| defaultEnum descriptor) pkg descriptor
 
         TypeSfixed32 ->
-            ( Primitive "Int" "sfixed32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "sfixed32" <| defaultNumber descriptor, Nothing )
 
         TypeSfixed64 ->
-            ( Primitive "Int" "sfixed32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "sfixed32" <| defaultNumber descriptor, Nothing )
 
         TypeSint32 ->
-            ( Primitive "Int" "sint32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "sint32" <| defaultNumber descriptor, Nothing )
 
         TypeSint64 ->
-            ( Primitive "Int" "sint32" <| defaultNumber descriptor, Nothing )
+            ( Primitive Prim_Int "sint32" <| defaultNumber descriptor, Nothing )
 
 
 complexFieldType : (DataType -> FieldType) -> String -> FieldDescriptorProto -> ( FieldType, Maybe String )
