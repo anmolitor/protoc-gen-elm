@@ -38,5 +38,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: log
-          path: log.txt
+          name: generated
+          path: generated/Proto
