@@ -42,10 +42,12 @@ const waitForOutput = async (stream: Readable): Promise<string> =>
     stream.on("data", onData);
   });
 
-interface Repl {
+export interface Repl {
   importModules: (...moduleNames: string[]) => Promise<void>;
   write: (command: string) => Promise<string>;
   writeMultiple: (...commands: string[]) => Promise<string[]>;
+  getFreshVariable: () => string;
+  stop: () => void;
 }
 
 /**
@@ -59,18 +61,19 @@ interface Repl {
  * Caveat: Commands that do not produce any output from the repl will result in a timeout.
  *
  * > repl.write('1 + 1')
+ *
+ * Commands that assign variables are prone to race conditions, so you should use
+ * `getFreshVariable` to get an unused one.
  */
-export const withRepl = async (
-  useRepl: (repl: Repl) => Promise<void>
-): Promise<void> => {
-  const repl = cp.spawn("elm", ["repl"]);
-  repl.stdout.pipe(process.stdout);
-  repl.stderr.pipe(process.stderr);
+export const startRepl = async (): Promise<Repl> => {
+  const replProcess = cp.spawn("elm", ["repl"]);
+  replProcess.stdout.pipe(process.stdout);
+  replProcess.stderr.pipe(process.stderr);
 
   const write = (input: string): Promise<string> => {
     const answer = Promise.race([
-      waitForOutput(repl.stdout),
-      waitForOutput(repl.stderr).then((err) => {
+      waitForOutput(replProcess.stdout),
+      waitForOutput(replProcess.stderr).then((err) => {
         throw new Error(err);
       }),
       // timeout if repl does not respond
@@ -81,7 +84,7 @@ export const withRepl = async (
       }),
     ]);
     process.stdout.write(input + "\n");
-    repl.stdin.write(input + "\n");
+    replProcess.stdin.write(input + "\n");
     return answer;
   };
 
@@ -99,21 +102,24 @@ export const withRepl = async (
     );
   };
 
-  const stop = () => repl.stdin.write(":exit\n");
+  const stop = () => replProcess.stdin.write(":exit\n");
 
-  await waitForMs(500);
+  await waitForMs(1000);
 
-  const replInterface = {
+  const varGen = variableGenerator();
+
+  return {
     write,
     writeMultiple,
     importModules,
+    getFreshVariable: () => varGen.next().value,
+    stop,
   };
+};
 
-  try {
-    await useRepl(replInterface);
-    stop();
-  } catch (err) {
-    stop();
-    throw err;
+const variableGenerator = function* () {
+  let start = 0;
+  while (true) {
+    yield "x" + start++;
   }
 };

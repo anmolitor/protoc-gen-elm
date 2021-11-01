@@ -1,7 +1,5 @@
 import cp from "child_process";
 import path from "path";
-import fs from "fs";
-import { promisify } from "util";
 
 const protoPath = path.join(__dirname, "proto");
 export const generatedPath = path.join(__dirname, "..", "generated");
@@ -16,24 +14,6 @@ const exec = (command: string): Promise<void> =>
       }
     });
   });
-
-const readFile = (filePath: string) =>
-  promisify(fs.readFile)(filePath, { encoding: "utf-8" });
-
-export const getGeneratedFileContents = async (
-  generatedFileOrFiles: string | string[]
-) => {
-  const files = Array.isArray(generatedFileOrFiles)
-    ? generatedFileOrFiles
-    : [generatedFileOrFiles];
-  const fileContents = await Promise.all(
-    files.map(async (filename) => {
-      const outputPath = path.join(generatedPath, filename);
-      return readFile(outputPath);
-    })
-  );
-  return fileContents.join("\n");
-};
 
 export const runPlugin = async (protoFileOrFiles: string | string[]) => {
   const args = Array.isArray(protoFileOrFiles)
