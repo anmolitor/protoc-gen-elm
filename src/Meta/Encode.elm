@@ -42,6 +42,11 @@ none =
     C.fqFun moduleName "none"
 
 
+list : Expression
+list =
+    C.fqFun moduleName "list"
+
+
 forPrimitive : Primitive -> Expression
 forPrimitive prim =
     case prim of

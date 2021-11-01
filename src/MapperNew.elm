@@ -1,64 +1,16 @@
-module MapperNew exposing (..)
+module MapperNew exposing (enum, message)
 
-import Dict
-import Elm.CodeGen as C
 import Internal.Google.Protobuf exposing (DescriptorProto, DescriptorProtoNestedType(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProtoLabel(..), FieldDescriptorProtoType(..), FileDescriptorProto)
 import List.Extra
-import Mapper as OldMapper
-import Mapping.Common as Common
-import Mapping.Enum as Enum
 import Mapping.Name as Name
+import Mapping.Struct as Struct exposing (Struct)
+import Mapping.Syntax exposing (Syntax(..))
 import Maybe.Extra
-import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), Map, Message, Primitive(..))
-import Set exposing (Set)
-import String.Extra
+import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), Map, Primitive(..))
 
 
 
 -- MODEL
-
-
-type Syntax
-    = Proto2
-    | Proto3
-
-
-type alias PublicInterface =
-    { moduleName : C.ModuleName
-    , types : List String
-    , functions : List String
-    }
-
-
-type alias Struct =
-    { messages : List Message
-    , enums : List Enum
-    , maps : List Map
-    }
-
-
-empty : Struct
-empty =
-    { messages = []
-    , enums = []
-    , maps = []
-    }
-
-
-append : Struct -> Struct -> Struct
-append { messages, enums, maps } struct =
-    { messages = struct.messages ++ messages
-    , enums = struct.enums ++ enums
-    , maps = struct.maps ++ maps
-    }
-
-
-concatMap : (a -> Struct) -> List a -> Struct
-concatMap fn xs =
-    List.foldl (append << fn) empty xs
-
-
-
 {--
     Transform an `EnumDescriptorProto` into our internal `Enum` representation.
     Prefix is used for enums nested inside of message declarations,
@@ -108,7 +60,7 @@ message syntax prefix descriptor =
         nested =
             case descriptor.nestedType of
                 DescriptorProtoNestedType nestedType ->
-                    concatMap (message syntax <| Just descriptor.name) nestedType
+                    Struct.concatMap (message syntax <| Just descriptor.name) nestedType
 
         isMap =
             Maybe.withDefault False <| Maybe.map .mapEntry descriptor.options
@@ -136,7 +88,7 @@ message syntax prefix descriptor =
     , enums = List.map (enum syntax <| Just descriptor.name) descriptor.enumType
     , maps = struct.maps
     }
-        |> append nested
+        |> Struct.append nested
 
 
 
@@ -223,7 +175,7 @@ mapField name descriptor =
                 |> List.head
                 |> Maybe.map fieldType
     in
-    Maybe.withDefault empty <|
+    Maybe.withDefault Struct.empty <|
         Maybe.map2
             (\keyType valueType ->
                 { messages = []
@@ -274,7 +226,8 @@ fieldType descriptor =
             Embedded descriptor.typeName
 
         TypeMessage ->
-            Embedded descriptor.typeName
+            -- for some reason the type always starts with a "."
+            Embedded <| String.dropLeft 1 descriptor.typeName
 
         TypeBytes ->
             Primitive Prim_Bytes "bytes" <| defaultBytes descriptor
@@ -351,103 +304,3 @@ cardinality value =
 
         LabelRepeated ->
             Repeated
-
-
-convert : List String -> List FileDescriptorProto -> List C.File
-convert fileNames descriptors =
-    let
-        files : List ( C.ModuleName, ( Struct, FileDescriptorProto ) )
-        files =
-            descriptors
-                |> List.filter (.name >> (\name -> List.member name fileNames))
-                |> List.map
-                    (\descriptor ->
-                        ( moduleName descriptor
-                        , let
-                            syntax =
-                                parseSyntax descriptor.syntax
-
-                            subStructs =
-                                List.map (message syntax Nothing) descriptor.messageType
-                          in
-                          ( List.foldl append
-                                { messages = []
-                                , enums = List.map (enum syntax Nothing) descriptor.enumType
-                                , maps = []
-                                }
-                                subStructs
-                          , descriptor
-                          )
-                        )
-                    )
-
-        fileDict =
-            Dict.fromList files
-    in
-    files
-        |> List.map
-            (\( modName, ( struct, descriptor ) ) ->
-                let
-                    exposedTypes =
-                        struct.enums |> List.filter .isTopLevel |> List.map .dataType
-
-                    exposedFunctions =
-                        exposedTypes
-                            |> List.concatMap (\t -> [ Common.decoderName t, Common.encoderName t ])
-                in
-                C.file
-                    (C.normalModule modName (List.map C.openTypeExpose exposedTypes ++ List.map C.funExpose exposedFunctions))
-                    [ C.importStmt [ "Protobuf", "Decode" ] Nothing Nothing
-                    , C.importStmt [ "Protobuf", "Encode" ] Nothing Nothing
-                    ]
-                    (List.concatMap Enum.toAST struct.enums)
-                    (C.emptyFileComment |> C.markdown ("""
-                        DO NOT EDIT THIS FILE MANUALLY!
-                        This file was automatically generated by
-                        - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) 1.0.0-beta-2
-                        - `protoc` 3.14.0
-                        - the following specification file: `""" ++ descriptor.name ++ """`
-
-                        To run it, add a dependency via `elm install` on [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/1.1.0) version 1.1.0 or higher.
-                        """) |> Just)
-            )
-
-
-parseSyntax : String -> Syntax
-parseSyntax str =
-    if str == "proto3" then
-        Proto3
-
-    else
-        Proto2
-
-
-moduleName : FileDescriptorProto -> C.ModuleName
-moduleName descriptor =
-    let
-        defaultName =
-            String.split "/" descriptor.name
-                |> List.Extra.unconsLast
-                |> Maybe.map (\( name, segments ) -> segments ++ [ removeExtension name ])
-                |> Maybe.withDefault []
-                |> List.map String.Extra.classify
-    in
-    case defaultName of
-        [ singleSegment ] ->
-            [ "Proto", singleSegment ]
-
-        _ ->
-            defaultName
-
-
-removeExtension : String -> String
-removeExtension =
-    String.split "."
-        >> List.Extra.init
-        >> Maybe.withDefault []
-        >> String.join "."
-
-
-moduleDefinition : FileDescriptorProto -> C.Module
-moduleDefinition descriptor =
-    C.normalModule (moduleName descriptor) []

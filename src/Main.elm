@@ -86,12 +86,6 @@ map versions request =
             , compiler = Maybe.withDefault "unknown version" (Maybe.map version request.compilerVersion)
             }
 
-        filesNew : List CodeGeneratorResponseFile
-        filesNew =
-            request.protoFile
-                |> MapperNew.convert request.fileToGenerate
-                |> List.map GeneratorNew.generate
-
         -- files : List CodeGeneratorResponseFile
         -- files =
         --     Mapper.map request.fileToGenerate request.protoFile
@@ -104,7 +98,7 @@ map versions request =
         --                 }
         --             )
     in
-    CodeGeneratorResponse "" 3 filesNew
+    GeneratorNew.requestToResponse request
 
 
 version : Version -> String

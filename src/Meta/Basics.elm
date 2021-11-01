@@ -7,3 +7,18 @@ import Elm.Syntax.Expression exposing (Expression)
 nothing : Expression
 nothing =
     C.fun "Nothing"
+
+
+just : Expression
+just =
+    C.fun "Just"
+
+
+mapMaybe : Expression
+mapMaybe =
+    C.fqFun [ "Maybe" ] "map"
+
+
+withDefault : Expression
+withDefault =
+    C.fqFun [ "Maybe" ] "withDefault"
