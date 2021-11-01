@@ -27,7 +27,12 @@ toAST deps msg =
             C.funDecl (Just <| Common.encoderDocumentation msg.dataType)
                 (Just <| Meta.Encode.encoder (C.typed msg.dataType []))
                 (Common.encoderName msg.dataType)
-                [ C.varPattern "value" ]
+                [ if msg.fields == [] then
+                    C.allPattern
+
+                  else
+                    C.varPattern "value"
+                ]
                 (Meta.Encode.message
                     (List.map (toEncoder deps) msg.fields)
                 )
@@ -75,10 +80,11 @@ fieldDeclarations deps ( _, field ) =
                             Meta.Type.forPrimitive prim
 
                         Embedded embedded ->
-                            C.fqTyped
-                                (Dependencies.resolveType embedded deps |> Maybe.withDefault [])
-                                embedded
-                                []
+                            let
+                                ( moduleName, actualType ) =
+                                    Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
+                            in
+                            C.fqTyped moduleName actualType []
 
                         Enumeration _ _ ->
                             C.typeVar "Enumeration not supported"
@@ -123,9 +129,13 @@ toDefaultValue field =
 toDecoder : Dependencies -> ( FieldName, Field ) -> C.Expression
 toDecoder deps ( fieldName, field ) =
     let
-        forEmbedded dataType =
-            C.fqFun (Dependencies.resolveType dataType deps |> Maybe.withDefault [])
-                (Common.decoderName dataType)
+        forEmbedded embedded =
+            let
+                ( moduleName, actualType ) =
+                    Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
+            in
+            C.fqFun moduleName
+                (Common.decoderName actualType)
     in
     case field of
         Field number cardinality fieldType ->
@@ -171,12 +181,16 @@ toDecoder deps ( fieldName, field ) =
                         , setter fieldName
                         ]
 
-                ( Repeated, Embedded dataType ) ->
+                ( Repeated, Embedded embedded ) ->
                     C.apply
                         [ Meta.Decode.repeated
                         , C.int number
-                        , C.fqFun (Dependencies.resolveType dataType deps |> Maybe.withDefault [])
-                            (Common.decoderName dataType)
+                        , let
+                            ( moduleName, actualType ) =
+                                Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
+                          in
+                          C.fqFun moduleName
+                            (Common.decoderName actualType)
                         , C.accessFun fieldName
                         , setter fieldName
                         ]
@@ -219,9 +233,13 @@ toDecoder deps ( fieldName, field ) =
 toEncoder : Dependencies -> ( FieldName, Field ) -> C.Expression
 toEncoder deps ( fieldName, field ) =
     let
-        forEmbedded dataType =
-            C.fqFun (Dependencies.resolveType dataType deps |> Maybe.withDefault [])
-                (Common.encoderName dataType)
+        forEmbedded embedded =
+            let
+                ( moduleName, actualType ) =
+                    Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
+            in
+            C.fqFun moduleName
+                (Common.encoderName actualType)
 
         fieldTypeToEncoder : Cardinality -> FieldType -> C.Expression
         fieldTypeToEncoder cardinality fieldType =
@@ -275,11 +293,12 @@ toEncoder deps ( fieldName, field ) =
 fieldToTypeAnnotation : Dependencies -> Field -> C.TypeAnnotation
 fieldToTypeAnnotation deps field =
     let
-        forEmbedded dataType =
-            C.fqTyped
-                (Dependencies.resolveType dataType deps |> Maybe.withDefault [])
-                dataType
-                []
+        forEmbedded embedded =
+            let
+                ( moduleName, actualType ) =
+                    Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
+            in
+            C.fqTyped moduleName actualType []
     in
     case field of
         Field _ cardinality fieldType ->

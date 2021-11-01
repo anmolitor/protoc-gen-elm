@@ -69,11 +69,11 @@ convert fileNames descriptors =
 
         allDependencies : Dependencies
         allDependencies =
-            List.foldl (\( modName, ( struct, _ ) ) -> Dependencies.addModule modName (getAllExposedTypes struct)) Dependencies.empty files
+            List.foldl (\( modName, ( struct, descriptor ) ) -> Dependencies.addModule ( modName, descriptor.package ) (getAllExposedTypes struct)) Dependencies.empty files
 
         getDependencies : FileDescriptorProto -> Dependencies
         getDependencies descriptor =
-            allDependencies |> Dict.filter (\modName _ -> List.map moduleName descriptor.dependency |> List.member modName)
+            allDependencies |> Dependencies.restrictToModuleNames (List.map moduleName descriptor.dependency)
 
         getExposedUnionTypes struct =
             struct.enums |> List.filter .isTopLevel |> List.map .dataType
