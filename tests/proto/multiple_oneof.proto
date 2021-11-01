@@ -9,7 +9,7 @@ message Oneof1 {
 
 message Oneof2 {
   oneof msg {
-    string OptionC = 1;
+    string OptionA = 1;
     string OptionD = 2; 
   }
 }

@@ -22,23 +22,6 @@ toAST deps msg =
                 []
                 (C.recordAnn <| List.map (Tuple.mapSecond <| fieldToTypeAnnotation deps) msg.fields)
 
-        setter : FieldName -> C.Declaration
-        setter fieldName =
-            C.funDecl (Just <| setterDocumentation fieldName)
-                (Just <|
-                    let
-                        fieldType =
-                            C.typeVar "a"
-
-                        recordType =
-                            C.extRecordAnn "r" [ ( fieldName, fieldType ) ]
-                    in
-                    C.funAnn fieldType (C.funAnn recordType recordType)
-                )
-                (setterName fieldName)
-                [ C.varPattern "a", C.varPattern "r" ]
-                (C.update "r" [ ( fieldName, C.val "a" ) ])
-
         encoder : C.Declaration
         encoder =
             C.funDecl (Just <| Common.encoderDocumentation msg.dataType)
@@ -63,12 +46,15 @@ toAST deps msg =
                 )
     in
     [ type_, encoder, decoder ]
-        ++ List.map (Tuple.first >> setter) msg.fields
         ++ List.concatMap (fieldDeclarations deps) msg.fields
 
 
-setterName fieldName =
-    "set" ++ String.Extra.classify fieldName
+setter : FieldName -> C.Expression
+setter fieldName =
+    C.parens <|
+        C.lambda
+            [ C.varPattern "a", C.varPattern "r" ]
+            (C.update "r" [ ( fieldName, C.val "a" ) ])
 
 
 fieldDeclarations : Dependencies -> ( FieldName, Field ) -> List C.Declaration
@@ -149,7 +135,7 @@ toDecoder deps ( fieldName, field ) =
                         [ Meta.Decode.optional
                         , C.int number
                         , Meta.Decode.forPrimitive dataType
-                        , C.val <| setterName fieldName
+                        , setter fieldName
                         ]
 
                 ( Optional, Embedded dataType ) ->
@@ -157,7 +143,7 @@ toDecoder deps ( fieldName, field ) =
                         [ Meta.Decode.optional
                         , C.int number
                         , C.parens (C.apply [ Meta.Decode.map, Meta.Basics.just, forEmbedded dataType ])
-                        , C.val <| setterName fieldName
+                        , setter fieldName
                         ]
 
                 ( Required, Primitive dataType _ _ ) ->
@@ -165,7 +151,7 @@ toDecoder deps ( fieldName, field ) =
                         [ Meta.Decode.required
                         , C.int number
                         , Meta.Decode.forPrimitive dataType
-                        , C.val <| setterName fieldName
+                        , setter fieldName
                         ]
 
                 ( Required, Embedded dataType ) ->
@@ -173,7 +159,7 @@ toDecoder deps ( fieldName, field ) =
                         [ Meta.Decode.required
                         , C.int number
                         , forEmbedded dataType
-                        , C.val <| setterName fieldName
+                        , setter fieldName
                         ]
 
                 ( Repeated, Primitive dataType _ _ ) ->
@@ -182,7 +168,7 @@ toDecoder deps ( fieldName, field ) =
                         , C.int number
                         , Meta.Decode.forPrimitive dataType
                         , C.accessFun fieldName
-                        , C.val <| setterName fieldName
+                        , setter fieldName
                         ]
 
                 ( Repeated, Embedded dataType ) ->
@@ -192,7 +178,7 @@ toDecoder deps ( fieldName, field ) =
                         , C.fqFun (Dependencies.resolveType dataType deps |> Maybe.withDefault [])
                             (Common.decoderName dataType)
                         , C.accessFun fieldName
-                        , C.val <| setterName fieldName
+                        , setter fieldName
                         ]
 
                 _ ->
@@ -226,7 +212,7 @@ toDecoder deps ( fieldName, field ) =
                         )
                         options
                     )
-                , C.val <| setterName fieldName
+                , setter fieldName
                 ]
 
 

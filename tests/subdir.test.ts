@@ -1,8 +1,5 @@
-import {
-  runPlugin,
-  compileElm,
-  getGeneratedFileContents,
-} from "./snapshot_test_base";
+import { withRepl } from "./repl";
+import { compileElm, runPlugin } from "./snapshot_test_base";
 
 describe("protoc-gen-elm", () => {
   beforeAll(() =>
@@ -17,10 +14,20 @@ describe("protoc-gen-elm", () => {
     await compileElm(expectedElmFileName);
   });
 
-  it("generates the expected code for files in subdirectory", async () => {
-    const generatedContent = await getGeneratedFileContents(
-      expectedElmFileName
-    );
-    expect(generatedContent).toMatchSnapshot();
-  });
+  it("generates working code for files in subdirectory", () =>
+    withRepl(async (repl) => {
+      await repl.importModules(
+        "Protobuf.Decode as D",
+        "Protobuf.Encode as E",
+        "Proto.Subdir.Imported as Imported",
+        "Proto.Subdir.Importing as Importing"
+      );
+      await repl.write(
+        'x = Importing.Nested "b" (Just <| Imported.SubImported "a" False)'
+      );
+      const output = await repl.write(
+        "(Importing.encodeNested x |> E.encode |> D.decode Importing.decodeNested) == Just x"
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    }));
 });

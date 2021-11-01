@@ -142,20 +142,12 @@ To run it, add a dependency via `elm install` on [`elm-protocol-buffers`](https:
 
 moduleName : String -> C.ModuleName
 moduleName descriptorName =
-    let
-        defaultName =
-            String.split "/" descriptorName
-                |> List.Extra.unconsLast
-                |> Maybe.map (\( name, segments ) -> segments ++ [ removeExtension name ])
-                |> Maybe.withDefault []
-                |> List.map String.Extra.classify
-    in
-    case defaultName of
-        [ singleSegment ] ->
-            [ "Proto", singleSegment ]
-
-        _ ->
-            defaultName
+    String.split "/" descriptorName
+        |> List.Extra.unconsLast
+        |> Maybe.map (\( name, segments ) -> segments ++ [ removeExtension name ])
+        |> Maybe.withDefault []
+        |> List.map String.Extra.classify
+        |> (::) "Proto"
 
 
 removeExtension : String -> String
