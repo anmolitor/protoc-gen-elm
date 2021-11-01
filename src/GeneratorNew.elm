@@ -16,6 +16,7 @@ import Mapping.Import as Import
 import Mapping.Message as Message
 import Mapping.Struct as Struct exposing (Struct)
 import Mapping.Syntax as Syntax
+import Model exposing (Field(..))
 import Set
 import String.Extra
 
@@ -77,6 +78,19 @@ convert fileNames descriptors =
         getExposedUnionTypes struct =
             struct.enums |> List.filter .isTopLevel |> List.map .dataType
 
+        getOneOfs struct =
+            struct.messages
+                |> List.concatMap .fields
+                |> List.filterMap
+                    (\( _, field ) ->
+                        case field of
+                            OneOfField dataType _ ->
+                                Just dataType
+
+                            _ ->
+                                Nothing
+                    )
+
         getExposedOtherTypes struct =
             struct.messages |> List.filter .isTopLevel |> List.map .dataType
 
@@ -104,6 +118,7 @@ convert fileNames descriptors =
                 C.file
                     (C.normalModule modName
                         (List.map C.openTypeExpose exposedUnionTypes
+                            ++ List.map C.openTypeExpose (getOneOfs struct)
                             ++ List.map C.typeOrAliasExpose otherExposedTypes
                             ++ List.map C.funExpose exposedFunctions
                         )

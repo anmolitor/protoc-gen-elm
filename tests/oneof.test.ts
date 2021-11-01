@@ -16,9 +16,10 @@ describe("protoc-gen-elm", () => {
         "Protobuf.Decode as D",
         "Protobuf.Encode as E"
       );
-      repl.write('x = P.OneOfMsgAString "test"');
-      const output = repl.write(
+      await repl.write('x = { msg = Just <| P.OneOfMsgAString "test" }');
+      const output = await repl.write(
         "(P.encodeOneOf x |> E.encode |> D.decode P.decodeOneOf) == Just x"
       );
+      expect(output).toEqual(expect.stringContaining("True"));
     }));
 });

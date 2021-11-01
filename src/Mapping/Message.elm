@@ -62,11 +62,49 @@ toAST deps msg =
                     ]
                 )
     in
-    [ type_, encoder, decoder ] ++ List.map (Tuple.first >> setter) msg.fields
+    [ type_, encoder, decoder ]
+        ++ List.map (Tuple.first >> setter) msg.fields
+        ++ List.concatMap (fieldDeclarations deps) msg.fields
 
 
 setterName fieldName =
     "set" ++ String.Extra.classify fieldName
+
+
+fieldDeclarations : Dependencies -> ( FieldName, Field ) -> List C.Declaration
+fieldDeclarations deps ( _, field ) =
+    case field of
+        Field _ _ _ ->
+            []
+
+        MapField _ _ ->
+            []
+
+        OneOfField dataType options ->
+            let
+                typeForFieldType : FieldType -> C.TypeAnnotation
+                typeForFieldType ft =
+                    case ft of
+                        Primitive prim _ _ ->
+                            Meta.Type.forPrimitive prim
+
+                        Embedded embedded ->
+                            C.fqTyped
+                                (Dependencies.resolveType embedded deps |> Maybe.withDefault [])
+                                embedded
+                                []
+
+                        Enumeration _ _ ->
+                            C.typeVar "Enumeration not supported"
+
+                type_ =
+                    C.customTypeDecl
+                        (Just <| oneofDocumentation dataType)
+                        dataType
+                        []
+                        (List.map (\( _, innerDataType, innerFieldType ) -> ( innerDataType, [ typeForFieldType innerFieldType ] )) options)
+            in
+            [ type_ ]
 
 
 toDefaultValue : Field -> C.Expression
@@ -87,13 +125,13 @@ toDefaultValue field =
                     Meta.Basics.nothing
 
                 ( _, _ ) ->
-                    Debug.todo "Unhandled: embedded and enum"
+                    C.string "Unhandled: enum"
 
         MapField _ _ ->
-            Debug.todo "Map field not supported yet"
+            C.string "Map field not supported yet"
 
         OneOfField _ _ ->
-            Debug.todo "Oneof field not supported yet"
+            Meta.Basics.nothing
 
 
 toDecoder : Dependencies -> ( FieldName, Field ) -> C.Expression
@@ -163,8 +201,33 @@ toDecoder deps ( fieldName, field ) =
         MapField _ _ ->
             C.string "Map field not supported yet"
 
-        OneOfField _ _ ->
-            C.string "Oneof field not supported yet"
+        OneOfField _ options ->
+            C.apply
+                [ Meta.Decode.oneOf
+                , C.list
+                    (List.map
+                        (\( fieldNumber, optionName, fieldType ) ->
+                            C.tuple
+                                [ C.int fieldNumber
+                                , C.apply
+                                    [ Meta.Decode.map
+                                    , C.val optionName
+                                    , case fieldType of
+                                        Primitive p _ _ ->
+                                            Meta.Decode.forPrimitive p
+
+                                        Embedded e ->
+                                            forEmbedded e
+
+                                        Enumeration _ _ ->
+                                            C.string "Enumeration not supported"
+                                    ]
+                                ]
+                        )
+                        options
+                    )
+                , C.val <| setterName fieldName
+                ]
 
 
 toEncoder : Dependencies -> ( FieldName, Field ) -> C.Expression
@@ -210,8 +273,17 @@ toEncoder deps ( fieldName, field ) =
         MapField _ _ ->
             C.string "Map field not supported yet"
 
-        OneOfField _ _ ->
-            C.string "Oneof field not supported yet"
+        OneOfField _ options ->
+            C.caseExpr (C.access (C.val "value") fieldName)
+                (( C.namedPattern "Nothing" [], C.tuple [ C.int 0, Meta.Encode.none ] )
+                    :: List.map
+                        (\( fieldNumber, optionName, fieldType ) ->
+                            ( C.namedPattern "Just" [ C.parensPattern (C.namedPattern optionName [ C.varPattern "innerValue" ]) ]
+                            , C.tuple [ C.int fieldNumber, C.apply [ fieldTypeToEncoder Optional fieldType, C.val "innerValue" ] ]
+                            )
+                        )
+                        options
+                )
 
 
 fieldToTypeAnnotation : Dependencies -> Field -> C.TypeAnnotation
@@ -250,13 +322,18 @@ fieldToTypeAnnotation deps field =
         MapField _ _ ->
             C.typeVar "Map field not supported yet"
 
-        OneOfField _ _ ->
-            C.typeVar "Oneof field not supported yet"
+        OneOfField dataType _ ->
+            C.maybeAnn <| C.typed dataType []
 
 
 messageDocumentation : String -> C.Comment C.DocComment
 messageDocumentation msgName =
     C.emptyDocComment |> C.markdown ("`" ++ msgName ++ "` message")
+
+
+oneofDocumentation : String -> C.Comment C.DocComment
+oneofDocumentation msgName =
+    C.emptyDocComment |> C.markdown ("`" ++ msgName ++ "` options")
 
 
 setterDocumentation : String -> C.Comment C.DocComment

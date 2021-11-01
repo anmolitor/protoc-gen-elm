@@ -99,7 +99,7 @@ messageFields : List String -> List Map -> List { field : ( FieldName, Field ), 
 messageFields oneOfFieldNames maps fieldsMeta parentDescriptor =
     let
         oneOfFields =
-            List.indexedMap (oneOfField fieldsMeta parentDescriptor) oneOfFieldNames
+            List.indexedMap (oneOfField fieldsMeta parentDescriptor.name) oneOfFieldNames
 
         maybeMapField field =
             case field of
@@ -145,20 +145,20 @@ messageFieldMeta name descriptor =
     }
 
 
-oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int } -> DescriptorProto -> Int -> String -> ( FieldName, Field )
-oneOfField fields parentDescriptor index name =
+oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int } -> String -> Int -> String -> ( FieldName, Field )
+oneOfField fields prefix index name =
     List.filter ((==) index << (-) 1 << .oneOfIndex) fields
         |> List.map .field
         |> List.filterMap
             (\( fieldName, field ) ->
                 case field of
                     Field fieldNumber _ type_ ->
-                        Just ( fieldNumber, Name.type_ <| name ++ "_" ++ fieldName, type_ )
+                        Just ( fieldNumber, Name.type_ <| prefix ++ "_" ++ name ++ "_" ++ fieldName, type_ )
 
                     _ ->
                         Nothing
             )
-        |> OneOfField (parentDescriptor.name ++ Name.type_ name)
+        |> OneOfField (prefix ++ Name.type_ name)
         |> Tuple.pair (Name.field name)
 
 

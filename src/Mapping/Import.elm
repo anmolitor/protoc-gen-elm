@@ -4,6 +4,7 @@ import Elm.CodeGen as C
 import Elm.Syntax.Declaration as Decl
 import Elm.Syntax.Expression as Expr
 import Elm.Syntax.Node as Node
+import Elm.Syntax.Pattern as Pat
 import Elm.Syntax.Signature as Sig
 import Elm.Syntax.Type as Type
 import Elm.Syntax.TypeAnnotation as Ann
@@ -36,8 +37,10 @@ extractImportsDecl decl =
                 Decl.InfixDeclaration _ ->
                     Set.empty
 
-                Decl.Destructuring _ _ ->
-                    Set.empty
+                Decl.Destructuring pat expr ->
+                    Set.union
+                        (extractImportsPat <| Node.value pat)
+                        (extractImportsExpr <| Node.value expr)
     in
     case decl of
         C.DeclWithComment _ f ->
@@ -193,6 +196,28 @@ extractImportsExpr expr =
 extractImportsPat : C.Pattern -> Set C.ModuleName
 extractImportsPat pat =
     case pat of
+        Pat.TuplePattern pats ->
+            concatSets <| List.map (Node.value >> extractImportsPat) pats
+
+        Pat.UnConsPattern p1 p2 ->
+            Set.union
+                (extractImportsPat <| Node.value p1)
+                (extractImportsPat <| Node.value p2)
+
+        Pat.ListPattern pats ->
+            concatSets <| List.map (Node.value >> extractImportsPat) pats
+
+        Pat.NamedPattern { moduleName } pats ->
+            Set.insert moduleName <|
+                concatSets <|
+                    List.map (Node.value >> extractImportsPat) pats
+
+        Pat.AsPattern p _ ->
+            extractImportsPat <| Node.value p
+
+        Pat.ParenthesizedPattern p ->
+            extractImportsPat <| Node.value p
+
         _ ->
             Set.empty
 
