@@ -75,3 +75,17 @@ elm reactor
 
 - All limitations of [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest#known-limitations) apply;
 - This is still a **beta** release. Please report any issues you have generating your Elm modules;
+
+## Development
+
+Note: Currently, this project won't run on Windows (WSL works) because of shell scripts/executable js files.
+
+Execute `npm install`, `npm run build` and `npm test` and you should be good to go.
+You will need `protoc` installed and on your PATH.
+
+- The plugin logic is written in Elm itself. To be executable via node, there is a index.js wrapper. It converts the incoming bytes to base64, because there currently is no way to directly send the type `Bytes` through a port.
+- Main.elm essentially wires up the binding to JS: A request is received through a port, gets decoded, processed and then sent through another port.
+- For decoding the protoc request, it uses "itself", meaning that upgrading protoc versions should be done by running the plugin against the new `include` files from protoc to generate the new encoders/decoders.
+- A `Mapper` converts the request into a convenient internal structure
+- A `Generator` then uses this internal structure to build an Elm AST
+- The `Writer` then converts this into a string representation/the expected protoc output representation

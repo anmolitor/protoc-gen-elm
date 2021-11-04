@@ -1,26 +1,23 @@
 module Mapping.Message exposing (..)
 
-import Dict exposing (Dict)
 import Elm.CodeGen as C
 import Mapping.Common as Common
-import Mapping.Dependencies as Dependencies exposing (Dependencies)
 import Meta.Basics
 import Meta.Decode
 import Meta.Encode
 import Meta.Type
-import Model exposing (Cardinality(..), Field(..), FieldName, FieldType(..), Message)
-import String.Extra
+import Model exposing (Cardinality(..), Field(..), FieldName, FieldType(..), Map, Message)
 
 
-toAST : Dependencies -> Message -> List C.Declaration
-toAST deps msg =
+toAST : Message -> List C.Declaration
+toAST msg =
     let
         type_ : C.Declaration
         type_ =
             C.aliasDecl (Just <| messageDocumentation msg.dataType)
                 msg.dataType
                 []
-                (C.recordAnn <| List.map (Tuple.mapSecond <| fieldToTypeAnnotation deps) msg.fields)
+                (C.recordAnn <| List.map (Tuple.mapSecond fieldToTypeAnnotation) msg.fields)
 
         encoder : C.Declaration
         encoder =
@@ -34,7 +31,7 @@ toAST deps msg =
                     C.varPattern "value"
                 ]
                 (Meta.Encode.message
-                    (List.map (toEncoder deps) msg.fields)
+                    (List.map toEncoder msg.fields)
                 )
 
         decoder : C.Declaration
@@ -46,12 +43,30 @@ toAST deps msg =
                 (C.apply
                     [ Meta.Decode.message
                     , C.record <| List.map (Tuple.mapSecond toDefaultValue) msg.fields
-                    , C.list <| List.map (toDecoder deps) msg.fields
+                    , C.list <| List.map toDecoder msg.fields
                     ]
                 )
     in
     [ type_, encoder, decoder ]
-        ++ List.concatMap (fieldDeclarations deps) msg.fields
+        ++ List.concatMap fieldDeclarations msg.fields
+
+
+mapToAST : Map -> List C.Declaration
+mapToAST map =
+    let
+        type_ =
+            C.aliasDecl (Just <| mapComment map)
+                map.dataType
+                []
+                (C.fqTyped [ "Dict" ] "Dict" [ fieldTypeToTypeAnnotation map.key, fieldTypeToTypeAnnotation map.value ])
+    in
+    [ type_ ]
+
+
+mapComment : Map -> C.Comment C.DocComment
+mapComment map =
+    C.emptyDocComment
+        |> C.markdown ("Dict for " ++ map.dataType)
 
 
 setter : FieldName -> C.Expression
@@ -62,13 +77,13 @@ setter fieldName =
             (C.update "r" [ ( fieldName, C.val "a" ) ])
 
 
-fieldDeclarations : Dependencies -> ( FieldName, Field ) -> List C.Declaration
-fieldDeclarations deps ( _, field ) =
+fieldDeclarations : ( FieldName, Field ) -> List C.Declaration
+fieldDeclarations ( _, field ) =
     case field of
-        Field _ _ _ ->
+        NormalField _ _ _ ->
             []
 
-        MapField _ _ ->
+        MapField _ _ _ ->
             []
 
         OneOfField dataType options ->
@@ -79,12 +94,8 @@ fieldDeclarations deps ( _, field ) =
                         Primitive prim _ _ ->
                             Meta.Type.forPrimitive prim
 
-                        Embedded embedded ->
-                            let
-                                ( moduleName, actualType ) =
-                                    Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
-                            in
-                            C.fqTyped moduleName actualType []
+                        Embedded typeRef moduleName ->
+                            C.fqTyped moduleName typeRef []
 
                         Enumeration _ _ ->
                             C.typeVar "Enumeration not supported"
@@ -102,7 +113,7 @@ fieldDeclarations deps ( _, field ) =
 toDefaultValue : Field -> C.Expression
 toDefaultValue field =
     case field of
-        Field _ cardinality fieldType ->
+        NormalField _ cardinality fieldType ->
             case ( cardinality, fieldType ) of
                 ( Optional, Primitive _ _ defaultValue ) ->
                     C.val defaultValue
@@ -113,32 +124,23 @@ toDefaultValue field =
                 ( Required, Primitive _ _ defaultValue ) ->
                     C.val defaultValue
 
-                ( Optional, Embedded dataType ) ->
+                ( Optional, Embedded _ _ ) ->
                     Meta.Basics.nothing
 
                 ( _, _ ) ->
                     C.string "Unhandled: enum"
 
-        MapField _ _ ->
-            C.string "Map field not supported yet"
+        MapField _ _ _ ->
+            C.fqFun [ "Dict" ] "empty"
 
         OneOfField _ _ ->
             Meta.Basics.nothing
 
 
-toDecoder : Dependencies -> ( FieldName, Field ) -> C.Expression
-toDecoder deps ( fieldName, field ) =
-    let
-        forEmbedded embedded =
-            let
-                ( moduleName, actualType ) =
-                    Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
-            in
-            C.fqFun moduleName
-                (Common.decoderName actualType)
-    in
+toDecoder : ( FieldName, Field ) -> C.Expression
+toDecoder ( fieldName, field ) =
     case field of
-        Field number cardinality fieldType ->
+        NormalField number cardinality fieldType ->
             case ( cardinality, fieldType ) of
                 ( Optional, Primitive dataType _ _ ) ->
                     C.apply
@@ -148,11 +150,17 @@ toDecoder deps ( fieldName, field ) =
                         , setter fieldName
                         ]
 
-                ( Optional, Embedded dataType ) ->
+                ( Optional, Embedded typeRef moduleName ) ->
                     C.apply
                         [ Meta.Decode.optional
                         , C.int number
-                        , C.parens (C.apply [ Meta.Decode.map, Meta.Basics.just, forEmbedded dataType ])
+                        , C.parens
+                            (C.apply
+                                [ Meta.Decode.map
+                                , Meta.Basics.just
+                                , C.fqFun moduleName (Common.decoderName typeRef)
+                                ]
+                            )
                         , setter fieldName
                         ]
 
@@ -164,11 +172,11 @@ toDecoder deps ( fieldName, field ) =
                         , setter fieldName
                         ]
 
-                ( Required, Embedded dataType ) ->
+                ( Required, Embedded typeRef moduleName ) ->
                     C.apply
                         [ Meta.Decode.required
                         , C.int number
-                        , forEmbedded dataType
+                        , C.fqFun moduleName (Common.decoderName typeRef)
                         , setter fieldName
                         ]
 
@@ -181,16 +189,11 @@ toDecoder deps ( fieldName, field ) =
                         , setter fieldName
                         ]
 
-                ( Repeated, Embedded embedded ) ->
+                ( Repeated, Embedded typeRef moduleName ) ->
                     C.apply
                         [ Meta.Decode.repeated
                         , C.int number
-                        , let
-                            ( moduleName, actualType ) =
-                                Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
-                          in
-                          C.fqFun moduleName
-                            (Common.decoderName actualType)
+                        , C.fqFun moduleName (Common.decoderName typeRef)
                         , C.accessFun fieldName
                         , setter fieldName
                         ]
@@ -198,8 +201,15 @@ toDecoder deps ( fieldName, field ) =
                 _ ->
                     C.string "NOT SUPPORTED"
 
-        MapField _ _ ->
-            C.string "Map field not supported yet"
+        MapField number key value ->
+            C.apply
+                [ Meta.Decode.mapped
+                , C.int number
+                , C.tuple []
+                , Meta.Decode.forPrimitive key
+                , C.accessFun fieldName
+                , setter fieldName
+                ]
 
         OneOfField _ options ->
             C.apply
@@ -216,8 +226,8 @@ toDecoder deps ( fieldName, field ) =
                                         Primitive p _ _ ->
                                             Meta.Decode.forPrimitive p
 
-                                        Embedded e ->
-                                            forEmbedded e
+                                        Embedded typeRef moduleName ->
+                                            C.fqFun moduleName (Common.decoderName typeRef)
 
                                         Enumeration _ _ ->
                                             C.string "Enumeration not supported"
@@ -230,52 +240,52 @@ toDecoder deps ( fieldName, field ) =
                 ]
 
 
-toEncoder : Dependencies -> ( FieldName, Field ) -> C.Expression
-toEncoder deps ( fieldName, field ) =
+toEncoder : ( FieldName, Field ) -> C.Expression
+toEncoder ( fieldName, field ) =
     let
-        forEmbedded embedded =
-            let
-                ( moduleName, actualType ) =
-                    Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
-            in
-            C.fqFun moduleName
-                (Common.encoderName actualType)
-
         fieldTypeToEncoder : Cardinality -> FieldType -> C.Expression
         fieldTypeToEncoder cardinality fieldType =
             case ( cardinality, fieldType ) of
                 ( Optional, Primitive dataType _ _ ) ->
                     Meta.Encode.forPrimitive dataType
 
-                ( Optional, Embedded dataType ) ->
+                ( Optional, Embedded typeRef moduleName ) ->
                     C.parens <|
                         C.applyBinOp
-                            (C.apply [ Meta.Basics.mapMaybe, forEmbedded dataType ])
+                            (C.apply [ Meta.Basics.mapMaybe, C.fqFun moduleName (Common.encoderName typeRef) ])
                             C.composer
                             (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
 
                 ( Required, Primitive dataType _ _ ) ->
                     Meta.Encode.forPrimitive dataType
 
-                ( Required, Embedded dataType ) ->
-                    forEmbedded dataType
+                ( Required, Embedded typeRef moduleName ) ->
+                    C.fqFun moduleName (Common.encoderName typeRef)
 
                 ( Repeated, Primitive dataType _ _ ) ->
                     C.apply [ Meta.Encode.list, Meta.Encode.forPrimitive dataType ]
 
-                ( Repeated, Embedded dataType ) ->
-                    C.apply [ Meta.Encode.list, forEmbedded dataType ]
+                ( Repeated, Embedded typeRef moduleName ) ->
+                    C.apply [ Meta.Encode.list, C.fqFun moduleName (Common.encoderName typeRef) ]
 
                 _ ->
                     C.string "Enumeration not supported yet"
     in
     -- TODO i need to access fields of "value" variable in a better way
     case field of
-        Field number cardinality fieldType ->
+        NormalField number cardinality fieldType ->
             C.tuple [ C.int number, C.apply [ fieldTypeToEncoder cardinality fieldType, C.access (C.val "value") fieldName ] ]
 
-        MapField _ _ ->
-            C.string "Map field not supported yet"
+        MapField number key value ->
+            C.tuple
+                [ C.int number
+                , C.apply
+                    [ Meta.Encode.dict
+                    , Meta.Encode.forPrimitive key
+                    , fieldTypeToEncoder Optional value
+                    , C.access (C.val "value") fieldName
+                    ]
+                ]
 
         OneOfField _ options ->
             C.caseExpr (C.access (C.val "value") fieldName)
@@ -290,42 +300,40 @@ toEncoder deps ( fieldName, field ) =
                 )
 
 
-fieldToTypeAnnotation : Dependencies -> Field -> C.TypeAnnotation
-fieldToTypeAnnotation deps field =
-    let
-        forEmbedded embedded =
-            let
-                ( moduleName, actualType ) =
-                    Dependencies.resolveType embedded deps |> Maybe.withDefault ( [], embedded )
-            in
-            C.fqTyped moduleName actualType []
-    in
+fieldTypeToTypeAnnotation : FieldType -> C.TypeAnnotation
+fieldTypeToTypeAnnotation fieldType =
+    case fieldType of
+        Primitive dataType _ _ ->
+            Meta.Type.forPrimitive dataType
+
+        Embedded typeRef moduleName ->
+            C.fqTyped moduleName typeRef []
+
+        _ ->
+            C.typeVar "Enumeration not supported yet"
+
+
+fieldToTypeAnnotation : Field -> C.TypeAnnotation
+fieldToTypeAnnotation field =
     case field of
-        Field _ cardinality fieldType ->
-            case ( cardinality, fieldType ) of
+        NormalField _ cardinality fieldType ->
+            (case ( cardinality, fieldType ) of
                 ( Optional, Primitive dataType _ _ ) ->
-                    Meta.Type.forPrimitive dataType
+                    identity
 
-                ( Required, Primitive dataType _ _ ) ->
-                    Meta.Type.forPrimitive dataType
+                ( Required, _ ) ->
+                    identity
 
-                ( Optional, Embedded dataType ) ->
-                    C.maybeAnn <| forEmbedded dataType
+                ( Optional, _ ) ->
+                    C.maybeAnn
 
-                ( Required, Embedded dataType ) ->
-                    forEmbedded dataType
+                ( Repeated, _ ) ->
+                    C.listAnn
+            )
+                (fieldTypeToTypeAnnotation fieldType)
 
-                ( Repeated, Primitive dataType _ _ ) ->
-                    C.listAnn <| Meta.Type.forPrimitive dataType
-
-                ( Repeated, Embedded dataType ) ->
-                    C.listAnn <| forEmbedded dataType
-
-                _ ->
-                    C.typeVar "Enumeration not supported yet"
-
-        MapField _ _ ->
-            C.typeVar "Map field not supported yet"
+        MapField _ key value ->
+            Meta.Type.forPrimitive key
 
         OneOfField dataType _ ->
             C.maybeAnn <| C.typed dataType []

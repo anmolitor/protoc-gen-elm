@@ -198,4 +198,25 @@ describe("protoc-gen-elm", () => {
       expect(output).toEqual(expect.stringContaining("True"));
     });
   });
+
+  describe("maps", () => {
+    beforeAll(() => runPlugin("map.proto"));
+    const expectedElmFileName = "Proto/Map.elm";
+
+    it("generates a valid elm file for files in subdirectory", async () => {
+      await compileElm(expectedElmFileName);
+    });
+
+    it("generates working code for files in subdirectory", async () => {
+      await repl.importModules("Proto.Map", "Dict");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(
+        `${freshVar} = Proto.Map.Bar (Dict.singleton "test" (Proto.Map.Foo "hi"))`
+      );
+      const output = await repl.write(
+        `(Proto.Map.encodeBar ${freshVar} |> E.encode |> D.decode Proto.Map.decodeBar) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
 });

@@ -1,11 +1,34 @@
-module Mapping.Name exposing (field, type_)
+module Mapping.Name exposing (field, module_, type_)
 
+import Elm.Syntax.ModuleName exposing (ModuleName)
+import List.Extra
 import String.Extra
+
+
+module_ : String -> ModuleName
+module_ descriptorName =
+    String.split "/" descriptorName
+        |> List.Extra.unconsLast
+        |> Maybe.map (\( name, segments ) -> segments ++ [ removeExtension name ])
+        |> Maybe.withDefault []
+        |> List.map String.Extra.classify
+        |> (::) "Proto"
+
+
+removeExtension : String -> String
+removeExtension =
+    String.split "."
+        >> List.Extra.init
+        >> Maybe.withDefault []
+        >> String.join "."
 
 
 type_ : String -> String
 type_ =
-    escapeType << String.Extra.classify
+    String.split "."
+        >> List.map String.Extra.classify
+        >> String.join "_"
+        >> escapeType
 
 
 field : String -> String

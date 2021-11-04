@@ -5,18 +5,21 @@ import Elm.CodeGen as C
 import Elm.Pretty
 import Elm.Syntax.Module as Module
 import Elm.Syntax.Node as Node
+import Errors exposing (Res)
 import Internal.Google.Protobuf exposing (FileDescriptorProto)
 import Internal.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile)
 import List.Extra
 import MapperNew as Mapper
 import Mapping.Common as Common
-import Mapping.Dependencies as Dependencies exposing (Dependencies)
 import Mapping.Enum as Enum
 import Mapping.Import as Import
 import Mapping.Message as Message
+import Mapping.Name as Name
 import Mapping.Struct as Struct exposing (Struct)
 import Mapping.Syntax as Syntax
 import Model exposing (Field(..))
+import Ports
+import Result.Extra
 import Set
 import String.Extra
 
@@ -24,10 +27,18 @@ import String.Extra
 requestToResponse : CodeGeneratorRequest -> CodeGeneratorResponse
 requestToResponse req =
     let
-        filesToResponse file =
-            { error = "", supportedFeatures = 3, file = file }
+        filesToResponse : List (Res CodeGeneratorResponseFile) -> CodeGeneratorResponse
+        filesToResponse fileResults =
+            let
+                ( file, errors ) =
+                    Result.Extra.partition fileResults
+            in
+            { error = Errors.MultipleErrors errors |> Errors.format, supportedFeatures = 3, file = file }
+
+        files =
+            convert req.fileToGenerate req.protoFile
     in
-    convert req.fileToGenerate req.protoFile |> List.map generate |> filesToResponse
+    files |> List.map (Result.map generate) |> filesToResponse
 
 
 generate : C.File -> CodeGeneratorResponseFile
@@ -39,41 +50,14 @@ generate file =
     }
 
 
-convert : List String -> List FileDescriptorProto -> List C.File
+convert : List String -> List FileDescriptorProto -> List (Res C.File)
 convert fileNames descriptors =
     let
-        files : List ( C.ModuleName, ( Struct, FileDescriptorProto ) )
+        files : List ( String, Res Struct )
         files =
             descriptors
                 |> List.filter (.name >> (\name -> List.member name fileNames))
-                |> List.map
-                    (\descriptor ->
-                        ( moduleName descriptor.name
-                        , let
-                            syntax =
-                                Syntax.parseSyntax descriptor.syntax
-
-                            subStructs =
-                                List.map (Mapper.message syntax Nothing) descriptor.messageType
-                          in
-                          ( List.foldl Struct.append
-                                { messages = []
-                                , enums = List.map (Mapper.enum syntax Nothing) descriptor.enumType
-                                , maps = []
-                                }
-                                subStructs
-                          , descriptor
-                          )
-                        )
-                    )
-
-        allDependencies : Dependencies
-        allDependencies =
-            List.foldl (\( modName, ( struct, descriptor ) ) -> Dependencies.addModule ( modName, descriptor.package ) (getAllExposedTypes struct)) Dependencies.empty files
-
-        getDependencies : FileDescriptorProto -> Dependencies
-        getDependencies descriptor =
-            allDependencies |> Dependencies.restrictToModuleNames (List.map moduleName descriptor.dependency)
+                |> Mapper.mapMain
 
         getExposedUnionTypes struct =
             struct.enums |> List.filter .isTopLevel |> List.map .dataType
@@ -99,55 +83,56 @@ convert fileNames descriptors =
     in
     files
         |> List.map
-            (\( modName, ( struct, descriptor ) ) ->
-                let
-                    exposedUnionTypes =
-                        struct.enums |> List.filter .isTopLevel |> List.map .dataType
+            (\( fileName, structResult ) ->
+                case structResult of
+                    Ok struct ->
+                        let
+                            modName =
+                                Name.module_ fileName
 
-                    otherExposedTypes =
-                        struct.messages |> List.filter .isTopLevel |> List.map .dataType
+                            exposedUnionTypes =
+                                struct.enums |> List.filter .isTopLevel |> List.map .dataType
 
-                    exposedFunctions =
-                        (exposedUnionTypes ++ otherExposedTypes)
-                            |> List.concatMap (\t -> [ Common.decoderName t, Common.encoderName t ])
+                            otherExposedTypes =
+                                struct.messages
+                                    --|> List.filter .isTopLevel
+                                    |> List.map .dataType
 
-                    declarations =
-                        List.concatMap Enum.toAST struct.enums
-                            ++ List.concatMap (Message.toAST (getDependencies descriptor)) struct.messages
-                in
-                C.file
-                    (C.normalModule modName
-                        (List.map C.openTypeExpose exposedUnionTypes
-                            ++ List.map C.openTypeExpose (getOneOfs struct)
-                            ++ List.map C.typeOrAliasExpose otherExposedTypes
-                            ++ List.map C.funExpose exposedFunctions
-                        )
-                    )
-                    (List.map (\importedModule -> C.importStmt importedModule Nothing Nothing) (Set.toList <| Import.extractImports declarations))
-                    declarations
-                    (C.emptyFileComment |> fileComment descriptor |> Just)
+                            exposedFunctions =
+                                (exposedUnionTypes ++ otherExposedTypes)
+                                    |> List.concatMap (\t -> [ Common.decoderName t, Common.encoderName t ])
+
+                            declarations =
+                                List.concatMap Enum.toAST struct.enums
+                                    ++ List.concatMap Message.toAST struct.messages
+                        in
+                        Ok <|
+                            C.file
+                                (C.normalModule modName
+                                    (List.map C.openTypeExpose exposedUnionTypes
+                                        ++ List.map C.openTypeExpose (getOneOfs struct)
+                                        ++ List.map C.typeOrAliasExpose otherExposedTypes
+                                        ++ List.map C.funExpose exposedFunctions
+                                    )
+                                )
+                                (List.map (\importedModule -> C.importStmt importedModule Nothing Nothing) (Set.toList <| Import.extractImports declarations))
+                                declarations
+                                (C.emptyFileComment |> fileComment fileName |> Just)
+
+                    Err err ->
+                        Err err
             )
 
 
-fileComment : FileDescriptorProto -> C.Comment C.FileComment -> C.Comment C.FileComment
-fileComment descriptor =
+fileComment : String -> C.Comment C.FileComment -> C.Comment C.FileComment
+fileComment fileName =
     C.markdown <| """
 This file was automatically generated by
 - [`protoc-gen-elm`](https://www.npmjs.com/package/protoc-gen-elm) 1.0.0-beta-2
 - `protoc` 3.14.0
-- the following specification file: `""" ++ descriptor.name ++ """`
+- the following specification file: `""" ++ fileName ++ """`
 
 To run it, add a dependency via `elm install` on [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/1.1.0) version 1.1.0 or higher."""
-
-
-moduleName : String -> C.ModuleName
-moduleName descriptorName =
-    String.split "/" descriptorName
-        |> List.Extra.unconsLast
-        |> Maybe.map (\( name, segments ) -> segments ++ [ removeExtension name ])
-        |> Maybe.withDefault []
-        |> List.map String.Extra.classify
-        |> (::) "Proto"
 
 
 removeExtension : String -> String
@@ -160,4 +145,4 @@ removeExtension =
 
 moduleDefinition : FileDescriptorProto -> C.Module
 moduleDefinition descriptor =
-    C.normalModule (moduleName descriptor.name) []
+    C.normalModule (Name.module_ descriptor.name) []

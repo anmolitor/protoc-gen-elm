@@ -17,6 +17,11 @@ int32 =
     C.fqFun moduleName "int32"
 
 
+dict : Expression
+dict =
+    C.fqFun moduleName "dict"
+
+
 bool : Expression
 bool =
     C.fqFun moduleName "bool"

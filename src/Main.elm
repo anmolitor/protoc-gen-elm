@@ -1,11 +1,8 @@
 module Main exposing (main)
 
 import Base64
-import Generator
 import GeneratorNew
 import Internal.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile, Version, codeGeneratorRequestDecoder, toCodeGeneratorResponseEncoder)
-import Mapper
-import MapperNew
 import Platform
 import Ports
 import Protobuf.Decode as Decode

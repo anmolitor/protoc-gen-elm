@@ -22,6 +22,11 @@ oneOf =
     C.fqFun moduleName "oneOf"
 
 
+mapped : Expression
+mapped =
+    C.fqFun moduleName "mapped"
+
+
 int32 : Expression
 int32 =
     C.fqFun moduleName "int32"
