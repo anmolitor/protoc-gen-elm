@@ -6,5 +6,5 @@ message Foo {
 
 message Bar {
   map<string, Foo> foos = 1;
-  map<bool, string> idk = 3;
+  map<int32, string> idk = 3;
 }
