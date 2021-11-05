@@ -6,6 +6,11 @@ const waitForMs = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
+interface Cancelable<T> {
+  promise: Promise<string>;
+  cancel: () => void;
+}
+
 /**
  * Sets up event listeners on the given stream, such that
  * it resolves when
@@ -15,32 +20,37 @@ const waitForMs = (ms: number) =>
  * @param stream
  * @returns The data received from one or more `data` events
  */
-const waitForOutput = async (stream: Readable): Promise<string> =>
-  new Promise((resolve) => {
-    let data = "";
+const waitForOutput = (stream: Readable): Cancelable<string> => {
+  let resolve: (data: string) => void = () => {};
+  let data = "";
 
-    let timer = 0;
-    const startTimer = () => {
-      const handle = setInterval(() => {
-        timer += 10;
-        if (timer > 50) {
-          stream.off("data", onData);
-          clearInterval(handle);
-          resolve(data);
-        }
-      }, 10);
-    };
-
-    const onData = (chunk: Buffer) => {
-      if (data == "") {
-        startTimer();
-      } else {
-        timer = 0;
+  let timer = 0;
+  const startTimer = () => {
+    const handle = setInterval(() => {
+      timer += 10;
+      if (timer > 50) {
+        stream.off("data", onData);
+        clearInterval(handle);
+        resolve(data);
       }
-      data += chunk.toString("utf-8");
-    };
-    stream.on("data", onData);
-  });
+    }, 10);
+  };
+  const onData = (chunk: Buffer) => {
+    if (data == "") {
+      startTimer();
+    } else {
+      timer = 0;
+    }
+    data += chunk.toString("utf-8");
+  };
+  return {
+    promise: new Promise((res) => {
+      resolve = res;
+      stream.on("data", onData);
+    }),
+    cancel: () => stream.off("data", onData),
+  };
+};
 
 export interface Repl {
   importModules: (...moduleNames: string[]) => Promise<void>;
@@ -70,14 +80,16 @@ export const startRepl = async (): Promise<Repl> => {
   replProcess.stdout.pipe(process.stdout);
   replProcess.stderr.pipe(process.stderr);
 
-  const write = (input: string): Promise<string> => {
+  const write = async (input: string): Promise<string> => {
+    const stdoutCancelable = waitForOutput(replProcess.stdout);
+    const stderrCancelable = waitForOutput(replProcess.stderr);
     const answer = Promise.race([
-      waitForOutput(replProcess.stdout),
-      waitForOutput(replProcess.stderr).then((err) => {
+      stdoutCancelable.promise,
+      stderrCancelable.promise.then((err) => {
         throw new Error(err);
       }),
       // timeout if repl does not respond
-      waitForMs(500).then(() => {
+      waitForMs(2000).then(() => {
         throw new Error(
           `Timed out when waiting for output of command '${input}'`
         );
@@ -85,7 +97,10 @@ export const startRepl = async (): Promise<Repl> => {
     ]);
     process.stdout.write(input + "\n");
     replProcess.stdin.write(input + "\n");
-    return answer;
+    const awaited = await answer;
+    stdoutCancelable.cancel();
+    stderrCancelable.cancel();
+    return awaited;
   };
 
   const writeMultiple = async (...commands: string[]) => {
@@ -102,7 +117,17 @@ export const startRepl = async (): Promise<Repl> => {
     );
   };
 
-  const stop = () => replProcess.stdin.write(":exit\n");
+  const stop = (): Promise<void> =>
+    new Promise((resolve, reject) => {
+      replProcess.on("exit", (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+      replProcess.stdin.write(":exit\n");
+    });
 
   await waitForMs(1000);
 

@@ -5,6 +5,11 @@ import Elm.Syntax.TypeAnnotation exposing (TypeAnnotation)
 import Model exposing (Primitive(..))
 
 
+dict : TypeAnnotation -> TypeAnnotation -> TypeAnnotation
+dict k v =
+    C.fqTyped [ "Dict" ] "Dict" [ k, v ]
+
+
 forPrimitive : Primitive -> TypeAnnotation
 forPrimitive prim =
     case prim of

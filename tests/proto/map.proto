@@ -1,0 +1,10 @@
+syntax="proto3";
+
+message Foo {
+  string abc = 3;
+}
+
+message Bar {
+  map<string, Foo> foos = 1;
+  map<bool, string> idk = 3;
+}

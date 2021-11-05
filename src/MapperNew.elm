@@ -173,6 +173,11 @@ enum syntax prefix descriptor =
     }
 
 
+isAMap : DescriptorProto -> Bool
+isAMap =
+    .options >> Maybe.map .mapEntry >> Maybe.withDefault False
+
+
 
 {--
     Transform a `DescriptorProto` into our internal `Struct` representation.
@@ -184,15 +189,38 @@ enum syntax prefix descriptor =
 message : Syntax -> TypeRefs -> Maybe String -> DescriptorProto -> Res Struct
 message syntax typeRefs prefix descriptor =
     let
+        appendPrefix target =
+            Maybe.map (\pre -> pre ++ "." ++ target) prefix
+                |> Maybe.withDefault target
+
         name =
-            Maybe.map (\pre -> pre ++ "." ++ descriptor.name) prefix
-                |> Maybe.withDefault descriptor.name
+            appendPrefix descriptor.name
                 |> Name.type_
+
+        getFromMaps : FieldDescriptorProto -> Maybe { key : FieldType, value : FieldType }
+        getFromMaps fieldDescriptor =
+            case fieldDescriptor.type_ of
+                TypeMessage ->
+                    Dict.get (String.dropLeft 1 fieldDescriptor.typeName) maps
+
+                _ ->
+                    Nothing
 
         messageFieldMeta : FieldDescriptorProto -> Res { field : ( FieldName, Field ), oneOfIndex : Int }
         messageFieldMeta fieldDescriptor =
-            fieldType fieldDescriptor typeRefs
-                |> Result.map (NormalField fieldDescriptor.number (cardinality fieldDescriptor.label))
+            (case getFromMaps fieldDescriptor of
+                Just { key, value } ->
+                    case key of
+                        Primitive _ _ _ ->
+                            Ok <| MapField fieldDescriptor.number key value
+
+                        _ ->
+                            Err <| NonPrimitiveMapKey fieldDescriptor.typeName
+
+                Nothing ->
+                    fieldType fieldDescriptor typeRefs
+                        |> Result.map (NormalField fieldDescriptor.number (cardinality fieldDescriptor.label))
+            )
                 |> Result.map
                     (\field ->
                         { field = ( Name.field fieldDescriptor.name, field )
@@ -204,12 +232,34 @@ message syntax typeRefs prefix descriptor =
         fieldsMetaResult =
             Errors.combineMap messageFieldMeta descriptor.field
 
+        (DescriptorProtoNestedType nestedTypes) =
+            descriptor.nestedType
+
+        maps : Dict String { key : FieldType, value : FieldType }
+        maps =
+            nestedTypes
+                |> List.filter isAMap
+                |> List.filterMap
+                    (\d ->
+                        case ( List.filter (.number >> (==) 1) d.field, List.filter (.number >> (==) 2) d.field ) of
+                            ( [ field1 ], [ field2 ] ) ->
+                                case ( fieldType field1 typeRefs, fieldType field2 typeRefs ) of
+                                    ( Ok t1, Ok t2 ) ->
+                                        Just ( appendPrefix descriptor.name ++ "." ++ d.name, { key = t1, value = t2 } )
+
+                                    _ ->
+                                        Nothing
+
+                            _ ->
+                                Nothing
+                    )
+                |> Dict.fromList
+
         nested : Res Struct
         nested =
-            case descriptor.nestedType of
-                DescriptorProtoNestedType nestedType ->
-                    Errors.combineMap (message syntax typeRefs <| Just descriptor.name) nestedType
-                        |> Result.map Struct.concat
+            List.filter (not << isAMap) nestedTypes
+                |> Errors.combineMap (message syntax typeRefs <| Just descriptor.name)
+                |> Result.map Struct.concat
 
         mainStruct : Res Struct
         mainStruct =

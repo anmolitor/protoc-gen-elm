@@ -211,7 +211,7 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto.Map", "Dict");
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = Proto.Map.Bar (Dict.singleton "test" (Proto.Map.Foo "hi"))`
+        `${freshVar} = Proto.Map.Bar (Dict.singleton "test" (Just <| Proto.Map.Foo "hi")) (Dict.fromList [(True, "true"), (False, "false")])`
       );
       const output = await repl.write(
         `(Proto.Map.encodeBar ${freshVar} |> E.encode |> D.decode Proto.Map.decodeBar) == Just ${freshVar}`

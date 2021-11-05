@@ -69,6 +69,11 @@ mapComment map =
         |> C.markdown ("Dict for " ++ map.dataType)
 
 
+getter : FieldName -> C.Expression
+getter fieldName =
+    C.accessFun <| "." ++ fieldName
+
+
 setter : FieldName -> C.Expression
 setter fieldName =
     C.parens <|
@@ -110,6 +115,19 @@ fieldDeclarations ( _, field ) =
             [ type_ ]
 
 
+fieldTypeToDefaultValue : FieldType -> C.Expression
+fieldTypeToDefaultValue fieldType =
+    case fieldType of
+        Primitive _ _ defaultValue ->
+            C.val defaultValue
+
+        Embedded _ _ ->
+            Meta.Basics.nothing
+
+        _ ->
+            C.string "Unhandled: enum"
+
+
 toDefaultValue : Field -> C.Expression
 toDefaultValue field =
     case field of
@@ -139,75 +157,67 @@ toDefaultValue field =
 
 toDecoder : ( FieldName, Field ) -> C.Expression
 toDecoder ( fieldName, field ) =
-    case field of
-        NormalField number cardinality fieldType ->
+    let
+        fieldTypeToDecoder : FieldType -> Cardinality -> C.Expression
+        fieldTypeToDecoder fieldType cardinality =
             case ( cardinality, fieldType ) of
-                ( Optional, Primitive dataType _ _ ) ->
-                    C.apply
-                        [ Meta.Decode.optional
-                        , C.int number
-                        , Meta.Decode.forPrimitive dataType
-                        , setter fieldName
-                        ]
+                ( _, Primitive dataType _ _ ) ->
+                    Meta.Decode.forPrimitive dataType
 
                 ( Optional, Embedded typeRef moduleName ) ->
-                    C.apply
-                        [ Meta.Decode.optional
-                        , C.int number
-                        , C.parens
-                            (C.apply
-                                [ Meta.Decode.map
-                                , Meta.Basics.just
-                                , C.fqFun moduleName (Common.decoderName typeRef)
-                                ]
-                            )
-                        , setter fieldName
-                        ]
-
-                ( Required, Primitive dataType _ _ ) ->
-                    C.apply
-                        [ Meta.Decode.required
-                        , C.int number
-                        , Meta.Decode.forPrimitive dataType
-                        , setter fieldName
-                        ]
+                    C.parens
+                        (C.apply
+                            [ Meta.Decode.map
+                            , Meta.Basics.just
+                            , C.fqFun moduleName (Common.decoderName typeRef)
+                            ]
+                        )
 
                 ( Required, Embedded typeRef moduleName ) ->
-                    C.apply
-                        [ Meta.Decode.required
-                        , C.int number
-                        , C.fqFun moduleName (Common.decoderName typeRef)
-                        , setter fieldName
-                        ]
-
-                ( Repeated, Primitive dataType _ _ ) ->
-                    C.apply
-                        [ Meta.Decode.repeated
-                        , C.int number
-                        , Meta.Decode.forPrimitive dataType
-                        , C.accessFun fieldName
-                        , setter fieldName
-                        ]
+                    C.fqFun moduleName (Common.decoderName typeRef)
 
                 ( Repeated, Embedded typeRef moduleName ) ->
-                    C.apply
-                        [ Meta.Decode.repeated
-                        , C.int number
-                        , C.fqFun moduleName (Common.decoderName typeRef)
-                        , C.accessFun fieldName
-                        , setter fieldName
-                        ]
+                    C.fqFun moduleName (Common.decoderName typeRef)
 
                 _ ->
                     C.string "NOT SUPPORTED"
+    in
+    case field of
+        NormalField number cardinality fieldType ->
+            case cardinality of
+                Optional ->
+                    C.apply
+                        [ Meta.Decode.optional
+                        , C.int number
+                        , fieldTypeToDecoder fieldType cardinality
+                        , setter fieldName
+                        ]
+
+                Required ->
+                    C.apply
+                        [ Meta.Decode.required
+                        , C.int number
+                        , fieldTypeToDecoder fieldType cardinality
+                        , setter fieldName
+                        ]
+
+                Repeated ->
+                    C.apply
+                        [ Meta.Decode.repeated
+                        , C.int number
+                        , fieldTypeToDecoder fieldType cardinality
+                        , getter fieldName
+                        , setter fieldName
+                        ]
 
         MapField number key value ->
             C.apply
                 [ Meta.Decode.mapped
                 , C.int number
-                , C.tuple []
-                , Meta.Decode.forPrimitive key
-                , C.accessFun fieldName
+                , C.tuple [ fieldTypeToDefaultValue key, fieldTypeToDefaultValue value ]
+                , fieldTypeToDecoder key Optional
+                , fieldTypeToDecoder value Optional
+                , C.accessFun <| "." ++ fieldName
                 , setter fieldName
                 ]
 
@@ -281,7 +291,7 @@ toEncoder ( fieldName, field ) =
                 [ C.int number
                 , C.apply
                     [ Meta.Encode.dict
-                    , Meta.Encode.forPrimitive key
+                    , fieldTypeToEncoder Optional key
                     , fieldTypeToEncoder Optional value
                     , C.access (C.val "value") fieldName
                     ]
@@ -315,10 +325,10 @@ fieldTypeToTypeAnnotation fieldType =
 
 fieldToTypeAnnotation : Field -> C.TypeAnnotation
 fieldToTypeAnnotation field =
-    case field of
-        NormalField _ cardinality fieldType ->
-            (case ( cardinality, fieldType ) of
-                ( Optional, Primitive dataType _ _ ) ->
+    let
+        cardinalityModifier cardinality fieldType =
+            case ( cardinality, fieldType ) of
+                ( Optional, Primitive _ _ _ ) ->
                     identity
 
                 ( Required, _ ) ->
@@ -329,11 +339,14 @@ fieldToTypeAnnotation field =
 
                 ( Repeated, _ ) ->
                     C.listAnn
-            )
+    in
+    case field of
+        NormalField _ cardinality fieldType ->
+            cardinalityModifier cardinality fieldType
                 (fieldTypeToTypeAnnotation fieldType)
 
         MapField _ key value ->
-            Meta.Type.forPrimitive key
+            Meta.Type.dict (fieldTypeToTypeAnnotation key) (cardinalityModifier Optional value <| fieldTypeToTypeAnnotation value)
 
         OneOfField dataType _ ->
             C.maybeAnn <| C.typed dataType []

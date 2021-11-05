@@ -5,6 +5,7 @@ type Error
     = AmbiguousTypeReference String
     | NoTypeReferenceFound String
     | UnsupportedFeature String
+    | NonPrimitiveMapKey String
     | MultipleErrors (List Error)
     | AddContext String Error
 
@@ -26,6 +27,9 @@ format =
 
                 UnsupportedFeature feature ->
                     String.repeat depth " " ++ "This plugin does not support the feature: '" ++ feature ++ "' yet."
+
+                NonPrimitiveMapKey context ->
+                    String.repeat depth " " ++ "Cannot use a non-primitive as a map key. Context: '" ++ context ++ "'."
 
                 MultipleErrors errors ->
                     List.map (formatInternal depth) errors |> String.join "\n"

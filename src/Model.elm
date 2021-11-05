@@ -74,7 +74,7 @@ type Primitive
 
 type Field
     = NormalField FieldNumber Cardinality FieldType
-    | MapField FieldNumber Primitive FieldType
+    | MapField FieldNumber FieldType FieldType
     | OneOfField DataType OneOf
 
 
