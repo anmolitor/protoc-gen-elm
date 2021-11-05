@@ -28,9 +28,9 @@ describe("protoc-gen-elm", () => {
     it("generates working encoders and decoders", async () => {
       await repl.importModules("Proto.SingleEnum");
       const output = await repl.write(
-        "Proto.SingleEnum.encodeAnEnum Proto.SingleEnum.OptionB |> E.encode |> D.decode Proto.SingleEnum.decodeAnEnum"
+        "Proto.SingleEnum.encodeAnEnum Proto.SingleEnum.AnEnum_OptionB |> E.encode |> D.decode Proto.SingleEnum.decodeAnEnum"
       );
-      expect(output).toEqual(expect.stringMatching(/Just.+OptionB/));
+      expect(output).toEqual(expect.stringMatching(/Just.+AnEnum_OptionB/));
     });
   });
 
@@ -203,11 +203,11 @@ describe("protoc-gen-elm", () => {
     beforeAll(() => runPlugin("map.proto"));
     const expectedElmFileName = "Proto/Map.elm";
 
-    it("generates a valid elm file for files in subdirectory", async () => {
+    it("generates a valid elm file for maps", async () => {
       await compileElm(expectedElmFileName);
     });
 
-    it("generates working code for files in subdirectory", async () => {
+    it("generates working code for maps", async () => {
       await repl.importModules("Proto.Map", "Dict");
       const freshVar = repl.getFreshVariable();
       await repl.write(
@@ -217,6 +217,26 @@ describe("protoc-gen-elm", () => {
         `(Proto.Map.encodeBar ${freshVar} |> E.encode |> D.decode Proto.Map.decodeBar) == Just ${freshVar}`
       );
       expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+  describe("nested declarations", () => {
+    beforeAll(() => runPlugin("nested.proto"));
+    const expectedElmFileName = "Proto/Nested.elm";
+
+    it("generates a valid elm file for nested messages and enums", async () => {
+      await compileElm(expectedElmFileName);
+    });
+
+    it("generates working code for nested messages and enums", async () => {
+      // await repl.importModules("Proto.Map", "Dict");
+      // const freshVar = repl.getFreshVariable();
+      // await repl.write(
+      //   `${freshVar} = Proto.Map.Bar (Dict.singleton "test" (Just <| Proto.Map.Foo "hi")) (Dict.fromList [(1, "a"), (5, "b")])`
+      // );
+      // const output = await repl.write(
+      //   `(Proto.Map.encodeBar ${freshVar} |> E.encode |> D.decode Proto.Map.decodeBar) == Just ${freshVar}`
+      // );
+      // expect(output).toEqual(expect.stringContaining("True"));
     });
   });
 });

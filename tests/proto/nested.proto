@@ -1,0 +1,20 @@
+syntax="proto3";
+
+message TopLevel {
+  message LevelOne {
+    message LevelTwo {
+      enum EnumLevelTwo {
+        a = 0;
+        b = 1;
+      }
+    }
+    enum EnumLevelOne {
+      a = 0;
+      b = 1;
+    }
+  }
+}
+
+message Test {
+  TopLevel.LevelOne.LevelTwo.EnumLevelTwo property = 1;
+}

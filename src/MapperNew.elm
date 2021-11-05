@@ -75,12 +75,12 @@ mapMain descriptors =
                 ( descriptor.name
                 , Result.map
                     (Struct.append
-                        { enums = List.map (enum syntax Nothing) descriptor.enumType
+                        { enums = List.map (enum syntax emptyPrefixer) descriptor.enumType
                         , messages = []
                         }
                         << Struct.concat
                     )
-                    (Errors.combineMap (message syntax typeRefs Nothing) descriptor.messageType)
+                    (Errors.combineMap (message syntax typeRefs emptyPrefixer) descriptor.messageType)
                 )
             )
 
@@ -152,22 +152,42 @@ splitNonEmpty l =
 -}
 
 
-enum : Syntax -> Maybe String -> EnumDescriptorProto -> Enum
-enum syntax prefix descriptor =
+type alias Prefixer =
+    String -> String
+
+
+isEmptyPrefixer : Prefixer -> Bool
+isEmptyPrefixer p =
+    p "" == ""
+
+
+emptyPrefixer : Prefixer
+emptyPrefixer =
+    identity
+
+
+addPrefix : String -> Prefixer -> Prefixer
+addPrefix prefix prefixer str =
+    [ prefixer "", prefix, str ]
+        |> List.filter (not << String.isEmpty)
+        |> String.join "."
+
+
+enum : Syntax -> Prefixer -> EnumDescriptorProto -> Enum
+enum syntax prefixer descriptor =
     let
         name =
-            Maybe.map (\pre -> pre ++ "." ++ descriptor.name) prefix
-                |> Maybe.withDefault descriptor.name
+            prefixer descriptor.name
                 |> Name.type_
 
         fields =
             descriptor.value
-                |> List.map (\value -> ( value.number, Name.type_ value.name ))
+                |> List.map (\value -> ( value.number, addPrefix descriptor.name prefixer value.name |> Name.type_ ))
                 |> List.Extra.uncons
                 |> Maybe.withDefault ( ( 0, name ), [] )
     in
     { dataType = name
-    , isTopLevel = Maybe.Extra.isNothing prefix
+    , isTopLevel = prefixer "" == ""
     , withUnrecognized = syntax == Proto3
     , fields = fields
     }
@@ -186,15 +206,11 @@ isAMap =
 -}
 
 
-message : Syntax -> TypeRefs -> Maybe String -> DescriptorProto -> Res Struct
-message syntax typeRefs prefix descriptor =
+message : Syntax -> TypeRefs -> Prefixer -> DescriptorProto -> Res Struct
+message syntax typeRefs prefixer descriptor =
     let
-        appendPrefix target =
-            Maybe.map (\pre -> pre ++ "." ++ target) prefix
-                |> Maybe.withDefault target
-
         name =
-            appendPrefix descriptor.name
+            prefixer descriptor.name
                 |> Name.type_
 
         getFromMaps : FieldDescriptorProto -> Maybe { key : FieldType, value : FieldType }
@@ -245,7 +261,7 @@ message syntax typeRefs prefix descriptor =
                             ( [ field1 ], [ field2 ] ) ->
                                 case ( fieldType field1 typeRefs, fieldType field2 typeRefs ) of
                                     ( Ok t1, Ok t2 ) ->
-                                        Just ( appendPrefix descriptor.name ++ "." ++ d.name, { key = t1, value = t2 } )
+                                        Just ( addPrefix descriptor.name prefixer d.name, { key = t1, value = t2 } )
 
                                     _ ->
                                         Nothing
@@ -258,7 +274,7 @@ message syntax typeRefs prefix descriptor =
         nested : Res Struct
         nested =
             List.filter (not << isAMap) nestedTypes
-                |> Errors.combineMap (message syntax typeRefs <| Just descriptor.name)
+                |> Errors.combineMap (message syntax typeRefs (addPrefix descriptor.name prefixer))
                 |> Result.map Struct.concat
 
         mainStruct : Res Struct
@@ -267,11 +283,11 @@ message syntax typeRefs prefix descriptor =
                 (\fieldsMeta ->
                     { messages =
                         [ { dataType = name
-                          , isTopLevel = Maybe.Extra.isNothing prefix
+                          , isTopLevel = isEmptyPrefixer prefixer
                           , fields = messageFields oneOfFieldNames fieldsMeta descriptor
                           }
                         ]
-                    , enums = List.map (enum syntax <| Just descriptor.name) descriptor.enumType
+                    , enums = List.map (enum syntax (addPrefix descriptor.name prefixer)) descriptor.enumType
                     }
                 )
                 fieldsMetaResult

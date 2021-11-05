@@ -2,15 +2,11 @@ module Mapping.Enum exposing (toAST)
 
 import Elm.CodeGen as C
 import Elm.Syntax.Expression exposing (Expression)
-import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Pattern exposing (Pattern)
-import Internal.Google.Protobuf exposing (EnumDescriptorProto, EnumValueDescriptorProto)
 import List.NonEmpty as NonEmpty exposing (NonEmpty)
 import Mapping.Common as Common
-import Mapping.Name as Name
 import Meta.Decode
 import Meta.Encode
-import Meta.Type
 import Model exposing (Enum)
 
 
