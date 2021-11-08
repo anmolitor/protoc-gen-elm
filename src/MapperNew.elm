@@ -250,14 +250,13 @@ isAMap =
     .options >> Maybe.map .mapEntry >> Maybe.withDefault False
 
 
+{-|
 
-{--
     Transform a `DescriptorProto` into our internal `Struct` representation.
     Prefix is used for nested messages inside of message declarations,
     since they could potentially overlap otherwise.
+
 -}
-
-
 message : Syntax -> TypeRefs -> Prefixer -> DescriptorProto -> Res Struct
 message syntax typeRefs prefixer descriptor =
     let
@@ -375,7 +374,7 @@ messageFields oneOfFieldNames fieldsMeta parentDescriptor =
 
 oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int } -> String -> Int -> String -> ( FieldName, Field )
 oneOfField fields prefix index name =
-    List.filter ((==) index << (-) 1 << .oneOfIndex) fields
+    List.filter (\field -> field.oneOfIndex - 1 == index) fields
         |> List.map .field
         |> List.filterMap
             (\( fieldName, field ) ->

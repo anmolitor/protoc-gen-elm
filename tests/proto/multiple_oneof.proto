@@ -12,4 +12,10 @@ message Oneof2 {
     string OptionA = 1;
     string OptionD = 2; 
   }
+  oneof msg2 {
+    double OptionC = 3;
+  }
+  oneof msg3 {
+    double OptionE = 4;
+  }
 }
