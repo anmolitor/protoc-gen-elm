@@ -1,0 +1,6 @@
+syntax="proto3";
+
+message msg {
+  double Capital = 1;
+  int32 ALL_CAPS = 2;
+}

@@ -265,6 +265,16 @@ describe("protoc-gen-elm", () => {
       const output = await repl.write(
         `(Proto.Recursive.encodeRecursive ${outerRec} |> E.encode |> D.decode Proto.Recursive.decodeRecursive) == Just ${outerRec}`
       );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+
+  describe("weird names", () => {
+    beforeAll(() => runPlugin("weird_names.proto"));
+    const expectedElmFileName = "Proto/WeirdNames.elm";
+
+    it("generates a valid elm file even with weird casing conventions", async () => {
+      await compileElm(expectedElmFileName);
     });
   });
 });

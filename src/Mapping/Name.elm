@@ -33,7 +33,7 @@ type_ =
 
 field : String -> String
 field =
-    escape << String.Extra.camelize
+    escape << String.Extra.decapitalize << String.Extra.camelize
 
 
 escape : String -> String
