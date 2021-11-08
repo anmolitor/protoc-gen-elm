@@ -6,6 +6,9 @@ type Error
     | NoTypeReferenceFound String
     | UnsupportedFeature String
     | NonPrimitiveMapKey String
+    | EnumReferenceInsteadOfMessage String
+    | MessageReferenceInsteadOfEnum String
+    | NoEnumValues String
     | MultipleErrors (List Error)
     | AddContext String Error
 
@@ -30,6 +33,15 @@ format =
 
                 NonPrimitiveMapKey context ->
                     String.repeat depth " " ++ "Cannot use a non-primitive as a map key. Context: '" ++ context ++ "'."
+
+                EnumReferenceInsteadOfMessage enumName ->
+                    String.repeat depth " " ++ "Expected to find message but found enum reference '" ++ enumName ++ "'."
+
+                MessageReferenceInsteadOfEnum messageName ->
+                    String.repeat depth " " ++ "Expected to find enum but found message reference '" ++ messageName ++ "'."
+
+                NoEnumValues enumName ->
+                    String.repeat depth " " ++ "Found enum type without any values '" ++ enumName ++ "'. Enums are required to have at least one constructor."
 
                 MultipleErrors errors ->
                     List.map (formatInternal depth) errors |> String.join "\n"

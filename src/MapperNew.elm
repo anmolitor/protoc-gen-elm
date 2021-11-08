@@ -5,17 +5,22 @@ import Elm.CodeGen exposing (ModuleName)
 import Errors exposing (Error(..), Res)
 import Internal.Google.Protobuf exposing (DescriptorProto, DescriptorProtoNestedType(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProtoLabel(..), FieldDescriptorProtoType(..), FileDescriptorProto)
 import List.Extra
+import List.NonEmpty as NonEmpty
 import Mapping.Name as Name
 import Mapping.Struct as Struct exposing (Struct)
 import Mapping.Syntax exposing (Syntax(..), parseSyntax)
-import Maybe.Extra
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), Primitive(..))
-import Result.Extra
-import String.Extra
+import Set exposing (Set)
 
 
 type alias DefinedTypes =
-    List String
+    List DefinedType
+
+
+type DefinedType
+    = -- name, references to further types
+      Message String (Set String)
+    | Enum String (List String)
 
 
 type alias PackageName =
@@ -23,27 +28,58 @@ type alias PackageName =
 
 
 type alias TypeRefs =
-    ( -- Own Types
-      DefinedTypes
+    ( -- Own PackageName
+      PackageName
+      -- Own Types
+    , DefinedTypes
     , -- Types defined in package dependencies
       Dict PackageName ( ModuleName, DefinedTypes )
     )
+
+
+nestDefinedType : String -> DefinedType -> DefinedType
+nestDefinedType prefix definedType =
+    let
+        nest name =
+            prefix ++ "." ++ name
+    in
+    case definedType of
+        Message name deps ->
+            Message (nest name) deps
+
+        Enum name values ->
+            Enum (nest name) (List.map nest values)
+
+
+elmNameDefinedType : DefinedType -> DefinedType
+elmNameDefinedType definedType =
+    case definedType of
+        Message name deps ->
+            Message (Name.type_ name) deps
+
+        Enum name values ->
+            Enum (Name.type_ name) (List.map Name.type_ values)
+
+
+definedTypesInEnumDescriptor : EnumDescriptorProto -> DefinedType
+definedTypesInEnumDescriptor descriptor =
+    Enum descriptor.name (List.map (.name >> (++) (descriptor.name ++ ".")) descriptor.value)
 
 
 definedTypesInMessageDescriptor : DescriptorProto -> DefinedTypes
 definedTypesInMessageDescriptor descriptor =
     case descriptor.nestedType of
         DescriptorProtoNestedType nested ->
-            descriptor.name
-                :: (List.map ((++) (descriptor.name ++ ".")) <|
+            Message descriptor.name (List.map .typeName descriptor.field |> Set.fromList)
+                :: (List.map (nestDefinedType descriptor.name) <|
                         List.concatMap definedTypesInMessageDescriptor nested
-                            ++ List.map .name descriptor.enumType
+                            ++ List.map definedTypesInEnumDescriptor descriptor.enumType
                    )
 
 
 definedTypesInFileDescriptor : FileDescriptorProto -> DefinedTypes
 definedTypesInFileDescriptor descriptor =
-    List.map .name descriptor.enumType
+    List.map definedTypesInEnumDescriptor descriptor.enumType
         ++ List.concatMap definedTypesInMessageDescriptor descriptor.messageType
 
 
@@ -61,7 +97,8 @@ mapMain descriptors =
             (\descriptor ->
                 let
                     typeRefs =
-                        ( definedTypesInFileDescriptor descriptor
+                        ( descriptor.package
+                        , definedTypesInFileDescriptor descriptor
                         , dict
                             |> Dict.filter (\name _ -> List.member name descriptor.dependency)
                             |> Dict.toList
@@ -85,15 +122,30 @@ mapMain descriptors =
             )
 
 
-lookForTypeRef : String -> TypeRefs -> Res FieldType
-lookForTypeRef name ( ownModuleTypes, dependencies ) =
+lookForTypeRef : String -> TypeRefs -> Res ( DefinedType, ModuleName )
+lookForTypeRef name ( ownPackageName, ownModuleTypes, dependencies ) =
     let
         nameWithoutPrefixDot =
             name |> String.dropLeft 1
+
+        nameWithoutOwnPackage =
+            if String.isEmpty ownPackageName then
+                nameWithoutPrefixDot
+
+            else
+                String.replace (ownPackageName ++ ".") "" nameWithoutPrefixDot
+
+        matchesString str definedType =
+            case definedType of
+                Message messageName _ ->
+                    str == messageName
+
+                Enum enumName _ ->
+                    str == enumName
     in
-    case List.filter (\definedType -> definedType == nameWithoutPrefixDot) ownModuleTypes of
+    case List.filter (matchesString nameWithoutOwnPackage) ownModuleTypes of
         [ referencedType ] ->
-            Ok (Embedded (Name.type_ referencedType) [])
+            Ok ( elmNameDefinedType referencedType, [] )
 
         [] ->
             let
@@ -108,7 +160,7 @@ lookForTypeRef name ( ownModuleTypes, dependencies ) =
                                 Dict.get packageName dependencies
                                     |> Maybe.andThen
                                         (\( modName, types ) ->
-                                            List.filter ((==) typeName) types
+                                            List.filter (matchesString typeName) types
                                                 |> List.head
                                                 |> Maybe.map (Tuple.pair modName)
                                         )
@@ -116,7 +168,7 @@ lookForTypeRef name ( ownModuleTypes, dependencies ) =
             in
             case dependencySearchResult of
                 [ ( moduleName, referencedType ) ] ->
-                    Ok <| Embedded (Name.type_ referencedType) moduleName
+                    Ok ( elmNameDefinedType referencedType, moduleName )
 
                 [] ->
                     Err <| NoTypeReferenceFound name
@@ -338,6 +390,42 @@ oneOfField fields prefix index name =
         |> Tuple.pair (Name.field name)
 
 
+handleMessage : String -> TypeRefs -> Res FieldType
+handleMessage messageName typeRefs =
+    let
+        searchForRecursion : Set String -> String -> Bool
+        searchForRecursion encounteredTypes currentName =
+            case lookForTypeRef currentName typeRefs of
+                Ok ( Message name fieldDeps, _ ) ->
+                    Set.member name encounteredTypes
+                        || (Set.toList fieldDeps
+                                |> List.any (searchForRecursion <| Set.insert name encounteredTypes)
+                           )
+
+                _ ->
+                    False
+    in
+    case lookForTypeRef messageName typeRefs of
+        Ok ( Message name _, moduleName ) ->
+            Ok <|
+                Embedded
+                    { dataType = name
+                    , moduleName = moduleName
+                    , typeKind =
+                        if searchForRecursion Set.empty messageName then
+                            Model.Type
+
+                        else
+                            Model.Alias
+                    }
+
+        Ok ( Enum enumName _, _ ) ->
+            Err <| EnumReferenceInsteadOfMessage enumName
+
+        Err err ->
+            Err err
+
+
 fieldType : FieldDescriptorProto -> TypeRefs -> Res FieldType
 fieldType descriptor typeRefs =
     case descriptor.type_ of
@@ -373,7 +461,7 @@ fieldType descriptor typeRefs =
             Err <| UnsupportedFeature "Groups (Deprecated)"
 
         TypeMessage ->
-            lookForTypeRef descriptor.typeName typeRefs
+            handleMessage descriptor.typeName typeRefs
 
         TypeBytes ->
             Ok <| Primitive Prim_Bytes "bytes" <| defaultBytes descriptor
@@ -382,9 +470,32 @@ fieldType descriptor typeRefs =
             Ok <| Primitive Prim_Int "uint32" <| defaultNumber descriptor
 
         TypeEnum ->
-            -- Difference: Enum has configurable default value!
-            --Enumeration (defaultEnum descriptor) lookForTypeRef descriptor.typeName typeRefs
             lookForTypeRef descriptor.typeName typeRefs
+                |> Result.andThen
+                    (\( definedType, moduleName ) ->
+                        case definedType of
+                            Message messageName _ ->
+                                Err <| MessageReferenceInsteadOfEnum messageName
+
+                            Enum enumName values ->
+                                case NonEmpty.fromList values of
+                                    Just nonEmptyValues ->
+                                        Ok <|
+                                            Enumeration
+                                                { dataType = enumName
+                                                , values = values
+                                                , moduleName = moduleName
+                                                , default =
+                                                    if String.isEmpty descriptor.defaultValue then
+                                                        NonEmpty.head nonEmptyValues
+
+                                                    else
+                                                        Name.type_ (enumName ++ "." ++ descriptor.defaultValue)
+                                                }
+
+                                    Nothing ->
+                                        Err <| NoEnumValues enumName
+                    )
 
         TypeSfixed32 ->
             Ok <| Primitive Prim_Int "sfixed32" <| defaultNumber descriptor
@@ -416,15 +527,6 @@ defaultBytes : FieldDescriptorProto -> String
 defaultBytes descriptor =
     -- TODO c escaped bytes, see https://github.com/golang/protobuf/pull/427/files
     "(Encode.encode <| Encode.string \"" ++ descriptor.defaultValue ++ "\")"
-
-
-defaultEnum : FieldDescriptorProto -> Maybe String
-defaultEnum descriptor =
-    if descriptor.defaultValue == "" then
-        Nothing
-
-    else
-        Just (Name.type_ descriptor.defaultValue)
 
 
 defaultNumber : FieldDescriptorProto -> String

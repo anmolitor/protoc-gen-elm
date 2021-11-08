@@ -1,0 +1,10 @@
+syntax="proto3";
+
+message Recursive {
+  repeated Recursive rec = 1;
+  Other other = 2;
+}
+
+message Other {
+  Recursive rec = 1;
+}

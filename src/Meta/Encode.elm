@@ -1,7 +1,7 @@
 module Meta.Encode exposing (..)
 
 import Elm.CodeGen as C
-import Elm.Syntax.Expression exposing (Expression, Function)
+import Elm.Syntax.Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.TypeAnnotation exposing (TypeAnnotation)
 import Model exposing (Primitive(..))

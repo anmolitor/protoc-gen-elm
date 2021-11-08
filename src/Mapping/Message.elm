@@ -6,7 +6,7 @@ import Meta.Basics
 import Meta.Decode
 import Meta.Encode
 import Meta.Type
-import Model exposing (Cardinality(..), Field(..), FieldName, FieldType(..), Map, Message)
+import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldType(..), Map, Message, TypeKind(..))
 
 
 toAST : Message -> List C.Declaration
@@ -85,6 +85,33 @@ setter fieldName =
 fieldDeclarations : ( FieldName, Field ) -> List C.Declaration
 fieldDeclarations ( _, field ) =
     case field of
+        NormalField _ _ (Embedded embedded) ->
+            case embedded.typeKind of
+                Alias ->
+                    []
+
+                Type ->
+                    let
+                        recursiveWrapperName =
+                            embedded.dataType ++ "_"
+
+                        wrappedAnn =
+                            C.typed embedded.dataType []
+
+                        recursiveTypeWrapper : C.Declaration
+                        recursiveTypeWrapper =
+                            C.customTypeDecl (Just C.emptyDocComment) recursiveWrapperName [] [ ( recursiveWrapperName, [ wrappedAnn ] ) ]
+
+                        unwrapper : C.Declaration
+                        unwrapper =
+                            C.funDecl (Just C.emptyDocComment)
+                                (Just <| C.funAnn (C.typed recursiveWrapperName []) wrappedAnn)
+                                ("unwrap" ++ recursiveWrapperName)
+                                [ C.namedPattern recursiveWrapperName [ C.varPattern "wrapped" ] ]
+                                (C.val "wrapped")
+                    in
+                    [ recursiveTypeWrapper, unwrapper ]
+
         NormalField _ _ _ ->
             []
 
@@ -99,11 +126,11 @@ fieldDeclarations ( _, field ) =
                         Primitive prim _ _ ->
                             Meta.Type.forPrimitive prim
 
-                        Embedded typeRef moduleName ->
-                            C.fqTyped moduleName typeRef []
+                        Embedded e ->
+                            C.fqTyped e.moduleName e.dataType []
 
-                        Enumeration _ _ ->
-                            C.typeVar "Enumeration not supported"
+                        Enumeration enum ->
+                            C.fqTyped enum.moduleName enum.dataType []
 
                 type_ =
                     C.customTypeDecl
@@ -121,11 +148,11 @@ fieldTypeToDefaultValue fieldType =
         Primitive _ _ defaultValue ->
             C.val defaultValue
 
-        Embedded _ _ ->
+        Embedded _ ->
             Meta.Basics.nothing
 
-        _ ->
-            C.string "Unhandled: enum"
+        Enumeration enum ->
+            C.val enum.default
 
 
 toDefaultValue : Field -> C.Expression
@@ -142,11 +169,11 @@ toDefaultValue field =
                 ( Required, Primitive _ _ defaultValue ) ->
                     C.val defaultValue
 
-                ( Optional, Embedded _ _ ) ->
+                ( _, Embedded _ ) ->
                     Meta.Basics.nothing
 
-                ( _, _ ) ->
-                    C.string "Unhandled: enum"
+                ( _, Enumeration enum ) ->
+                    C.val enum.default
 
         MapField _ _ _ ->
             C.fqFun [ "Dict" ] "empty"
@@ -158,29 +185,43 @@ toDefaultValue field =
 toDecoder : ( FieldName, Field ) -> C.Expression
 toDecoder ( fieldName, field ) =
     let
+        embeddedDecoder : { dataType : DataType, moduleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
+        embeddedDecoder e =
+            (case e.typeKind of
+                Alias ->
+                    identity
+
+                Type ->
+                    C.parens
+                        << C.applyBinOp (C.apply [ Meta.Decode.map, C.val <| e.dataType ++ "_" ]) C.pipel
+                        << C.applyBinOp Meta.Decode.lazy C.pipel
+                        << C.lambda [ C.allPattern ]
+            )
+                (C.fqFun e.moduleName (Common.decoderName e.dataType))
+
         fieldTypeToDecoder : FieldType -> Cardinality -> C.Expression
         fieldTypeToDecoder fieldType cardinality =
             case ( cardinality, fieldType ) of
                 ( _, Primitive dataType _ _ ) ->
                     Meta.Decode.forPrimitive dataType
 
-                ( Optional, Embedded typeRef moduleName ) ->
+                ( Optional, Embedded e ) ->
                     C.parens
                         (C.apply
                             [ Meta.Decode.map
                             , Meta.Basics.just
-                            , C.fqFun moduleName (Common.decoderName typeRef)
+                            , embeddedDecoder e
                             ]
                         )
 
-                ( Required, Embedded typeRef moduleName ) ->
-                    C.fqFun moduleName (Common.decoderName typeRef)
+                ( Required, Embedded e ) ->
+                    embeddedDecoder e
 
-                ( Repeated, Embedded typeRef moduleName ) ->
-                    C.fqFun moduleName (Common.decoderName typeRef)
+                ( Repeated, Embedded e ) ->
+                    embeddedDecoder e
 
-                _ ->
-                    C.string "NOT SUPPORTED"
+                ( _, Enumeration enum ) ->
+                    C.fqFun enum.moduleName (Common.decoderName enum.dataType)
     in
     case field of
         NormalField number cardinality fieldType ->
@@ -236,11 +277,11 @@ toDecoder ( fieldName, field ) =
                                         Primitive p _ _ ->
                                             Meta.Decode.forPrimitive p
 
-                                        Embedded typeRef moduleName ->
-                                            C.fqFun moduleName (Common.decoderName typeRef)
+                                        Embedded e ->
+                                            C.fqFun e.moduleName (Common.decoderName e.dataType)
 
-                                        Enumeration _ _ ->
-                                            C.string "Enumeration not supported"
+                                        Enumeration enum ->
+                                            C.fqFun enum.moduleName (Common.decoderName enum.dataType)
                                     ]
                                 ]
                         )
@@ -253,33 +294,50 @@ toDecoder ( fieldName, field ) =
 toEncoder : ( FieldName, Field ) -> C.Expression
 toEncoder ( fieldName, field ) =
     let
+        embeddedEncoder : { dataType : DataType, moduleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
+        embeddedEncoder e =
+            (case e.typeKind of
+                Alias ->
+                    identity
+
+                Type ->
+                    C.parens << C.applyBinOp (C.fun <| "unwrap" ++ e.dataType ++ "_") C.composer
+            )
+                (C.fqFun e.moduleName (Common.encoderName e.dataType))
+
         fieldTypeToEncoder : Cardinality -> FieldType -> C.Expression
         fieldTypeToEncoder cardinality fieldType =
             case ( cardinality, fieldType ) of
                 ( Optional, Primitive dataType _ _ ) ->
                     Meta.Encode.forPrimitive dataType
 
-                ( Optional, Embedded typeRef moduleName ) ->
+                ( Optional, Embedded e ) ->
                     C.parens <|
                         C.applyBinOp
-                            (C.apply [ Meta.Basics.mapMaybe, C.fqFun moduleName (Common.encoderName typeRef) ])
+                            (C.apply [ Meta.Basics.mapMaybe, embeddedEncoder e ])
                             C.composer
                             (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
+
+                ( Optional, Enumeration enum ) ->
+                    C.fqFun enum.moduleName (Common.encoderName enum.dataType)
 
                 ( Required, Primitive dataType _ _ ) ->
                     Meta.Encode.forPrimitive dataType
 
-                ( Required, Embedded typeRef moduleName ) ->
-                    C.fqFun moduleName (Common.encoderName typeRef)
+                ( Required, Embedded e ) ->
+                    embeddedEncoder e
+
+                ( Required, Enumeration enum ) ->
+                    C.fqFun enum.moduleName (Common.encoderName enum.dataType)
 
                 ( Repeated, Primitive dataType _ _ ) ->
                     C.apply [ Meta.Encode.list, Meta.Encode.forPrimitive dataType ]
 
-                ( Repeated, Embedded typeRef moduleName ) ->
-                    C.apply [ Meta.Encode.list, C.fqFun moduleName (Common.encoderName typeRef) ]
+                ( Repeated, Embedded e ) ->
+                    C.apply [ Meta.Encode.list, embeddedEncoder e ]
 
-                _ ->
-                    C.string "Enumeration not supported yet"
+                ( Repeated, Enumeration enum ) ->
+                    C.apply [ Meta.Encode.list, C.fqFun enum.moduleName (Common.encoderName enum.dataType) ]
     in
     -- TODO i need to access fields of "value" variable in a better way
     case field of
@@ -316,11 +374,19 @@ fieldTypeToTypeAnnotation fieldType =
         Primitive dataType _ _ ->
             Meta.Type.forPrimitive dataType
 
-        Embedded typeRef moduleName ->
-            C.fqTyped moduleName typeRef []
+        Embedded e ->
+            C.fqTyped e.moduleName
+                (case e.typeKind of
+                    Alias ->
+                        e.dataType
 
-        _ ->
-            C.typeVar "Enumeration not supported yet"
+                    Type ->
+                        e.dataType ++ "_"
+                )
+                []
+
+        Enumeration enum ->
+            C.fqTyped enum.moduleName enum.dataType []
 
 
 fieldToTypeAnnotation : Field -> C.TypeAnnotation
@@ -329,6 +395,9 @@ fieldToTypeAnnotation field =
         cardinalityModifier cardinality fieldType =
             case ( cardinality, fieldType ) of
                 ( Optional, Primitive _ _ _ ) ->
+                    identity
+
+                ( Optional, Enumeration _ ) ->
                     identity
 
                 ( Required, _ ) ->
@@ -342,7 +411,8 @@ fieldToTypeAnnotation field =
     in
     case field of
         NormalField _ cardinality fieldType ->
-            cardinalityModifier cardinality fieldType
+            cardinalityModifier cardinality
+                fieldType
                 (fieldTypeToTypeAnnotation fieldType)
 
         MapField _ key value ->

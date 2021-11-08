@@ -72,6 +72,11 @@ repeated =
     C.fqFun moduleName "repeated"
 
 
+lazy : Expression
+lazy =
+    C.fqFun moduleName "lazy"
+
+
 forPrimitive : Primitive -> Expression
 forPrimitive prim =
     case prim of

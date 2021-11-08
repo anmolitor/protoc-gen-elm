@@ -219,6 +219,7 @@ describe("protoc-gen-elm", () => {
       expect(output).toEqual(expect.stringContaining("True"));
     });
   });
+
   describe("nested declarations", () => {
     beforeAll(() => runPlugin("nested.proto"));
     const expectedElmFileName = "Proto/Nested.elm";
@@ -228,15 +229,42 @@ describe("protoc-gen-elm", () => {
     });
 
     it("generates working code for nested messages and enums", async () => {
-      // await repl.importModules("Proto.Map", "Dict");
-      // const freshVar = repl.getFreshVariable();
-      // await repl.write(
-      //   `${freshVar} = Proto.Map.Bar (Dict.singleton "test" (Just <| Proto.Map.Foo "hi")) (Dict.fromList [(1, "a"), (5, "b")])`
-      // );
-      // const output = await repl.write(
-      //   `(Proto.Map.encodeBar ${freshVar} |> E.encode |> D.decode Proto.Map.decodeBar) == Just ${freshVar}`
-      // );
-      // expect(output).toEqual(expect.stringContaining("True"));
+      await repl.importModules("Proto.Nested");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(
+        `${freshVar} = Proto.Nested.Test Proto.Nested.TopLevel_LevelOne_LevelTwo_EnumLevelTwo_A`
+      );
+      const output = await repl.write(
+        `(Proto.Nested.encodeTest ${freshVar} |> E.encode |> D.decode Proto.Nested.decodeTest) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+
+  describe("recursive declarations", () => {
+    beforeAll(() => runPlugin("recursive.proto"));
+    const expectedElmFileName = "Proto/Recursive.elm";
+
+    it("generates a valid elm file for recursive messages", async () => {
+      await compileElm(expectedElmFileName);
+    });
+
+    it("generates working code for recursive messages", async () => {
+      await repl.importModules("Proto.Recursive");
+      const innerRec = repl.getFreshVariable();
+      const other = repl.getFreshVariable();
+      const outerRec = repl.getFreshVariable();
+      await repl.write(`${innerRec} = { rec = [], other = Nothing }`);
+      await repl.write(
+        `${other} = { rec = Just (Proto.Recursive.Recursive_ ${innerRec}) }`
+      );
+      await repl.write(
+        `${outerRec} = { rec = [Proto.Recursive.Recursive_ ${innerRec}], other = Just (Proto.Recursive.Other_ ${other}) }`
+      );
+
+      const output = await repl.write(
+        `(Proto.Recursive.encodeRecursive ${outerRec} |> E.encode |> D.decode Proto.Recursive.decodeRecursive) == Just ${outerRec}`
+      );
     });
   });
 });

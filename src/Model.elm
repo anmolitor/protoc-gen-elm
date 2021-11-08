@@ -1,4 +1,4 @@
-module Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldNumber, FieldType(..), Map, Message, OneOf, Package, Primitive(..))
+module Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldNumber, FieldType(..), Map, Message, OneOf, Package, Primitive(..), TypeKind(..))
 
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.NonEmpty exposing (NonEmpty)
@@ -56,12 +56,16 @@ type alias Default =
     String
 
 
+type TypeKind
+    = Alias
+    | Type
+
+
 type FieldType
     = -- Primitive Type, Method in protobuf/[en/de]code to use, default value
       Primitive Primitive String Default
-    | Embedded DataType ModuleName
-    | Enumeration (Maybe Default) DataType
-
+    | Embedded { dataType : DataType, moduleName : ModuleName, typeKind : TypeKind }
+    | Enumeration { dataType : DataType, moduleName : ModuleName, values : List DataType, default : DataType }
 
 
 type Primitive

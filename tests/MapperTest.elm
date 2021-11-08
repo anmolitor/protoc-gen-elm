@@ -4,7 +4,7 @@ import Expect
 import Internal.Google.Protobuf exposing (DescriptorProto, DescriptorProtoNestedType(..), EnumDescriptorProto, EnumValueDescriptorProto, FieldDescriptorProto, FieldDescriptorProtoLabel(..), FieldDescriptorProtoType(..), FileDescriptorProto, MessageOptions)
 import MapperNew
 import Mapping.Syntax exposing (Syntax(..))
-import Model exposing (Cardinality(..), Field(..), FieldType(..), Primitive(..))
+import Model exposing (Cardinality(..), Field(..), FieldType(..), Primitive(..), TypeKind(..))
 import Test exposing (Test, describe, test)
 
 
@@ -35,6 +35,7 @@ suite =
                                     [ { defaultFieldDescriptorProto | name = "test" }
                                     , { defaultFieldDescriptorProto | name = "test2", type_ = TypeMessage, typeName = ".OtherMsg" }
                                     , { defaultFieldDescriptorProto | name = "test3", type_ = TypeEnum, typeName = ".OtherMsg.AnEnum" }
+                                    , { defaultFieldDescriptorProto | name = "test4", type_ = TypeMessage, typeName = ".Msg" }
                                     ]
                               }
                             ]
@@ -52,15 +53,18 @@ suite =
                                               , NormalField 0 Optional (Primitive Prim_Bool "bool" "False")
                                               )
                                             , ( "test2"
-                                              , NormalField 0 Optional (Embedded "OtherMsg" [])
+                                              , NormalField 0 Optional (Embedded { dataType = "OtherMsg", moduleName = [], typeKind = Alias })
                                               )
                                             , ( "test3"
-                                              , NormalField 0 Optional (Embedded "OtherMsg_AnEnum" [])
+                                              , NormalField 0 Optional (Enumeration { dataType = "OtherMsg_AnEnum", moduleName = [], default = "OtherMsg_AnEnum_Bla", values = [ "OtherMsg_AnEnum_Bla", "OtherMsg_AnEnum_Blub" ] })
+                                              )
+                                            , ( "test4"
+                                              , NormalField 0 Optional (Embedded { dataType = "Msg", moduleName = [], typeKind = Type })
                                               )
                                             ]
                                       }
                                     ]
-                                , enums = [ { dataType = "OtherMsg_AnEnum", fields = ( ( 0, "Bla" ), [ ( 2, "Blub" ) ] ), isTopLevel = False, withUnrecognized = True } ]
+                                , enums = [ { dataType = "OtherMsg_AnEnum", fields = ( ( 0, "OtherMsg_AnEnum_Bla" ), [ ( 2, "OtherMsg_AnEnum_Blub" ) ] ), isTopLevel = False, withUnrecognized = True } ]
                                 }
                           )
                         ]
@@ -70,7 +74,7 @@ suite =
                     file1 =
                         { defaultFileDescriptorProto
                             | name = "test.proto"
-                            , package = "pkg"
+                            , package = "some.pkg.name"
                             , messageType =
                                 [ { defaultDescriptorProto
                                     | name = "Msg"
@@ -100,7 +104,7 @@ suite =
                                 [ { defaultDescriptorProto
                                     | name = "Msg"
                                     , field =
-                                        [ { defaultFieldDescriptorProto | name = "field1", type_ = TypeMessage, typeName = ".pkg.Msg.OtherMsg" }
+                                        [ { defaultFieldDescriptorProto | name = "field1", type_ = TypeMessage, typeName = ".some.pkg.name.Msg.OtherMsg" }
                                         , { defaultFieldDescriptorProto | name = "field2", type_ = TypeMessage, typeName = ".Abc" }
                                         ]
                                   }
@@ -132,8 +136,8 @@ suite =
                                     [ { dataType = "Msg"
                                       , isTopLevel = True
                                       , fields =
-                                            [ ( "field1", NormalField 0 Optional (Embedded "Msg_OtherMsg" [ "Proto", "Test" ]) )
-                                            , ( "field2", NormalField 0 Optional (Embedded "Abc" [ "Proto", "NoPackage" ]) )
+                                            [ ( "field1", NormalField 0 Optional (Embedded { dataType = "Msg_OtherMsg", moduleName = [ "Proto", "Test" ], typeKind = Alias }) )
+                                            , ( "field2", NormalField 0 Optional (Embedded { dataType = "Abc", moduleName = [ "Proto", "NoPackage" ], typeKind = Alias }) )
                                             ]
                                       }
                                     ]

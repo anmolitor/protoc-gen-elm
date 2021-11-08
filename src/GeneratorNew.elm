@@ -1,6 +1,5 @@
 module GeneratorNew exposing (requestToResponse)
 
-import Dict
 import Elm.CodeGen as C
 import Elm.Pretty
 import Elm.Syntax.Module as Module
@@ -8,20 +7,17 @@ import Elm.Syntax.Node as Node
 import Errors exposing (Res)
 import Internal.Google.Protobuf exposing (FileDescriptorProto)
 import Internal.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile)
-import List.Extra
 import MapperNew as Mapper
 import Mapping.Common as Common
+import Mapping.Declarations exposing (removeDuplicateDeclarations)
 import Mapping.Enum as Enum
 import Mapping.Import as Import
 import Mapping.Message as Message
 import Mapping.Name as Name
-import Mapping.Struct as Struct exposing (Struct)
-import Mapping.Syntax as Syntax
+import Mapping.Struct exposing (Struct)
 import Model exposing (Field(..))
-import Ports
 import Result.Extra
 import Set
-import String.Extra
 
 
 requestToResponse : CodeGeneratorRequest -> CodeGeneratorResponse
@@ -59,9 +55,6 @@ convert fileNames descriptors =
                 |> List.filter (.name >> (\name -> List.member name fileNames))
                 |> Mapper.mapMain
 
-        getExposedUnionTypes struct =
-            struct.enums |> List.filter .isTopLevel |> List.map .dataType
-
         getOneOfs struct =
             struct.messages
                 |> List.concatMap .fields
@@ -74,12 +67,6 @@ convert fileNames descriptors =
                             _ ->
                                 Nothing
                     )
-
-        getExposedOtherTypes struct =
-            struct.messages |> List.filter .isTopLevel |> List.map .dataType
-
-        getAllExposedTypes struct =
-            getExposedUnionTypes struct ++ getExposedOtherTypes struct
     in
     files
         |> List.map
@@ -91,11 +78,10 @@ convert fileNames descriptors =
                                 Name.module_ fileName
 
                             exposedUnionTypes =
-                                struct.enums |> List.filter .isTopLevel |> List.map .dataType
+                                struct.enums |> List.map .dataType
 
                             otherExposedTypes =
                                 struct.messages
-                                    --|> List.filter .isTopLevel
                                     |> List.map .dataType
 
                             exposedFunctions =
@@ -108,15 +94,15 @@ convert fileNames descriptors =
                         in
                         Ok <|
                             C.file
-                                (C.normalModule modName
-                                    (List.map C.openTypeExpose exposedUnionTypes
-                                        ++ List.map C.openTypeExpose (getOneOfs struct)
-                                        ++ List.map C.typeOrAliasExpose otherExposedTypes
-                                        ++ List.map C.funExpose exposedFunctions
-                                    )
+                                (C.normalModule modName []
+                                 -- (List.map C.openTypeExpose exposedUnionTypes
+                                 --     ++ List.map C.openTypeExpose (getOneOfs struct)
+                                 --     ++ List.map C.typeOrAliasExpose otherExposedTypes
+                                 --     ++ List.map C.funExpose exposedFunctions
+                                 -- )
                                 )
                                 (List.map (\importedModule -> C.importStmt importedModule Nothing Nothing) (Set.toList <| Import.extractImports declarations))
-                                declarations
+                                (removeDuplicateDeclarations declarations)
                                 (C.emptyFileComment |> fileComment fileName |> Just)
 
                     Err err ->
