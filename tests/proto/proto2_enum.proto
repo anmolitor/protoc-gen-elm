@@ -1,0 +1,4 @@
+enum Proto2 {
+  OptionA = 0;
+  OptionB = 1;
+}

@@ -287,4 +287,22 @@ describe("protoc-gen-elm", () => {
       await compileElm(expectedElmFileName);
     });
   });
+
+  describe("proto2 enums", () => {
+    beforeAll(() => runPlugin("proto2_enum.proto"));
+    const expectedElmFileName = "Proto/Proto2Enum.elm";
+
+    it("generates a valid elm file for proto2 enum", async () => {
+      await compileElm(expectedElmFileName);
+    });
+  });
+
+  describe("proto2 required", () => {
+    beforeAll(() => runPlugin("proto2_required.proto"));
+    const expectedElmFileName = "Proto/Proto2Required.elm";
+
+    it("generates a valid elm file for proto2 enum", async () => {
+      await compileElm(expectedElmFileName);
+    });
+  });
 });

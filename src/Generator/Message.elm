@@ -36,18 +36,24 @@ toAST msg =
 
         decoder : C.Declaration
         decoder =
-            C.funDecl (Just <| Common.decoderDocumentation msg.dataType)
+            C.valDecl (Just <| Common.decoderDocumentation msg.dataType)
                 (Just <| Meta.Decode.decoder (C.typed msg.dataType []))
                 (Common.decoderName msg.dataType)
-                []
                 (C.apply
                     [ Meta.Decode.message
-                    , C.record <| List.map (Tuple.mapSecond toDefaultValue) msg.fields
+                    , C.val <| Common.defaultName msg.dataType
                     , C.list <| List.map toDecoder msg.fields
                     ]
                 )
+
+        default : C.Declaration
+        default =
+            C.valDecl (Just <| Common.decoderDocumentation msg.dataType)
+                (Just <| C.typed msg.dataType [])
+                (Common.defaultName msg.dataType)
+                (C.record <| List.map (Tuple.mapSecond toDefaultValue) msg.fields)
     in
-    [ type_, encoder, decoder ]
+    [ type_, encoder, decoder, default ]
         ++ List.concatMap fieldDeclarations msg.fields
 
 
@@ -169,8 +175,19 @@ toDefaultValue field =
                 ( Required, Primitive _ _ defaultValue ) ->
                     C.val defaultValue
 
-                ( _, Embedded _ ) ->
+                ( Optional, Embedded _ ) ->
                     Meta.Basics.nothing
+
+                ( Required, Embedded e ) ->
+                    C.fqVal e.moduleName (Common.defaultName e.dataType)
+                        |> (\val ->
+                                case e.typeKind of
+                                    Alias ->
+                                        val
+
+                                    Type ->
+                                        C.apply [ C.val (e.dataType ++ "_"), val ]
+                           )
 
                 ( _, Enumeration enum ) ->
                     C.val enum.default

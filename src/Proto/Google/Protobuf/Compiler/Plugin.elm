@@ -23,10 +23,19 @@ import Protobuf.Encode
 
 
 -}
+defaultCodeGeneratorResponse : CodeGeneratorResponse
+defaultCodeGeneratorResponse =
+    { error = "", supportedFeatures = 0, file = [] }
+
+
+{-| Decode a `CodeGeneratorResponse` from Bytes
+
+
+-}
 decodeCodeGeneratorResponse : Protobuf.Decode.Decoder CodeGeneratorResponse
 decodeCodeGeneratorResponse =
     Protobuf.Decode.message
-        { error = "", supportedFeatures = 0, file = [] }
+        defaultCodeGeneratorResponse
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | error = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.int32 (\a r -> { r | supportedFeatures = a })
         , Protobuf.Decode.repeated 15 decodeCodeGeneratorResponse_File .file (\a r -> { r | file = a })
@@ -58,10 +67,19 @@ type alias CodeGeneratorResponse =
 
 
 -}
+defaultCodeGeneratorResponse_File : CodeGeneratorResponse_File
+defaultCodeGeneratorResponse_File =
+    { name = "", insertionPoint = "", content = "", generatedCodeInfo = Nothing }
+
+
+{-| Decode a `CodeGeneratorResponse_File` from Bytes
+
+
+-}
 decodeCodeGeneratorResponse_File : Protobuf.Decode.Decoder CodeGeneratorResponse_File
 decodeCodeGeneratorResponse_File =
     Protobuf.Decode.message
-        { name = "", insertionPoint = "", content = "", generatedCodeInfo = Nothing }
+        defaultCodeGeneratorResponse_File
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | name = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.string (\a r -> { r | insertionPoint = a })
         , Protobuf.Decode.optional 15 Protobuf.Decode.string (\a r -> { r | content = a })
@@ -107,10 +125,19 @@ type alias CodeGeneratorResponse_File =
 
 
 -}
+defaultCodeGeneratorRequest : CodeGeneratorRequest
+defaultCodeGeneratorRequest =
+    { fileToGenerate = [], parameter = "", protoFile = [], compilerVersion = Nothing }
+
+
+{-| Decode a `CodeGeneratorRequest` from Bytes
+
+
+-}
 decodeCodeGeneratorRequest : Protobuf.Decode.Decoder CodeGeneratorRequest
 decodeCodeGeneratorRequest =
     Protobuf.Decode.message
-        { fileToGenerate = [], parameter = "", protoFile = [], compilerVersion = Nothing }
+        defaultCodeGeneratorRequest
         [ Protobuf.Decode.repeated 1 Protobuf.Decode.string .fileToGenerate (\a r -> { r | fileToGenerate = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.string (\a r -> { r | parameter = a })
         , Protobuf.Decode.repeated
@@ -152,10 +179,19 @@ type alias CodeGeneratorRequest =
 
 
 -}
+defaultVersion : Version
+defaultVersion =
+    { major = 0, minor = 0, patch = 0, suffix = "" }
+
+
+{-| Decode a `Version` from Bytes
+
+
+-}
 decodeVersion : Protobuf.Decode.Decoder Version
 decodeVersion =
     Protobuf.Decode.message
-        { major = 0, minor = 0, patch = 0, suffix = "" }
+        defaultVersion
         [ Protobuf.Decode.optional 1 Protobuf.Decode.int32 (\a r -> { r | major = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.int32 (\a r -> { r | minor = a })
         , Protobuf.Decode.optional 3 Protobuf.Decode.int32 (\a r -> { r | patch = a })

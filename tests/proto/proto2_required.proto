@@ -1,0 +1,12 @@
+enum Enum {
+  A = 5;
+  B = 10;
+}
+
+message Msg {}
+
+message Required {
+  required string field1 = 1;
+  required bytes field2 = 2;
+  required Msg field3 = 3;
+}

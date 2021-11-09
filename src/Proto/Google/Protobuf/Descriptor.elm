@@ -23,10 +23,19 @@ import Protobuf.Encode
 
 
 -}
+defaultGeneratedCodeInfo : GeneratedCodeInfo
+defaultGeneratedCodeInfo =
+    { annotation = [] }
+
+
+{-| Decode a `GeneratedCodeInfo` from Bytes
+
+
+-}
 decodeGeneratedCodeInfo : Protobuf.Decode.Decoder GeneratedCodeInfo
 decodeGeneratedCodeInfo =
     Protobuf.Decode.message
-        { annotation = [] }
+        defaultGeneratedCodeInfo
         [ Protobuf.Decode.repeated 1 decodeGeneratedCodeInfo_Annotation .annotation (\a r -> { r | annotation = a }) ]
 
 
@@ -51,10 +60,19 @@ type alias GeneratedCodeInfo =
 
 
 -}
+defaultGeneratedCodeInfo_Annotation : GeneratedCodeInfo_Annotation
+defaultGeneratedCodeInfo_Annotation =
+    { path = [], sourceFile = "", begin = 0, end = 0 }
+
+
+{-| Decode a `GeneratedCodeInfo_Annotation` from Bytes
+
+
+-}
 decodeGeneratedCodeInfo_Annotation : Protobuf.Decode.Decoder GeneratedCodeInfo_Annotation
 decodeGeneratedCodeInfo_Annotation =
     Protobuf.Decode.message
-        { path = [], sourceFile = "", begin = 0, end = 0 }
+        defaultGeneratedCodeInfo_Annotation
         [ Protobuf.Decode.repeated 1 Protobuf.Decode.int32 .path (\a r -> { r | path = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.string (\a r -> { r | sourceFile = a })
         , Protobuf.Decode.optional 3 Protobuf.Decode.int32 (\a r -> { r | begin = a })
@@ -88,10 +106,19 @@ type alias GeneratedCodeInfo_Annotation =
 
 
 -}
+defaultSourceCodeInfo : SourceCodeInfo
+defaultSourceCodeInfo =
+    { location = [] }
+
+
+{-| Decode a `SourceCodeInfo` from Bytes
+
+
+-}
 decodeSourceCodeInfo : Protobuf.Decode.Decoder SourceCodeInfo
 decodeSourceCodeInfo =
     Protobuf.Decode.message
-        { location = [] }
+        defaultSourceCodeInfo
         [ Protobuf.Decode.repeated 1 decodeSourceCodeInfo_Location .location (\a r -> { r | location = a }) ]
 
 
@@ -116,10 +143,19 @@ type alias SourceCodeInfo =
 
 
 -}
+defaultSourceCodeInfo_Location : SourceCodeInfo_Location
+defaultSourceCodeInfo_Location =
+    { path = [], span = [], leadingComments = "", trailingComments = "", leadingDetachedComments = [] }
+
+
+{-| Decode a `SourceCodeInfo_Location` from Bytes
+
+
+-}
 decodeSourceCodeInfo_Location : Protobuf.Decode.Decoder SourceCodeInfo_Location
 decodeSourceCodeInfo_Location =
     Protobuf.Decode.message
-        { path = [], span = [], leadingComments = "", trailingComments = "", leadingDetachedComments = [] }
+        defaultSourceCodeInfo_Location
         [ Protobuf.Decode.repeated 1 Protobuf.Decode.int32 .path (\a r -> { r | path = a })
         , Protobuf.Decode.repeated 2 Protobuf.Decode.int32 .span (\a r -> { r | span = a })
         , Protobuf.Decode.optional 3 Protobuf.Decode.string (\a r -> { r | leadingComments = a })
@@ -164,17 +200,26 @@ type alias SourceCodeInfo_Location =
 
 
 -}
+defaultUninterpretedOption : UninterpretedOption
+defaultUninterpretedOption =
+    { name = []
+    , identifierValue = ""
+    , positiveIntValue = 0
+    , negativeIntValue = 0
+    , doubleValue = 0
+    , stringValue = (Protobuf.Encode.encode <| Protobuf.Encode.string "")
+    , aggregateValue = ""
+    }
+
+
+{-| Decode a `UninterpretedOption` from Bytes
+
+
+-}
 decodeUninterpretedOption : Protobuf.Decode.Decoder UninterpretedOption
 decodeUninterpretedOption =
     Protobuf.Decode.message
-        { name = []
-        , identifierValue = ""
-        , positiveIntValue = 0
-        , negativeIntValue = 0
-        , doubleValue = 0
-        , stringValue = (Protobuf.Encode.encode <| Protobuf.Encode.string "")
-        , aggregateValue = ""
-        }
+        defaultUninterpretedOption
         [ Protobuf.Decode.repeated 2 decodeUninterpretedOption_NamePart .name (\a r -> { r | name = a })
         , Protobuf.Decode.optional 3 Protobuf.Decode.string (\a r -> { r | identifierValue = a })
         , Protobuf.Decode.optional 4 Protobuf.Decode.int32 (\a r -> { r | positiveIntValue = a })
@@ -221,10 +266,19 @@ type alias UninterpretedOption =
 
 
 -}
+defaultUninterpretedOption_NamePart : UninterpretedOption_NamePart
+defaultUninterpretedOption_NamePart =
+    { namePart = "", isExtension = False }
+
+
+{-| Decode a `UninterpretedOption_NamePart` from Bytes
+
+
+-}
 decodeUninterpretedOption_NamePart : Protobuf.Decode.Decoder UninterpretedOption_NamePart
 decodeUninterpretedOption_NamePart =
     Protobuf.Decode.message
-        { namePart = "", isExtension = False }
+        defaultUninterpretedOption_NamePart
         [ Protobuf.Decode.required 1 Protobuf.Decode.string (\a r -> { r | namePart = a })
         , Protobuf.Decode.required 2 Protobuf.Decode.bool (\a r -> { r | isExtension = a })
         ]
@@ -252,13 +306,22 @@ type alias UninterpretedOption_NamePart =
 
 
 -}
+defaultMethodOptions : MethodOptions
+defaultMethodOptions =
+    { deprecated = False
+    , idempotencyLevel = MethodOptions_IdempotencyLevel_IDEMPOTENCYUNKNOWN
+    , uninterpretedOption = []
+    }
+
+
+{-| Decode a `MethodOptions` from Bytes
+
+
+-}
 decodeMethodOptions : Protobuf.Decode.Decoder MethodOptions
 decodeMethodOptions =
     Protobuf.Decode.message
-        { deprecated = False
-        , idempotencyLevel = MethodOptions_IdempotencyLevel_IDEMPOTENCYUNKNOWN
-        , uninterpretedOption = []
-        }
+        defaultMethodOptions
         [ Protobuf.Decode.optional 33 Protobuf.Decode.bool (\a r -> { r | deprecated = a })
         , Protobuf.Decode.optional 34 decodeMethodOptions_IdempotencyLevel (\a r -> { r | idempotencyLevel = a })
         , Protobuf.Decode.repeated
@@ -297,10 +360,19 @@ type alias MethodOptions =
 
 
 -}
+defaultServiceOptions : ServiceOptions
+defaultServiceOptions =
+    { deprecated = False, uninterpretedOption = [] }
+
+
+{-| Decode a `ServiceOptions` from Bytes
+
+
+-}
 decodeServiceOptions : Protobuf.Decode.Decoder ServiceOptions
 decodeServiceOptions =
     Protobuf.Decode.message
-        { deprecated = False, uninterpretedOption = [] }
+        defaultServiceOptions
         [ Protobuf.Decode.optional 33 Protobuf.Decode.bool (\a r -> { r | deprecated = a })
         , Protobuf.Decode.repeated
             999
@@ -334,10 +406,19 @@ type alias ServiceOptions =
 
 
 -}
+defaultEnumValueOptions : EnumValueOptions
+defaultEnumValueOptions =
+    { deprecated = False, uninterpretedOption = [] }
+
+
+{-| Decode a `EnumValueOptions` from Bytes
+
+
+-}
 decodeEnumValueOptions : Protobuf.Decode.Decoder EnumValueOptions
 decodeEnumValueOptions =
     Protobuf.Decode.message
-        { deprecated = False, uninterpretedOption = [] }
+        defaultEnumValueOptions
         [ Protobuf.Decode.optional 1 Protobuf.Decode.bool (\a r -> { r | deprecated = a })
         , Protobuf.Decode.repeated
             999
@@ -371,10 +452,19 @@ type alias EnumValueOptions =
 
 
 -}
+defaultEnumOptions : EnumOptions
+defaultEnumOptions =
+    { allowAlias = False, deprecated = False, uninterpretedOption = [] }
+
+
+{-| Decode a `EnumOptions` from Bytes
+
+
+-}
 decodeEnumOptions : Protobuf.Decode.Decoder EnumOptions
 decodeEnumOptions =
     Protobuf.Decode.message
-        { allowAlias = False, deprecated = False, uninterpretedOption = [] }
+        defaultEnumOptions
         [ Protobuf.Decode.optional 2 Protobuf.Decode.bool (\a r -> { r | allowAlias = a })
         , Protobuf.Decode.optional 3 Protobuf.Decode.bool (\a r -> { r | deprecated = a })
         , Protobuf.Decode.repeated
@@ -410,10 +500,19 @@ type alias EnumOptions =
 
 
 -}
+defaultOneofOptions : OneofOptions
+defaultOneofOptions =
+    { uninterpretedOption = [] }
+
+
+{-| Decode a `OneofOptions` from Bytes
+
+
+-}
 decodeOneofOptions : Protobuf.Decode.Decoder OneofOptions
 decodeOneofOptions =
     Protobuf.Decode.message
-        { uninterpretedOption = [] }
+        defaultOneofOptions
         [ Protobuf.Decode.repeated
             999
             decodeUninterpretedOption
@@ -443,17 +542,26 @@ type alias OneofOptions =
 
 
 -}
+defaultFieldOptions : FieldOptions
+defaultFieldOptions =
+    { ctype = FieldOptions_CType_STRING
+    , packed = False
+    , jstype = FieldOptions_JSType_JSNORMAL
+    , lazy = False
+    , deprecated = False
+    , weak = False
+    , uninterpretedOption = []
+    }
+
+
+{-| Decode a `FieldOptions` from Bytes
+
+
+-}
 decodeFieldOptions : Protobuf.Decode.Decoder FieldOptions
 decodeFieldOptions =
     Protobuf.Decode.message
-        { ctype = FieldOptions_CType_STRING
-        , packed = False
-        , jstype = FieldOptions_JSType_JSNORMAL
-        , lazy = False
-        , deprecated = False
-        , weak = False
-        , uninterpretedOption = []
-        }
+        defaultFieldOptions
         [ Protobuf.Decode.optional 1 decodeFieldOptions_CType (\a r -> { r | ctype = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.bool (\a r -> { r | packed = a })
         , Protobuf.Decode.optional 6 decodeFieldOptions_JSType (\a r -> { r | jstype = a })
@@ -504,15 +612,24 @@ type alias FieldOptions =
 
 
 -}
+defaultMessageOptions : MessageOptions
+defaultMessageOptions =
+    { messageSetWireFormat = False
+    , noStandardDescriptorAccessor = False
+    , deprecated = False
+    , mapEntry = False
+    , uninterpretedOption = []
+    }
+
+
+{-| Decode a `MessageOptions` from Bytes
+
+
+-}
 decodeMessageOptions : Protobuf.Decode.Decoder MessageOptions
 decodeMessageOptions =
     Protobuf.Decode.message
-        { messageSetWireFormat = False
-        , noStandardDescriptorAccessor = False
-        , deprecated = False
-        , mapEntry = False
-        , uninterpretedOption = []
-        }
+        defaultMessageOptions
         [ Protobuf.Decode.optional 1 Protobuf.Decode.bool (\a r -> { r | messageSetWireFormat = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.bool (\a r -> { r | noStandardDescriptorAccessor = a })
         , Protobuf.Decode.optional 3 Protobuf.Decode.bool (\a r -> { r | deprecated = a })
@@ -557,31 +674,40 @@ type alias MessageOptions =
 
 
 -}
+defaultFileOptions : FileOptions
+defaultFileOptions =
+    { javaPackage = ""
+    , javaOuterClassname = ""
+    , javaMultipleFiles = False
+    , javaGenerateEqualsAndHash = False
+    , javaStringCheckUtf8 = False
+    , optimizeFor = FileOptions_OptimizeMode_SPEED
+    , goPackage = ""
+    , ccGenericServices = False
+    , javaGenericServices = False
+    , pyGenericServices = False
+    , phpGenericServices = False
+    , deprecated = False
+    , ccEnableArenas = True
+    , objcClassPrefix = ""
+    , csharpNamespace = ""
+    , swiftPrefix = ""
+    , phpClassPrefix = ""
+    , phpNamespace = ""
+    , phpMetadataNamespace = ""
+    , rubyPackage = ""
+    , uninterpretedOption = []
+    }
+
+
+{-| Decode a `FileOptions` from Bytes
+
+
+-}
 decodeFileOptions : Protobuf.Decode.Decoder FileOptions
 decodeFileOptions =
     Protobuf.Decode.message
-        { javaPackage = ""
-        , javaOuterClassname = ""
-        , javaMultipleFiles = False
-        , javaGenerateEqualsAndHash = False
-        , javaStringCheckUtf8 = False
-        , optimizeFor = FileOptions_OptimizeMode_SPEED
-        , goPackage = ""
-        , ccGenericServices = False
-        , javaGenericServices = False
-        , pyGenericServices = False
-        , phpGenericServices = False
-        , deprecated = False
-        , ccEnableArenas = True
-        , objcClassPrefix = ""
-        , csharpNamespace = ""
-        , swiftPrefix = ""
-        , phpClassPrefix = ""
-        , phpNamespace = ""
-        , phpMetadataNamespace = ""
-        , rubyPackage = ""
-        , uninterpretedOption = []
-        }
+        defaultFileOptions
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | javaPackage = a })
         , Protobuf.Decode.optional 8 Protobuf.Decode.string (\a r -> { r | javaOuterClassname = a })
         , Protobuf.Decode.optional 10 Protobuf.Decode.bool (\a r -> { r | javaMultipleFiles = a })
@@ -674,16 +800,19 @@ type alias FileOptions =
 
 
 -}
+defaultMethodDescriptorProto : MethodDescriptorProto
+defaultMethodDescriptorProto =
+    { name = "", inputType = "", outputType = "", options = Nothing, clientStreaming = False, serverStreaming = False }
+
+
+{-| Decode a `MethodDescriptorProto` from Bytes
+
+
+-}
 decodeMethodDescriptorProto : Protobuf.Decode.Decoder MethodDescriptorProto
 decodeMethodDescriptorProto =
     Protobuf.Decode.message
-        { name = ""
-        , inputType = ""
-        , outputType = ""
-        , options = Nothing
-        , clientStreaming = False
-        , serverStreaming = False
-        }
+        defaultMethodDescriptorProto
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | name = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.string (\a r -> { r | inputType = a })
         , Protobuf.Decode.optional 3 Protobuf.Decode.string (\a r -> { r | outputType = a })
@@ -727,10 +856,19 @@ type alias MethodDescriptorProto =
 
 
 -}
+defaultServiceDescriptorProto : ServiceDescriptorProto
+defaultServiceDescriptorProto =
+    { name = "", method = [], options = Nothing }
+
+
+{-| Decode a `ServiceDescriptorProto` from Bytes
+
+
+-}
 decodeServiceDescriptorProto : Protobuf.Decode.Decoder ServiceDescriptorProto
 decodeServiceDescriptorProto =
     Protobuf.Decode.message
-        { name = "", method = [], options = Nothing }
+        defaultServiceDescriptorProto
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | name = a })
         , Protobuf.Decode.repeated 2 decodeMethodDescriptorProto .method (\a r -> { r | method = a })
         , Protobuf.Decode.optional 3 (Protobuf.Decode.map Just decodeServiceOptions) (\a r -> { r | options = a })
@@ -762,10 +900,19 @@ type alias ServiceDescriptorProto =
 
 
 -}
+defaultEnumValueDescriptorProto : EnumValueDescriptorProto
+defaultEnumValueDescriptorProto =
+    { name = "", number = 0, options = Nothing }
+
+
+{-| Decode a `EnumValueDescriptorProto` from Bytes
+
+
+-}
 decodeEnumValueDescriptorProto : Protobuf.Decode.Decoder EnumValueDescriptorProto
 decodeEnumValueDescriptorProto =
     Protobuf.Decode.message
-        { name = "", number = 0, options = Nothing }
+        defaultEnumValueDescriptorProto
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | name = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.int32 (\a r -> { r | number = a })
         , Protobuf.Decode.optional 3 (Protobuf.Decode.map Just decodeEnumValueOptions) (\a r -> { r | options = a })
@@ -797,10 +944,19 @@ type alias EnumValueDescriptorProto =
 
 
 -}
+defaultEnumDescriptorProto : EnumDescriptorProto
+defaultEnumDescriptorProto =
+    { name = "", value = [], options = Nothing, reservedRange = [], reservedName = [] }
+
+
+{-| Decode a `EnumDescriptorProto` from Bytes
+
+
+-}
 decodeEnumDescriptorProto : Protobuf.Decode.Decoder EnumDescriptorProto
 decodeEnumDescriptorProto =
     Protobuf.Decode.message
-        { name = "", value = [], options = Nothing, reservedRange = [], reservedName = [] }
+        defaultEnumDescriptorProto
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | name = a })
         , Protobuf.Decode.repeated 2 decodeEnumValueDescriptorProto .value (\a r -> { r | value = a })
         , Protobuf.Decode.optional 3 (Protobuf.Decode.map Just decodeEnumOptions) (\a r -> { r | options = a })
@@ -845,10 +1001,19 @@ type alias EnumDescriptorProto =
 
 
 -}
+defaultEnumDescriptorProto_EnumReservedRange : EnumDescriptorProto_EnumReservedRange
+defaultEnumDescriptorProto_EnumReservedRange =
+    { start = 0, end = 0 }
+
+
+{-| Decode a `EnumDescriptorProto_EnumReservedRange` from Bytes
+
+
+-}
 decodeEnumDescriptorProto_EnumReservedRange : Protobuf.Decode.Decoder EnumDescriptorProto_EnumReservedRange
 decodeEnumDescriptorProto_EnumReservedRange =
     Protobuf.Decode.message
-        { start = 0, end = 0 }
+        defaultEnumDescriptorProto_EnumReservedRange
         [ Protobuf.Decode.optional 1 Protobuf.Decode.int32 (\a r -> { r | start = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.int32 (\a r -> { r | end = a })
         ]
@@ -875,10 +1040,19 @@ type alias EnumDescriptorProto_EnumReservedRange =
 
 
 -}
+defaultOneofDescriptorProto : OneofDescriptorProto
+defaultOneofDescriptorProto =
+    { name = "", options = Nothing }
+
+
+{-| Decode a `OneofDescriptorProto` from Bytes
+
+
+-}
 decodeOneofDescriptorProto : Protobuf.Decode.Decoder OneofDescriptorProto
 decodeOneofDescriptorProto =
     Protobuf.Decode.message
-        { name = "", options = Nothing }
+        defaultOneofDescriptorProto
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | name = a })
         , Protobuf.Decode.optional 2 (Protobuf.Decode.map Just decodeOneofOptions) (\a r -> { r | options = a })
         ]
@@ -908,21 +1082,30 @@ type alias OneofDescriptorProto =
 
 
 -}
+defaultFieldDescriptorProto : FieldDescriptorProto
+defaultFieldDescriptorProto =
+    { name = ""
+    , number = 0
+    , label = FieldDescriptorProto_Label_LABELOPTIONAL
+    , type_ = FieldDescriptorProto_Type_TYPEDOUBLE
+    , typeName = ""
+    , extendee = ""
+    , defaultValue = ""
+    , oneofIndex = -1
+    , jsonName = ""
+    , options = Nothing
+    , proto3Optional = False
+    }
+
+
+{-| Decode a `FieldDescriptorProto` from Bytes
+
+
+-}
 decodeFieldDescriptorProto : Protobuf.Decode.Decoder FieldDescriptorProto
 decodeFieldDescriptorProto =
     Protobuf.Decode.message
-        { name = ""
-        , number = 0
-        , label = FieldDescriptorProto_Label_LABELOPTIONAL
-        , type_ = FieldDescriptorProto_Type_TYPEDOUBLE
-        , typeName = ""
-        , extendee = ""
-        , defaultValue = ""
-        , oneofIndex = -1
-        , jsonName = ""
-        , options = Nothing
-        , proto3Optional = False
-        }
+        defaultFieldDescriptorProto
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | name = a })
         , Protobuf.Decode.optional 3 Protobuf.Decode.int32 (\a r -> { r | number = a })
         , Protobuf.Decode.optional 4 decodeFieldDescriptorProto_Label (\a r -> { r | label = a })
@@ -981,10 +1164,19 @@ type alias FieldDescriptorProto =
 
 
 -}
+defaultExtensionRangeOptions : ExtensionRangeOptions
+defaultExtensionRangeOptions =
+    { uninterpretedOption = [] }
+
+
+{-| Decode a `ExtensionRangeOptions` from Bytes
+
+
+-}
 decodeExtensionRangeOptions : Protobuf.Decode.Decoder ExtensionRangeOptions
 decodeExtensionRangeOptions =
     Protobuf.Decode.message
-        { uninterpretedOption = [] }
+        defaultExtensionRangeOptions
         [ Protobuf.Decode.repeated
             999
             decodeUninterpretedOption
@@ -1027,20 +1219,29 @@ type DescriptorProto_
 
 
 -}
+defaultDescriptorProto : DescriptorProto
+defaultDescriptorProto =
+    { name = ""
+    , field = []
+    , extension = []
+    , nestedType = []
+    , enumType = []
+    , extensionRange = []
+    , oneofDecl = []
+    , options = Nothing
+    , reservedRange = []
+    , reservedName = []
+    }
+
+
+{-| Decode a `DescriptorProto` from Bytes
+
+
+-}
 decodeDescriptorProto : Protobuf.Decode.Decoder DescriptorProto
 decodeDescriptorProto =
     Protobuf.Decode.message
-        { name = ""
-        , field = []
-        , extension = []
-        , nestedType = []
-        , enumType = []
-        , extensionRange = []
-        , oneofDecl = []
-        , options = Nothing
-        , reservedRange = []
-        , reservedName = []
-        }
+        defaultDescriptorProto
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | name = a })
         , Protobuf.Decode.repeated 2 decodeFieldDescriptorProto .field (\a r -> { r | field = a })
         , Protobuf.Decode.repeated 6 decodeFieldDescriptorProto .extension (\a r -> { r | extension = a })
@@ -1108,10 +1309,19 @@ type alias DescriptorProto =
 
 
 -}
+defaultDescriptorProto_ReservedRange : DescriptorProto_ReservedRange
+defaultDescriptorProto_ReservedRange =
+    { start = 0, end = 0 }
+
+
+{-| Decode a `DescriptorProto_ReservedRange` from Bytes
+
+
+-}
 decodeDescriptorProto_ReservedRange : Protobuf.Decode.Decoder DescriptorProto_ReservedRange
 decodeDescriptorProto_ReservedRange =
     Protobuf.Decode.message
-        { start = 0, end = 0 }
+        defaultDescriptorProto_ReservedRange
         [ Protobuf.Decode.optional 1 Protobuf.Decode.int32 (\a r -> { r | start = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.int32 (\a r -> { r | end = a })
         ]
@@ -1138,10 +1348,19 @@ type alias DescriptorProto_ReservedRange =
 
 
 -}
+defaultDescriptorProto_ExtensionRange : DescriptorProto_ExtensionRange
+defaultDescriptorProto_ExtensionRange =
+    { start = 0, end = 0, options = Nothing }
+
+
+{-| Decode a `DescriptorProto_ExtensionRange` from Bytes
+
+
+-}
 decodeDescriptorProto_ExtensionRange : Protobuf.Decode.Decoder DescriptorProto_ExtensionRange
 decodeDescriptorProto_ExtensionRange =
     Protobuf.Decode.message
-        { start = 0, end = 0, options = Nothing }
+        defaultDescriptorProto_ExtensionRange
         [ Protobuf.Decode.optional 1 Protobuf.Decode.int32 (\a r -> { r | start = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.int32 (\a r -> { r | end = a })
         , Protobuf.Decode.optional
@@ -1176,22 +1395,31 @@ type alias DescriptorProto_ExtensionRange =
 
 
 -}
+defaultFileDescriptorProto : FileDescriptorProto
+defaultFileDescriptorProto =
+    { name = ""
+    , package = ""
+    , dependency = []
+    , publicDependency = []
+    , weakDependency = []
+    , messageType = []
+    , enumType = []
+    , service = []
+    , extension = []
+    , options = Nothing
+    , sourceCodeInfo = Nothing
+    , syntax = ""
+    }
+
+
+{-| Decode a `FileDescriptorProto` from Bytes
+
+
+-}
 decodeFileDescriptorProto : Protobuf.Decode.Decoder FileDescriptorProto
 decodeFileDescriptorProto =
     Protobuf.Decode.message
-        { name = ""
-        , package = ""
-        , dependency = []
-        , publicDependency = []
-        , weakDependency = []
-        , messageType = []
-        , enumType = []
-        , service = []
-        , extension = []
-        , options = Nothing
-        , sourceCodeInfo = Nothing
-        , syntax = ""
-        }
+        defaultFileDescriptorProto
         [ Protobuf.Decode.optional 1 Protobuf.Decode.string (\a r -> { r | name = a })
         , Protobuf.Decode.optional 2 Protobuf.Decode.string (\a r -> { r | package = a })
         , Protobuf.Decode.repeated 3 Protobuf.Decode.string .dependency (\a r -> { r | dependency = a })
@@ -1256,10 +1484,19 @@ type alias FileDescriptorProto =
 
 
 -}
+defaultFileDescriptorSet : FileDescriptorSet
+defaultFileDescriptorSet =
+    { file = [] }
+
+
+{-| Decode a `FileDescriptorSet` from Bytes
+
+
+-}
 decodeFileDescriptorSet : Protobuf.Decode.Decoder FileDescriptorSet
 decodeFileDescriptorSet =
     Protobuf.Decode.message
-        { file = [] }
+        defaultFileDescriptorSet
         [ Protobuf.Decode.repeated 1 decodeFileDescriptorProto .file (\a r -> { r | file = a }) ]
 
 
