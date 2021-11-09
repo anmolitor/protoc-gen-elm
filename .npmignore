@@ -1,3 +1,14 @@
 elm-stuff/
 node_modules/
-/example/src/Greeter.elm
+/tests/
+/example/
+/.github/
+
+*.sh
+*.elm
+*.proto
+
+jest.config.js
+tsconfig.json
+elm.json
+

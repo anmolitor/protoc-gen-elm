@@ -1,0 +1,9 @@
+syntax="proto3";
+
+import "multiple_imports1.proto";
+import "multiple_imports2.proto";
+
+message Import3 {
+  Import1 i1 = 1;
+  Import2 i2 = 2;
+}

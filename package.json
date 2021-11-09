@@ -1,5 +1,5 @@
 {
-  "name": "protoc-gen-elm",
+  "name": "protoc-gen-elm-fork",
   "version": "1.0.0",
   "description": "Elm protoc plugin",
   "keywords": [

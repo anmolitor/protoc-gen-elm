@@ -1,0 +1,12 @@
+syntax="proto3";
+
+message Message {
+  bool idk = 1;
+}
+
+message Oneof {
+  oneof msg {
+    Message opt1 = 1;
+    Message opt2 = 2;
+  }
+}

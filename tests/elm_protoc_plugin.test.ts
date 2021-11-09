@@ -314,4 +314,31 @@ describe("protoc-gen-elm", () => {
       await compileElm(expectedElmFileName);
     });
   });
+
+  describe("oneof with embedded types", () => {
+    beforeAll(() => runPlugin("oneof_embedded.proto"));
+    const expectedElmFileName = "Proto/OneofEmbedded.elm";
+
+    it("generates a valid elm file for proto2 group", async () => {
+      await compileElm(expectedElmFileName);
+    });
+  });
+
+  describe("multiple imports", () => {
+    beforeAll(() =>
+      runPlugin([
+        "multiple_imports1.proto",
+        "multiple_imports2.proto",
+        "multiple_imports3.proto",
+      ])
+    );
+
+    it("generates a valid elm file for proto2 group", async () => {
+      await compileElm([
+        "Proto/MultipleImports1.elm",
+        "Proto/MultipleImports2.elm",
+        "Proto/MultipleImports3.elm",
+      ]);
+    });
+  });
 });

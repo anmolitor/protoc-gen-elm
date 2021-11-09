@@ -378,7 +378,7 @@ toEncoder ( fieldName, field ) =
                     :: List.map
                         (\( fieldNumber, optionName, fieldType ) ->
                             ( C.namedPattern "Just" [ C.parensPattern (C.namedPattern optionName [ C.varPattern "innerValue" ]) ]
-                            , C.tuple [ C.int fieldNumber, C.apply [ fieldTypeToEncoder Optional fieldType, C.val "innerValue" ] ]
+                            , C.tuple [ C.int fieldNumber, C.apply [ fieldTypeToEncoder Required fieldType, C.val "innerValue" ] ]
                             )
                         )
                         options

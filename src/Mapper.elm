@@ -1,6 +1,7 @@
 module Mapper exposing (definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, splitNonEmpty)
 
 import Dict exposing (Dict)
+import Dict.Extra
 import Elm.CodeGen exposing (ModuleName)
 import Errors exposing (Error(..), Res)
 import List.Extra
@@ -33,7 +34,7 @@ type alias TypeRefs =
       -- Own Types
     , DefinedTypes
     , -- Types defined in package dependencies
-      Dict PackageName ( ModuleName, DefinedTypes )
+      Dict PackageName (List ( ModuleName, DefinedTypes ))
     )
 
 
@@ -70,7 +71,7 @@ definedTypesInMessageDescriptor : DescriptorProto -> DefinedTypes
 definedTypesInMessageDescriptor descriptor =
     List.map unwrapDescriptorProto_ descriptor.nestedType
         |> (\nested ->
-                Message descriptor.name (List.map .typeName descriptor.field |> Set.fromList)
+                Message descriptor.name (List.map .typeName descriptor.field |> List.filter (not << String.isEmpty) |> Set.fromList)
                     :: (List.map (nestDefinedType descriptor.name) <|
                             List.concatMap definedTypesInMessageDescriptor nested
                                 ++ List.map definedTypesInEnumDescriptor descriptor.enumType
@@ -103,8 +104,8 @@ mapMain descriptors =
                         , dict
                             |> Dict.filter (\name _ -> List.member name descriptor.dependency)
                             |> Dict.toList
-                            |> List.map (\( name, ( packageName, types ) ) -> ( packageName, ( Name.module_ name, types ) ))
-                            |> Dict.fromList
+                            |> List.map (\( name, ( packageName, types ) ) -> ( packageName, [ ( Name.module_ name, types ) ] ))
+                            |> Dict.Extra.fromListDedupe (++)
                         )
 
                     syntax =
@@ -160,10 +161,13 @@ lookForTypeRef name ( ownPackageName, ownModuleTypes, dependencies ) =
                             (\( packageName, typeName ) ->
                                 Dict.get packageName dependencies
                                     |> Maybe.andThen
-                                        (\( modName, types ) ->
-                                            List.filter (matchesString typeName) types
-                                                |> List.head
-                                                |> Maybe.map (Tuple.pair modName)
+                                        (List.filterMap
+                                            (\( modName, types ) ->
+                                                List.filter (matchesString typeName) types
+                                                    |> List.head
+                                                    |> Maybe.map (Tuple.pair modName)
+                                            )
+                                            >> List.head
                                         )
                             )
             in
