@@ -82,20 +82,8 @@ map versions request =
             , library = versions.library
             , compiler = Maybe.withDefault "unknown version" (Maybe.map version request.compilerVersion)
             }
-
-        -- files : List CodeGeneratorResponseFile
-        -- files =
-        --     Mapper.map request.fileToGenerate request.protoFile
-        --         |> List.map
-        --             (\pkg ->
-        --                 { name = packageFile pkg.name
-        --                 , insertionPoint = ""
-        --                 , content = Generator.generate allVersions pkg
-        --                 , generatedCodeInfo = Nothing
-        --                 }
-        --             )
     in
-    Generator.requestToResponse request
+    Generator.requestToResponse allVersions request
 
 
 version : Version -> String
