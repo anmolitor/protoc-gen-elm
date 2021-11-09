@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser
-import Greeter
+import Proto.Greeter as Greeter
 import Html
 import Html.Attributes as Attr
 import Html.Events as Events
@@ -65,8 +65,8 @@ sayHello toMsg model =
         { url = "http://localhost:8001"
         , body =
             Http.bytesBody "application/octet-stream" <|
-                Encode.encode (Greeter.toHelloRequestEncoder (Greeter.HelloRequest model.name))
-        , expect = Decode.expectBytes toMsg Greeter.helloResponseDecoder
+                Encode.encode (Greeter.encodeHelloRequest (Greeter.HelloRequest model.name))
+        , expect = Decode.expectBytes toMsg Greeter.decodeHelloResponse
         }
 
 

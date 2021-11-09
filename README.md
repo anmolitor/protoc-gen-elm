@@ -63,7 +63,7 @@ npm install
 node example/server.js
 ```
 
-The server implements a (basic) back-end for `example/greeter.proto`. You can now generate an Elm module from the same specification. The example code will use the generated `example/src/Greeter.elm` to communicate with the server. Start the reactor and give it a try on http://localhost:8000/src/Main.elm:
+The server implements a (basic) back-end for `example/greeter.proto`. You can now generate an Elm module from the same specification. The example code will use the generated `example/src/Proto.Greeter.elm` to communicate with the server. Start the reactor and give it a try on http://localhost:8000/src/Main.elm:
 
 ```bash
 cd example
@@ -88,4 +88,4 @@ You will need `protoc` installed and on your PATH.
 - For decoding the protoc request, it uses "itself", meaning that upgrading protoc versions should be done by running the plugin against the new `include` files from protoc to generate the new encoders/decoders.
 - A `Mapper` converts the request into a convenient internal structure
 - A `Generator` then uses this internal structure to build an Elm AST
-- The `Writer` then converts this into a string representation/the expected protoc output representation
+  which is then pretty-printed to a file.
