@@ -5,7 +5,6 @@ import Elm.Pretty
 import Elm.Syntax.Module as Module
 import Elm.Syntax.Node as Node
 import Errors exposing (Res)
-import Generator.Common as Common
 import Generator.Declarations exposing (removeDuplicateDeclarations)
 import Generator.Enum as Enum
 import Generator.Import as Import
@@ -64,19 +63,6 @@ convert versions fileNames descriptors =
             descriptors
                 |> List.filter (.name >> (\name -> List.member name fileNames))
                 |> Mapper.mapMain
-
-        getOneOfs struct =
-            struct.messages
-                |> List.concatMap .fields
-                |> List.filterMap
-                    (\( _, field ) ->
-                        case field of
-                            OneOfField dataType _ ->
-                                Just dataType
-
-                            _ ->
-                                Nothing
-                    )
     in
     files
         |> List.map
@@ -87,30 +73,13 @@ convert versions fileNames descriptors =
                             modName =
                                 Name.module_ fileName
 
-                            exposedUnionTypes =
-                                struct.enums |> List.map .dataType
-
-                            otherExposedTypes =
-                                struct.messages
-                                    |> List.map .dataType
-
-                            exposedFunctions =
-                                (exposedUnionTypes ++ otherExposedTypes)
-                                    |> List.concatMap (\t -> [ Common.decoderName t, Common.encoderName t ])
-
                             declarations =
                                 List.concatMap Enum.toAST struct.enums
                                     ++ List.concatMap Message.toAST struct.messages
                         in
                         Ok <|
                             C.file
-                                (C.normalModule modName []
-                                 -- (List.map C.openTypeExpose exposedUnionTypes
-                                 --     ++ List.map C.openTypeExpose (getOneOfs struct)
-                                 --     ++ List.map C.typeOrAliasExpose otherExposedTypes
-                                 --     ++ List.map C.funExpose exposedFunctions
-                                 -- )
-                                )
+                                (C.normalModule modName [])
                                 (List.map (\importedModule -> C.importStmt importedModule Nothing Nothing) (Set.toList <| Import.extractImports declarations))
                                 (removeDuplicateDeclarations declarations)
                                 (C.emptyFileComment |> fileComment versions fileName |> Just)
