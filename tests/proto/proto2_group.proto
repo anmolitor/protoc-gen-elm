@@ -1,0 +1,7 @@
+message Message {
+  repeated group Group = 1 {
+    required string a = 2;
+    optional string b = 3;
+    repeated string c = 4;
+  }
+}

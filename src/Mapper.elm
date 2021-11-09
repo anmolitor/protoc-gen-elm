@@ -479,8 +479,7 @@ fieldType parentDataType descriptor typeRefs =
             Ok <| Primitive Prim_String "string" <| defaultString descriptor
 
         FieldDescriptorProto_Type_TYPEGROUP ->
-            -- read about this feature. it is deprecated but this package should probably still support it somehow
-            Err <| UnsupportedFeature "Groups (Deprecated)"
+            handleMessage parentDataType descriptor.typeName typeRefs
 
         FieldDescriptorProto_Type_TYPEMESSAGE ->
             handleMessage parentDataType descriptor.typeName typeRefs

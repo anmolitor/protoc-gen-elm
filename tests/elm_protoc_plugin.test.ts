@@ -305,4 +305,13 @@ describe("protoc-gen-elm", () => {
       await compileElm(expectedElmFileName);
     });
   });
+
+  fdescribe("proto2 group", () => {
+    beforeAll(() => runPlugin("proto2_group.proto"));
+    const expectedElmFileName = "Proto/Proto2Group.elm";
+
+    it("generates a valid elm file for proto2 group", async () => {
+      await compileElm(expectedElmFileName);
+    });
+  });
 });
