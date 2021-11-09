@@ -306,7 +306,7 @@ describe("protoc-gen-elm", () => {
     });
   });
 
-  fdescribe("proto2 group", () => {
+  describe("proto2 group", () => {
     beforeAll(() => runPlugin("proto2_group.proto"));
     const expectedElmFileName = "Proto/Proto2Group.elm";
 
