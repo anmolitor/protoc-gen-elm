@@ -2,5 +2,5 @@ elm-stuff/
 generated/
 google/**/*.proto
 node_modules/
-/example/src/Greeter.elm
+/example/src/Proto
 /elm.min.js
