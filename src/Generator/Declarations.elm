@@ -1,4 +1,4 @@
-module Mapping.Declarations exposing (removeDuplicateDeclarations)
+module Generator.Declarations exposing (removeDuplicateDeclarations)
 
 import Elm.CodeGen as C
 import Elm.Syntax.Declaration exposing (Declaration(..))

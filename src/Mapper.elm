@@ -1,13 +1,13 @@
-module MapperNew exposing (definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, splitNonEmpty)
+module Mapper exposing (definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, splitNonEmpty)
 
 import Dict exposing (Dict)
 import Elm.CodeGen exposing (ModuleName)
 import Errors exposing (Error(..), Res)
 import List.Extra
 import List.NonEmpty as NonEmpty
-import Mapping.Name as Name
-import Mapping.Struct as Struct exposing (Struct)
-import Mapping.Syntax exposing (Syntax(..), parseSyntax)
+import Mapper.Name as Name
+import Mapper.Struct as Struct exposing (Struct)
+import Mapper.Syntax exposing (Syntax(..), parseSyntax)
 import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), Primitive(..))
 import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, unwrapDescriptorProto_)
 import Set exposing (Set)

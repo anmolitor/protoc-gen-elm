@@ -1,4 +1,4 @@
-module Mapping.Struct exposing (..)
+module Mapper.Struct exposing (..)
 
 import Model exposing (Enum, Message)
 

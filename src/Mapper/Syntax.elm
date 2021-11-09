@@ -1,4 +1,4 @@
-module Mapping.Syntax exposing (..)
+module Mapper.Syntax exposing (..)
 
 
 type Syntax

@@ -1,7 +1,7 @@
-module Mapping.Message exposing (..)
+module Generator.Message exposing (..)
 
 import Elm.CodeGen as C
-import Mapping.Common as Common
+import Generator.Common as Common
 import Meta.Basics
 import Meta.Decode
 import Meta.Encode

@@ -1,8 +1,8 @@
 module MapperTest exposing (..)
 
 import Expect
-import MapperNew
-import Mapping.Syntax exposing (Syntax(..))
+import Mapper
+import Mapper.Syntax exposing (Syntax(..))
 import Model exposing (Cardinality(..), Field(..), FieldType(..), Primitive(..), TypeKind(..))
 import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, EnumValueDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MessageOptions)
 import Test exposing (Test, describe, test)
@@ -13,7 +13,7 @@ suite =
     describe "Mapper"
         [ test "converts a single file descriptor correctly" <|
             \_ ->
-                MapperNew.mapMain
+                Mapper.mapMain
                     [ { defaultFileDescriptorProto
                         | name = "test.proto"
                         , messageType =
@@ -110,7 +110,7 @@ suite =
                                 ]
                         }
                 in
-                MapperNew.mapMain [ file1, file2, file3 ]
+                Mapper.mapMain [ file1, file2, file3 ]
                     |> Expect.equal
                         [ ( "test.proto"
                           , Ok <|

@@ -1,4 +1,4 @@
-module Mapping.Common exposing (..)
+module Generator.Common exposing (..)
 
 import Elm.CodeGen as C
 

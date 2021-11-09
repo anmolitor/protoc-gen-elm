@@ -1,10 +1,10 @@
-module Mapping.Enum exposing (toAST)
+module Generator.Enum exposing (toAST)
 
 import Elm.CodeGen as C
 import Elm.Syntax.Expression exposing (Expression)
 import Elm.Syntax.Pattern exposing (Pattern)
 import List.NonEmpty as NonEmpty exposing (NonEmpty)
-import Mapping.Common as Common
+import Generator.Common as Common
 import Meta.Decode
 import Meta.Encode
 import Model exposing (Enum)

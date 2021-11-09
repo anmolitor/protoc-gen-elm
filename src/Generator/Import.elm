@@ -1,4 +1,4 @@
-module Mapping.Import exposing (extractImports)
+module Generator.Import exposing (extractImports)
 
 import Elm.CodeGen as C
 import Elm.Syntax.Declaration as Decl

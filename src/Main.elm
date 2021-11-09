@@ -1,10 +1,10 @@
 module Main exposing (main)
 
 import Base64
-import GeneratorNew
-import Proto.Google.Protobuf.Compiler.Plugin exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
+import Generator
 import Platform
 import Ports
+import Proto.Google.Protobuf.Compiler.Plugin exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
 import Protobuf.Decode as Decode
 import Protobuf.Encode as Encode
 
@@ -95,17 +95,12 @@ map versions request =
         --                 }
         --             )
     in
-    GeneratorNew.requestToResponse request
+    Generator.requestToResponse request
 
 
 version : Version -> String
 version v =
     String.join "." [ String.fromInt v.major, String.fromInt v.minor, String.fromInt v.patch ] ++ v.suffix
-
-
-packageFile : String -> String
-packageFile =
-    (\f -> f ++ ".elm") << String.replace "." "/"
 
 
 fail : String -> CodeGeneratorResponse

@@ -1,4 +1,4 @@
-module Mapping.Name exposing (field, module_, type_)
+module Mapper.Name exposing (field, module_, type_)
 
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.Extra
