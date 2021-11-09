@@ -52,6 +52,6 @@ retrieveName decl =
         InfixDeclaration infx ->
             infx.function |> Node.value
 
-        Destructuring pattern _ ->
+        Destructuring _ _ ->
             -- cannot occur top level
             ""

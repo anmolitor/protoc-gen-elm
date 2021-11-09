@@ -1,0 +1,7 @@
+syntax="proto3";
+
+import "recursive_imported.proto";
+
+message Importing {
+  repeated Rec rec = 1;
+}

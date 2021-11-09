@@ -1,6 +1,6 @@
 module Mapping.Struct exposing (..)
 
-import Model exposing (Enum, Map, Message)
+import Model exposing (Enum, Message)
 
 
 type alias Struct =

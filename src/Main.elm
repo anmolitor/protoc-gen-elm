@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Base64
 import GeneratorNew
-import Internal.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponseFile, Version, codeGeneratorRequestDecoder, toCodeGeneratorResponseEncoder)
+import Proto.Google.Protobuf.Compiler.Plugin exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
 import Platform
 import Ports
 import Protobuf.Decode as Decode
@@ -61,13 +61,13 @@ process model base64 =
         request =
             base64
                 |> Base64.toBytes
-                |> Maybe.andThen (Decode.decode codeGeneratorRequestDecoder)
+                |> Maybe.andThen (Decode.decode decodeCodeGeneratorRequest)
 
         response =
             Maybe.map (map model.versions) request
                 |> Maybe.withDefault (fail <| "Failed parsing request from protoc. Here is the request in base64: " ++ base64)
     in
-    toCodeGeneratorResponseEncoder response
+    encodeCodeGeneratorResponse response
         |> Encode.encode
         |> Base64.fromBytes
         |> Maybe.withDefault ""

@@ -242,11 +242,23 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("recursive declarations", () => {
-    beforeAll(() => runPlugin("recursive.proto"));
-    const expectedElmFileName = "Proto/Recursive.elm";
+    beforeAll(() =>
+      runPlugin([
+        "recursive.proto",
+        "recursive_importing.proto",
+        "recursive_imported.proto",
+      ])
+    );
 
     it("generates a valid elm file for recursive messages", async () => {
-      await compileElm(expectedElmFileName);
+      await compileElm("Proto/Recursive.elm");
+    });
+
+    it("generates a valid elm file for imported recursive messages", async () => {
+      await compileElm([
+        "Proto/RecursiveImported.elm",
+        "Proto/RecursiveImporting.elm",
+      ]);
     });
 
     it("generates working code for recursive messages", async () => {
@@ -255,9 +267,7 @@ describe("protoc-gen-elm", () => {
       const other = repl.getFreshVariable();
       const outerRec = repl.getFreshVariable();
       await repl.write(`${innerRec} = { rec = [], other = Nothing }`);
-      await repl.write(
-        `${other} = { rec = Just (Proto.Recursive.Recursive_ ${innerRec}) }`
-      );
+      await repl.write(`${other} = { rec = Just ${innerRec} }`);
       await repl.write(
         `${outerRec} = { rec = [Proto.Recursive.Recursive_ ${innerRec}], other = Just (Proto.Recursive.Other_ ${other}) }`
       );

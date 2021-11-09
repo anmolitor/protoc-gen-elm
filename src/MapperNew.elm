@@ -3,13 +3,13 @@ module MapperNew exposing (definedTypesInFileDescriptor, definedTypesInMessageDe
 import Dict exposing (Dict)
 import Elm.CodeGen exposing (ModuleName)
 import Errors exposing (Error(..), Res)
-import Internal.Google.Protobuf exposing (DescriptorProto, DescriptorProtoNestedType(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProtoLabel(..), FieldDescriptorProtoType(..), FileDescriptorProto)
 import List.Extra
 import List.NonEmpty as NonEmpty
 import Mapping.Name as Name
 import Mapping.Struct as Struct exposing (Struct)
 import Mapping.Syntax exposing (Syntax(..), parseSyntax)
-import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), Primitive(..))
+import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), Primitive(..))
+import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, unwrapDescriptorProto_)
 import Set exposing (Set)
 
 
@@ -68,13 +68,14 @@ definedTypesInEnumDescriptor descriptor =
 
 definedTypesInMessageDescriptor : DescriptorProto -> DefinedTypes
 definedTypesInMessageDescriptor descriptor =
-    case descriptor.nestedType of
-        DescriptorProtoNestedType nested ->
-            Message descriptor.name (List.map .typeName descriptor.field |> Set.fromList)
-                :: (List.map (nestDefinedType descriptor.name) <|
-                        List.concatMap definedTypesInMessageDescriptor nested
-                            ++ List.map definedTypesInEnumDescriptor descriptor.enumType
-                   )
+    List.map unwrapDescriptorProto_ descriptor.nestedType
+        |> (\nested ->
+                Message descriptor.name (List.map .typeName descriptor.field |> Set.fromList)
+                    :: (List.map (nestDefinedType descriptor.name) <|
+                            List.concatMap definedTypesInMessageDescriptor nested
+                                ++ List.map definedTypesInEnumDescriptor descriptor.enumType
+                       )
+           )
 
 
 definedTypesInFileDescriptor : FileDescriptorProto -> DefinedTypes
@@ -267,7 +268,7 @@ message syntax typeRefs prefixer descriptor =
         getFromMaps : FieldDescriptorProto -> Maybe { key : FieldType, value : FieldType }
         getFromMaps fieldDescriptor =
             case fieldDescriptor.type_ of
-                TypeMessage ->
+                FieldDescriptorProto_Type_TYPEMESSAGE ->
                     Dict.get (String.dropLeft 1 fieldDescriptor.typeName) maps
 
                 _ ->
@@ -285,7 +286,7 @@ message syntax typeRefs prefixer descriptor =
                             Err <| NonPrimitiveMapKey fieldDescriptor.typeName
 
                 Nothing ->
-                    fieldType fieldDescriptor typeRefs
+                    fieldType name fieldDescriptor typeRefs
                         |> Result.map (NormalField fieldDescriptor.number (cardinality fieldDescriptor.label))
             )
                 |> Result.map
@@ -299,8 +300,8 @@ message syntax typeRefs prefixer descriptor =
         fieldsMetaResult =
             Errors.combineMap messageFieldMeta descriptor.field
 
-        (DescriptorProtoNestedType nestedTypes) =
-            descriptor.nestedType
+        nestedTypes =
+            List.map unwrapDescriptorProto_ descriptor.nestedType
 
         maps : Dict String { key : FieldType, value : FieldType }
         maps =
@@ -310,7 +311,7 @@ message syntax typeRefs prefixer descriptor =
                     (\d ->
                         case ( List.filter (.number >> (==) 1) d.field, List.filter (.number >> (==) 2) d.field ) of
                             ( [ field1 ], [ field2 ] ) ->
-                                case ( fieldType field1 typeRefs, fieldType field2 typeRefs ) of
+                                case ( fieldType name field1 typeRefs, fieldType name field2 typeRefs ) of
                                     ( Ok t1, Ok t2 ) ->
                                         Just ( addPrefix descriptor.name prefixer d.name, { key = t1, value = t2 } )
 
@@ -363,8 +364,8 @@ messageFields oneOfFieldNames fieldsMeta parentDescriptor =
     fieldsMeta
         |> List.filterMap
             (\{ field, oneOfIndex } ->
-                if oneOfIndex > 0 then
-                    List.Extra.getAt (oneOfIndex - 1) oneOfFields
+                if oneOfIndex >= 0 then
+                    List.Extra.getAt oneOfIndex oneOfFields
 
                 else
                     Just field
@@ -374,7 +375,7 @@ messageFields oneOfFieldNames fieldsMeta parentDescriptor =
 
 oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int } -> String -> Int -> String -> ( FieldName, Field )
 oneOfField fields prefix index name =
-    List.filter (\field -> field.oneOfIndex - 1 == index) fields
+    List.filter (\field -> field.oneOfIndex == index) fields
         |> List.map .field
         |> List.filterMap
             (\( fieldName, field ) ->
@@ -389,29 +390,36 @@ oneOfField fields prefix index name =
         |> Tuple.pair (Name.field name)
 
 
-handleMessage : String -> TypeRefs -> Res FieldType
-handleMessage messageName typeRefs =
+handleMessage : DataType -> String -> TypeRefs -> Res FieldType
+handleMessage parentDataType messageName typeRefs =
     let
-        searchForRecursion : Set String -> String -> Bool
-        searchForRecursion encounteredTypes currentName =
+        searchForRecursionHelper : Set String -> String -> Bool
+        searchForRecursionHelper encounteredTypes currentName =
             case lookForTypeRef currentName typeRefs of
-                Ok ( Message name fieldDeps, _ ) ->
-                    Set.member name encounteredTypes
-                        || (Set.toList fieldDeps
-                                |> List.any (searchForRecursion <| Set.insert name encounteredTypes)
-                           )
+                Ok ( Message name fieldDeps, [] ) ->
+                    if Set.member name encounteredTypes then
+                        name == parentDataType
+
+                    else
+                        Set.toList fieldDeps
+                            |> List.any (searchForRecursionHelper <| Set.insert name encounteredTypes)
 
                 _ ->
                     False
+
+        searchForRecursion : String -> Set String -> Bool
+        searchForRecursion name fieldDeps =
+            Set.toList fieldDeps
+                |> List.any (searchForRecursionHelper <| Set.singleton name)
     in
     case lookForTypeRef messageName typeRefs of
-        Ok ( Message name _, moduleName ) ->
+        Ok ( Message name fieldDeps, moduleName ) ->
             Ok <|
                 Embedded
                     { dataType = name
                     , moduleName = moduleName
                     , typeKind =
-                        if searchForRecursion Set.empty messageName then
+                        if searchForRecursion name fieldDeps then
                             Model.Type
 
                         else
@@ -425,50 +433,62 @@ handleMessage messageName typeRefs =
             Err err
 
 
-fieldType : FieldDescriptorProto -> TypeRefs -> Res FieldType
-fieldType descriptor typeRefs =
+fieldType : DataType -> FieldDescriptorProto -> TypeRefs -> Res FieldType
+fieldType parentDataType descriptor typeRefs =
     case descriptor.type_ of
-        TypeDouble ->
+        FieldDescriptorProto_Type_TYPEDOUBLE ->
             Ok <| Primitive Prim_Float "double" <| defaultNumber descriptor
 
-        TypeFloat ->
+        FieldDescriptorProto_Type_TYPEFLOAT ->
             Ok <| Primitive Prim_Float "float" <| defaultNumber descriptor
 
-        TypeInt64 ->
+        FieldDescriptorProto_Type_TYPEINT64 ->
             Ok <| Primitive Prim_Int "int32" <| defaultNumber descriptor
 
-        TypeUint64 ->
+        FieldDescriptorProto_Type_TYPEINT32 ->
+            Ok <| Primitive Prim_Int "int32" <| defaultNumber descriptor
+
+        FieldDescriptorProto_Type_TYPEUINT64 ->
             Ok <| Primitive Prim_Int "uint32" <| defaultNumber descriptor
 
-        TypeInt32 ->
-            Ok <| Primitive Prim_Int "int32" <| defaultNumber descriptor
+        FieldDescriptorProto_Type_TYPEUINT32 ->
+            Ok <| Primitive Prim_Int "uint32" <| defaultNumber descriptor
 
-        TypeFixed64 ->
+        FieldDescriptorProto_Type_TYPEFIXED64 ->
             Ok <| Primitive Prim_Int "fixed32" <| defaultNumber descriptor
 
-        TypeFixed32 ->
+        FieldDescriptorProto_Type_TYPEFIXED32 ->
             Ok <| Primitive Prim_Int "fixed32" <| defaultNumber descriptor
 
-        TypeBool ->
+        FieldDescriptorProto_Type_TYPESFIXED64 ->
+            Ok <| Primitive Prim_Int "sfixed32" <| defaultNumber descriptor
+
+        FieldDescriptorProto_Type_TYPESFIXED32 ->
+            Ok <| Primitive Prim_Int "sfixed32" <| defaultNumber descriptor
+
+        FieldDescriptorProto_Type_TYPESINT64 ->
+            Ok <| Primitive Prim_Int "sint32" <| defaultNumber descriptor
+
+        FieldDescriptorProto_Type_TYPESINT32 ->
+            Ok <| Primitive Prim_Int "sint32" <| defaultNumber descriptor
+
+        FieldDescriptorProto_Type_TYPEBOOL ->
             Ok <| Primitive Prim_Bool "bool" <| defaultBool descriptor
 
-        TypeString ->
+        FieldDescriptorProto_Type_TYPESTRING ->
             Ok <| Primitive Prim_String "string" <| defaultString descriptor
 
-        TypeGroup ->
+        FieldDescriptorProto_Type_TYPEGROUP ->
             -- read about this feature. it is deprecated but this package should probably still support it somehow
             Err <| UnsupportedFeature "Groups (Deprecated)"
 
-        TypeMessage ->
-            handleMessage descriptor.typeName typeRefs
+        FieldDescriptorProto_Type_TYPEMESSAGE ->
+            handleMessage parentDataType descriptor.typeName typeRefs
 
-        TypeBytes ->
+        FieldDescriptorProto_Type_TYPEBYTES ->
             Ok <| Primitive Prim_Bytes "bytes" <| defaultBytes descriptor
 
-        TypeUint32 ->
-            Ok <| Primitive Prim_Int "uint32" <| defaultNumber descriptor
-
-        TypeEnum ->
+        FieldDescriptorProto_Type_TYPEENUM ->
             lookForTypeRef descriptor.typeName typeRefs
                 |> Result.andThen
                     (\( definedType, moduleName ) ->
@@ -489,24 +509,12 @@ fieldType descriptor typeRefs =
                                                         NonEmpty.head nonEmptyValues
 
                                                     else
-                                                        Name.type_ (enumName ++ "." ++ descriptor.defaultValue)
+                                                        enumName ++ "_" ++ Name.type_ descriptor.defaultValue
                                                 }
 
                                     Nothing ->
                                         Err <| NoEnumValues enumName
                     )
-
-        TypeSfixed32 ->
-            Ok <| Primitive Prim_Int "sfixed32" <| defaultNumber descriptor
-
-        TypeSfixed64 ->
-            Ok <| Primitive Prim_Int "sfixed32" <| defaultNumber descriptor
-
-        TypeSint32 ->
-            Ok <| Primitive Prim_Int "sint32" <| defaultNumber descriptor
-
-        TypeSint64 ->
-            Ok <| Primitive Prim_Int "sint32" <| defaultNumber descriptor
 
 
 
@@ -525,7 +533,7 @@ defaultBool descriptor =
 defaultBytes : FieldDescriptorProto -> String
 defaultBytes descriptor =
     -- TODO c escaped bytes, see https://github.com/golang/protobuf/pull/427/files
-    "(Encode.encode <| Encode.string \"" ++ descriptor.defaultValue ++ "\")"
+    "(Protobuf.Encode.encode <| Protobuf.Encode.string \"" ++ descriptor.defaultValue ++ "\")"
 
 
 defaultNumber : FieldDescriptorProto -> String
@@ -542,14 +550,14 @@ defaultString descriptor =
     "\"" ++ descriptor.defaultValue ++ "\""
 
 
-cardinality : FieldDescriptorProtoLabel -> Cardinality
+cardinality : FieldDescriptorProto_Label -> Cardinality
 cardinality value =
     case value of
-        LabelOptional ->
+        FieldDescriptorProto_Label_LABELOPTIONAL ->
             Optional
 
-        LabelRequired ->
+        FieldDescriptorProto_Label_LABELREQUIRED ->
             Required
 
-        LabelRepeated ->
+        FieldDescriptorProto_Label_LABELREPEATED ->
             Repeated

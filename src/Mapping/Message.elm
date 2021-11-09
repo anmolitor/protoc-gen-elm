@@ -96,7 +96,7 @@ fieldDeclarations ( _, field ) =
                             embedded.dataType ++ "_"
 
                         wrappedAnn =
-                            C.typed embedded.dataType []
+                            C.fqTyped embedded.moduleName embedded.dataType []
 
                         recursiveTypeWrapper : C.Declaration
                         recursiveTypeWrapper =

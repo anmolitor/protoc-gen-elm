@@ -1,10 +1,10 @@
 module MapperTest exposing (..)
 
 import Expect
-import Internal.Google.Protobuf exposing (DescriptorProto, DescriptorProtoNestedType(..), EnumDescriptorProto, EnumValueDescriptorProto, FieldDescriptorProto, FieldDescriptorProtoLabel(..), FieldDescriptorProtoType(..), FileDescriptorProto, MessageOptions)
 import MapperNew
 import Mapping.Syntax exposing (Syntax(..))
 import Model exposing (Cardinality(..), Field(..), FieldType(..), Primitive(..), TypeKind(..))
+import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, EnumValueDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MessageOptions)
 import Test exposing (Test, describe, test)
 
 
@@ -33,9 +33,9 @@ suite =
                                 | name = "Msg"
                                 , field =
                                     [ { defaultFieldDescriptorProto | name = "test" }
-                                    , { defaultFieldDescriptorProto | name = "test2", type_ = TypeMessage, typeName = ".OtherMsg" }
-                                    , { defaultFieldDescriptorProto | name = "test3", type_ = TypeEnum, typeName = ".OtherMsg.AnEnum" }
-                                    , { defaultFieldDescriptorProto | name = "test4", type_ = TypeMessage, typeName = ".Msg" }
+                                    , { defaultFieldDescriptorProto | name = "test2", type_ = FieldDescriptorProto_Type_TYPEMESSAGE, typeName = ".OtherMsg" }
+                                    , { defaultFieldDescriptorProto | name = "test3", type_ = FieldDescriptorProto_Type_TYPEENUM, typeName = ".OtherMsg.AnEnum" }
+                                    , { defaultFieldDescriptorProto | name = "test4", type_ = FieldDescriptorProto_Type_TYPEMESSAGE, typeName = ".Msg" }
                                     ]
                               }
                             ]
@@ -79,9 +79,8 @@ suite =
                                 [ { defaultDescriptorProto
                                     | name = "Msg"
                                     , nestedType =
-                                        DescriptorProtoNestedType
-                                            [ { defaultDescriptorProto | name = "OtherMsg" }
-                                            ]
+                                        [ DescriptorProto_ { defaultDescriptorProto | name = "OtherMsg" }
+                                        ]
                                   }
                                 ]
                         }
@@ -104,8 +103,8 @@ suite =
                                 [ { defaultDescriptorProto
                                     | name = "Msg"
                                     , field =
-                                        [ { defaultFieldDescriptorProto | name = "field1", type_ = TypeMessage, typeName = ".some.pkg.name.Msg.OtherMsg" }
-                                        , { defaultFieldDescriptorProto | name = "field2", type_ = TypeMessage, typeName = ".Abc" }
+                                        [ { defaultFieldDescriptorProto | name = "field1", type_ = FieldDescriptorProto_Type_TYPEMESSAGE, typeName = ".some.pkg.name.Msg.OtherMsg" }
+                                        , { defaultFieldDescriptorProto | name = "field2", type_ = FieldDescriptorProto_Type_TYPEMESSAGE, typeName = ".Abc" }
                                         ]
                                   }
                                 ]
@@ -172,7 +171,7 @@ defaultDescriptorProto =
     , extensionRange = []
     , field = []
     , name = ""
-    , nestedType = DescriptorProtoNestedType []
+    , nestedType = []
     , oneofDecl = []
     , options = Nothing
     , reservedName = []
@@ -184,12 +183,12 @@ defaultFieldDescriptorProto : FieldDescriptorProto
 defaultFieldDescriptorProto =
     { name = ""
     , number = 0
-    , label = LabelOptional
-    , type_ = TypeBool
+    , label = FieldDescriptorProto_Label_LABELOPTIONAL
+    , type_ = FieldDescriptorProto_Type_TYPEBOOL
     , typeName = ""
     , extendee = ""
     , defaultValue = ""
-    , oneofIndex = 0
+    , oneofIndex = -1
     , jsonName = ""
     , options = Nothing
     , proto3Optional = False
