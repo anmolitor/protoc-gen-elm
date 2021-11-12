@@ -15,7 +15,7 @@
             "elm/regex": "1.0.0",
             "elm-community/dict-extra": "2.4.0",
             "elm-community/list-extra": "8.5.1",
-            "elm-community/maybe-extra": "5.2.0",
+            "elm-community/maybe-extra": "5.2.1",
             "elm-community/result-extra": "2.4.0",
             "elm-community/string-extra": "4.0.1",
             "eriktim/elm-protocol-buffers": "1.1.0",
