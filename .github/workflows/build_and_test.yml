@@ -41,6 +41,9 @@ jobs:
         run: |
           npm config set //registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN
           npm publish || true
+        env:
+          CI: true
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}  
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         if: failure()
