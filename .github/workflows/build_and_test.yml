@@ -1,9 +1,8 @@
-# This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
 name: Node.js CI
 
 on:
+  push:
+    branches: [master]
   pull_request:
     branches: [master]
 
@@ -25,12 +24,23 @@ jobs:
       - uses: arduino/setup-protoc@v1.1.2
         with:
           version: 3.14.0
-      - name: install, build and test
+      - name: install
+        run: npm ci
+      - name: build
         run: |
           mkdir generated
           npm ci
           npm run build
-          npm test
+      - name: test
+        run: npm test
+      - name: npm publish
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          npm config set //registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN
+          npm publish --access public || true
+        env:
+          CI: true
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         if: failure()
