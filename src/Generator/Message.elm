@@ -48,7 +48,7 @@ toAST msg =
 
         default : C.Declaration
         default =
-            C.valDecl (Just <| Common.decoderDocumentation msg.dataType)
+            C.valDecl (Just <| Common.defaultDocumentation msg.dataType)
                 (Just <| C.typed msg.dataType [])
                 (Common.defaultName msg.dataType)
                 (C.record <| List.map (Tuple.mapSecond toDefaultValue) msg.fields)
@@ -99,20 +99,20 @@ fieldDeclarations ( _, field ) =
                 Type ->
                     let
                         recursiveWrapperName =
-                            embedded.dataType ++ "_"
+                            recursiveDataTypeName embedded.dataType
 
                         wrappedAnn =
                             C.fqTyped embedded.moduleName embedded.dataType []
 
                         recursiveTypeWrapper : C.Declaration
                         recursiveTypeWrapper =
-                            C.customTypeDecl (Just C.emptyDocComment) recursiveWrapperName [] [ ( recursiveWrapperName, [ wrappedAnn ] ) ]
+                            C.customTypeDecl (Just <| recursiveDataTypeDocumentation embedded.dataType) recursiveWrapperName [] [ ( recursiveWrapperName, [ wrappedAnn ] ) ]
 
                         unwrapper : C.Declaration
                         unwrapper =
-                            C.funDecl (Just C.emptyDocComment)
+                            C.funDecl (Just <| recursiveUnwrapDocumentation embedded.dataType)
                                 (Just <| C.funAnn (C.typed recursiveWrapperName []) wrappedAnn)
-                                ("unwrap" ++ recursiveWrapperName)
+                                (recursiveUnwrapName embedded.dataType)
                                 [ C.namedPattern recursiveWrapperName [ C.varPattern "wrapped" ] ]
                                 (C.val "wrapped")
                     in
@@ -186,7 +186,7 @@ toDefaultValue field =
                                         val
 
                                     Type ->
-                                        C.apply [ C.val (e.dataType ++ "_"), val ]
+                                        C.apply [ C.val (recursiveDataTypeName e.dataType), val ]
                            )
 
                 ( _, Enumeration enum ) ->
@@ -210,7 +210,7 @@ toDecoder ( fieldName, field ) =
 
                 Type ->
                     C.parens
-                        << C.applyBinOp (C.apply [ Meta.Decode.map, C.val <| e.dataType ++ "_" ]) C.pipel
+                        << C.applyBinOp (C.apply [ Meta.Decode.map, C.val <| recursiveDataTypeName e.dataType ]) C.pipel
                         << C.applyBinOp Meta.Decode.lazy C.pipel
                         << C.lambda [ C.allPattern ]
             )
@@ -318,7 +318,7 @@ toEncoder ( fieldName, field ) =
                     identity
 
                 Type ->
-                    C.parens << C.applyBinOp (C.fun <| "unwrap" ++ e.dataType ++ "_") C.composer
+                    C.parens << C.applyBinOp (C.fun <| recursiveUnwrapName e.dataType) C.composer
             )
                 (C.fqFun e.moduleName (Common.encoderName e.dataType))
 
@@ -398,7 +398,7 @@ fieldTypeToTypeAnnotation fieldType =
                         e.dataType
 
                     Type ->
-                        e.dataType ++ "_"
+                        recursiveDataTypeName e.dataType
                 )
                 []
 
@@ -439,6 +439,16 @@ fieldToTypeAnnotation field =
             C.maybeAnn <| C.typed dataType []
 
 
+recursiveDataTypeName : String -> String
+recursiveDataTypeName wrappedDataType =
+    wrappedDataType ++ "_"
+
+
+recursiveUnwrapName : String -> String
+recursiveUnwrapName wrappedDataType =
+    "unwrap" ++ recursiveDataTypeName wrappedDataType
+
+
 messageDocumentation : String -> C.Comment C.DocComment
 messageDocumentation msgName =
     C.emptyDocComment |> C.markdown ("`" ++ msgName ++ "` message")
@@ -452,3 +462,13 @@ oneofDocumentation msgName =
 setterDocumentation : String -> C.Comment C.DocComment
 setterDocumentation fieldName =
     C.emptyDocComment |> C.markdown ("Updates a field of key `" ++ fieldName ++ "` in any record containing that key")
+
+
+recursiveDataTypeDocumentation : String -> C.Comment C.DocComment
+recursiveDataTypeDocumentation wrappedDataType =
+    C.emptyDocComment |> C.markdown ("Type wrapper for alias type `" ++ wrappedDataType ++ "` to avoid unlimited recursion.")
+
+
+recursiveUnwrapDocumentation : String -> C.Comment C.DocComment
+recursiveUnwrapDocumentation wrappedDataType =
+    C.emptyDocComment |> C.markdown ("Unwrap a `" ++ wrappedDataType ++ "` from its wrapper `" ++ recursiveDataTypeName wrappedDataType ++ "`")

@@ -385,7 +385,7 @@ oneOfField fields prefix index name =
             (\( fieldName, field ) ->
                 case field of
                     NormalField fieldNumber _ type_ ->
-                        Just ( fieldNumber, Name.type_ <| prefix ++ "_" ++ name ++ "_" ++ fieldName, type_ )
+                        Just ( fieldNumber, Name.type_ <| prefix ++ "." ++ fieldName, type_ )
 
                     _ ->
                         Nothing

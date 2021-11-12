@@ -67,7 +67,7 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto.Oneof");
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { msg = Just <| Proto.Oneof.OneOfMsgAString "test" }`
+        `${freshVar} = { msg = Just <| Proto.Oneof.OneOf_AString "test" }`
       );
       const output = await repl.write(
         `(Proto.Oneof.encodeOneOf ${freshVar} |> E.encode |> D.decode Proto.Oneof.decodeOneOf) == Just ${freshVar}`
@@ -88,7 +88,7 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto.MultipleOneof");
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { msg = Just <| Proto.MultipleOneof.Oneof1MsgOptionA "a" }`
+        `${freshVar} = { msg = Just <| Proto.MultipleOneof.Oneof1_OptionA "a" }`
       );
       await repl.write(
         `(Proto.MultipleOneof.encodeOneof1 ${freshVar} |> E.encode |> D.decode Proto.MultipleOneof.decodeOneof1) == Just ${freshVar}`
