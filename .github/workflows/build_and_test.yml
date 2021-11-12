@@ -31,11 +31,18 @@ jobs:
       - uses: arduino/setup-protoc@v1.1.2
         with:
           version: 3.14.0
-      - run: mkdir generated
-      - run: npm ci
-      - run: npm run build
-      - run: npm test
-      - uses: actions/upload-artifact@v2
+      - name: install, build and test
+        run: |
+          mkdir generated
+          npm ci
+          npm run build
+          npm test
+      - name: npm publish
+        run: |
+          npm config set //registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN
+          npm publish || true
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: generated
