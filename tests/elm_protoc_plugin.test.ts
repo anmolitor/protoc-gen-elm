@@ -319,7 +319,7 @@ describe("protoc-gen-elm", () => {
     beforeAll(() => runPlugin("oneof_embedded.proto"));
     const expectedElmFileName = "Proto/OneofEmbedded.elm";
 
-    it("generates a valid elm file for proto2 group", async () => {
+    it("generates a valid elm file for embedded types", async () => {
       await compileElm(expectedElmFileName);
     });
   });
@@ -333,12 +333,20 @@ describe("protoc-gen-elm", () => {
       ])
     );
 
-    it("generates a valid elm file for proto2 group", async () => {
+    it("generates a valid elm file for multiple imports", async () => {
       await compileElm([
         "Proto/MultipleImports1.elm",
         "Proto/MultipleImports2.elm",
         "Proto/MultipleImports3.elm",
       ]);
+    });
+  });
+
+  describe("nested oneofs", () => {
+    beforeAll(() => runPlugin(["nested_oneofs.proto"]));
+
+    it("generates a valid elm file for proto2 group", async () => {
+      await compileElm(["Proto/NestedOneofs.elm"]);
     });
   });
 });

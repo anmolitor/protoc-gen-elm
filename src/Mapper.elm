@@ -340,7 +340,7 @@ message syntax typeRefs prefixer descriptor =
                     { messages =
                         [ { dataType = name
                           , isTopLevel = isEmptyPrefixer prefixer
-                          , fields = messageFields oneOfFieldNames fieldsMeta descriptor
+                          , fields = messageFields oneOfFieldNames fieldsMeta (addPrefix descriptor.name prefixer)
                           }
                         ]
                     , enums = List.map (enum syntax (addPrefix descriptor.name prefixer)) descriptor.enumType
@@ -359,11 +359,11 @@ message syntax typeRefs prefixer descriptor =
 -- FIELD
 
 
-messageFields : List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> DescriptorProto -> List ( FieldName, Field )
-messageFields oneOfFieldNames fieldsMeta parentDescriptor =
+messageFields : List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> Prefixer -> List ( FieldName, Field )
+messageFields oneOfFieldNames fieldsMeta prefixer =
     let
         oneOfFields =
-            List.indexedMap (oneOfField fieldsMeta parentDescriptor.name) oneOfFieldNames
+            List.indexedMap (oneOfField fieldsMeta prefixer) oneOfFieldNames
     in
     fieldsMeta
         |> List.filterMap
@@ -377,20 +377,20 @@ messageFields oneOfFieldNames fieldsMeta parentDescriptor =
         |> List.Extra.uniqueBy Tuple.first
 
 
-oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int } -> String -> Int -> String -> ( FieldName, Field )
-oneOfField fields prefix index name =
+oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int } -> Prefixer -> Int -> String -> ( FieldName, Field )
+oneOfField fields prefixer index name =
     List.filter (\field -> field.oneOfIndex == index) fields
         |> List.map .field
         |> List.filterMap
             (\( fieldName, field ) ->
                 case field of
                     NormalField fieldNumber _ type_ ->
-                        Just ( fieldNumber, Name.type_ <| prefix ++ "." ++ fieldName, type_ )
+                        Just ( fieldNumber, Name.type_ <| prefixer fieldName, type_ )
 
                     _ ->
                         Nothing
             )
-        |> OneOfField (prefix ++ Name.type_ name)
+        |> OneOfField (Name.type_ <| prefixer name)
         |> Tuple.pair (Name.field name)
 
 

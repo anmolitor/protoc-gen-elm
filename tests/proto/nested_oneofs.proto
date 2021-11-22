@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+message Outer1 {
+  message Inner {
+    oneof msg {
+      int32 first = 1;
+      bool second = 2;
+    }
+  }
+
+  Inner inner = 1;
+}
+
+message Outer2 {
+  message Inner {
+    oneof msg {
+      int32 first = 1;
+      bool third = 3;
+    }
+  }
+  Inner inner = 1;
+}
