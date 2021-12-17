@@ -220,6 +220,27 @@ describe("protoc-gen-elm", () => {
     });
   });
 
+    describe("map_in_package", () => {
+    beforeAll(() => runPlugin("map_in_package.proto"));
+    const expectedElmFileName = "Proto/MapInPackage.elm";
+
+    it("generates a valid elm file for maps", async () => {
+      await compileElm(expectedElmFileName);
+    });
+
+    it("generates working code for maps", async () => {
+      await repl.importModules("Proto.MapInPackage", "Dict");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(
+        `${freshVar} = Proto.MapInPackage.Bar (Dict.singleton "test" (Just <| Proto.MapInPackage.Foo "hi"))`
+      );
+      const output = await repl.write(
+        `(Proto.MapInPackage.encodeBar ${freshVar} |> E.encode |> D.decode Proto.MapInPackage.decodeBar) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+
   describe("nested declarations", () => {
     beforeAll(() => runPlugin("nested.proto"));
     const expectedElmFileName = "Proto/Nested.elm";

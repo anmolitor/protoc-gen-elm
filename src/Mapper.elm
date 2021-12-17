@@ -269,11 +269,17 @@ message syntax typeRefs prefixer descriptor =
             prefixer descriptor.name
                 |> Name.type_
 
+        removePackageName : String -> TypeRefs -> String
+        removePackageName typeName (packageName, _, _)=
+            if String.isEmpty packageName then
+                String.dropLeft 1 typeName
+            else String.replace ("." ++ packageName ++ ".") "" typeName
+
         getFromMaps : FieldDescriptorProto -> Maybe { key : FieldType, value : FieldType }
         getFromMaps fieldDescriptor =
             case fieldDescriptor.type_ of
                 FieldDescriptorProto_Type_TYPEMESSAGE ->
-                    Dict.get (String.dropLeft 1 fieldDescriptor.typeName) maps
+                    Dict.get (removePackageName fieldDescriptor.typeName typeRefs) maps
 
                 _ ->
                     Nothing

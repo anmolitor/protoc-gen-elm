@@ -1,0 +1,11 @@
+syntax="proto3";
+
+package pack;
+
+message Foo {
+  string abc = 1;
+}
+
+message Bar {
+  map<string, Foo> foos = 1;
+}
