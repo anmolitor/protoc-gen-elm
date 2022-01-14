@@ -220,7 +220,7 @@ describe("protoc-gen-elm", () => {
     });
   });
 
-    describe("map_in_package", () => {
+  describe("map_in_package", () => {
     beforeAll(() => runPlugin("map_in_package.proto"));
     const expectedElmFileName = "Proto/MapInPackage.elm";
 
