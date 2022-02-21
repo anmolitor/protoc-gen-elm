@@ -447,7 +447,7 @@ fieldType : DataType -> FieldDescriptorProto -> TypeRefs -> Res FieldType
 fieldType parentDataType descriptor typeRefs =
     case descriptor.type_ of
         FieldDescriptorProto_Type_TYPEDOUBLE ->
-            Ok <| Primitive Prim_Float "double" <| defaultNumber descriptor
+            Ok <| Primitive Prim_Double "double" <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEFLOAT ->
             Ok <| Primitive Prim_Float "float" <| defaultNumber descriptor

@@ -74,6 +74,7 @@ type Primitive
     | Prim_Float
     | Prim_Bool
     | Prim_Bytes
+    | Prim_Double
 
 
 type Field

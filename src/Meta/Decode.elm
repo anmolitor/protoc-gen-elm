@@ -42,6 +42,11 @@ float =
     C.fqFun moduleName "float"
 
 
+double : Expression
+double =
+    C.fqFun moduleName "double"
+
+
 bool : Expression
 bool =
     C.fqFun moduleName "bool"
@@ -94,6 +99,9 @@ forPrimitive prim =
 
         Prim_Int ->
             int32
+
+        Prim_Double ->
+            double
 
 
 moduleName : ModuleName
