@@ -27,3 +27,6 @@ forPrimitive prim =
 
         Prim_Bytes ->
             C.fqTyped [ "Bytes" ] "Bytes" []
+
+        Prim_Double ->
+            C.floatAnn

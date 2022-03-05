@@ -31,6 +31,10 @@ float : Expression
 float =
     C.fqFun moduleName "float"
 
+double : Expression
+double =
+    C.fqFun moduleName "double"
+
 
 string : Expression
 string =
@@ -69,6 +73,9 @@ forPrimitive prim =
 
         Prim_Bytes ->
             bytes
+
+        Prim_Double ->
+            double
 
 
 message : List Expression -> Expression
