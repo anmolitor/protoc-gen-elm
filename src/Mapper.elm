@@ -270,10 +270,12 @@ message syntax typeRefs prefixer descriptor =
                 |> Name.type_
 
         removePackageName : String -> TypeRefs -> String
-        removePackageName typeName (packageName, _, _)=
+        removePackageName typeName ( packageName, _, _ ) =
             if String.isEmpty packageName then
                 String.dropLeft 1 typeName
-            else String.replace ("." ++ packageName ++ ".") "" typeName
+
+            else
+                String.replace ("." ++ packageName ++ ".") "" typeName
 
         getFromMaps : FieldDescriptorProto -> Maybe { key : FieldType, value : FieldType }
         getFromMaps fieldDescriptor =

@@ -158,7 +158,7 @@ fieldTypeToDefaultValue fieldType =
             Meta.Basics.nothing
 
         Enumeration enum ->
-            C.val enum.default
+            C.fqVal enum.moduleName enum.default
 
 
 toDefaultValue : Field -> C.Expression
@@ -190,7 +190,7 @@ toDefaultValue field =
                            )
 
                 ( _, Enumeration enum ) ->
-                    C.val enum.default
+                    fieldTypeToDefaultValue (Enumeration enum)
 
         MapField _ _ _ ->
             C.fqFun [ "Dict" ] "empty"

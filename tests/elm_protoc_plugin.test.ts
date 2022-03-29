@@ -146,6 +146,40 @@ describe("protoc-gen-elm", () => {
     });
   });
 
+  describe("enum imports", () => {
+    beforeAll(() => runPlugin(["imported_enum.proto", "importing_enum.proto"]));
+    const expectedElmFileNames = [
+      "Proto/ImportedEnum.elm",
+      "Proto/ImportingEnum.elm",
+    ];
+
+    it("generates a valid elm file for imported_enum.proto and importing_enum.proto", async () => {
+      await compileElm(expectedElmFileNames);
+    });
+
+    it("generates working code for imported_enum.proto", async () => {
+      await repl.importModules("Proto.ImportedEnum");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(`${freshVar} = Proto.ImportedEnum.SomeEnum_OptionA`);
+      const output = await repl.write(
+        `(Proto.ImportedEnum.encodeSomeEnum ${freshVar} |> E.encode |> D.decode Proto.ImportedEnum.decodeSomeEnum) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("generates working code for importing_enum.proto", async () => {
+      await repl.importModules("Proto.ImportedEnum", "Proto.ImportingEnum");
+      const inner = repl.getFreshVariable();
+      const outer = repl.getFreshVariable();
+      await repl.write(`${inner} = Proto.ImportedEnum.SomeEnum_OptionB`);
+      await repl.write(`${outer} = { someEnum = ${inner} }`);
+      const output = await repl.write(
+        `(Proto.ImportingEnum.encodeMsg ${outer} |> E.encode |> D.decode Proto.ImportingEnum.decodeMsg) == Just ${outer}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+
   describe("subdirectory", () => {
     beforeAll(() =>
       runPlugin(["subdir/imported.proto", "subdir/importing.proto"])

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+import "imported_enum.proto";
+
+message Msg {
+  SomeEnum someEnum = 1;
+}
