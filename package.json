@@ -16,7 +16,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/jest": "^27.0.2",
-    "@types/node": "^17.0.8",
+    "@types/node": "^18.0.6",
     "assert": "^2.0.0",
     "jest": "^27.3.1",
     "protobufjs": "^6.8.8",
