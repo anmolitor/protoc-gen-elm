@@ -1,24 +1,27 @@
 import fs from "fs";
 import { Repl, startRepl } from "./repl";
-import { compileElm, generatedPath, runPlugin } from "./util";
+import { makeRoundtripRunner, RoundtripRunner } from "./roundtrip";
+import { compileElm, generatedPath, runPluginForAllFiles } from "./util";
 
 describe("protoc-gen-elm", () => {
   let repl: Repl;
+  let roundtripRunner: RoundtripRunner;
 
   beforeAll(async () => {
     console.log("Cleaning /generated folder");
     fs.rmSync(generatedPath, { recursive: true, force: true });
     fs.mkdirSync(generatedPath);
+    runPluginForAllFiles();
 
     repl = await startRepl();
     await repl.importModules("Protobuf.Decode as D", "Protobuf.Encode as E");
     console.log("Started elm repl.");
+    roundtripRunner = makeRoundtripRunner(repl);
   });
 
   afterAll(() => repl.stop());
 
   describe("single enum", () => {
-    beforeAll(() => runPlugin("single_enum.proto"));
     const expectedElmFileName = "Proto/SingleEnum.elm";
 
     it("generates a valid elm file for single_enum.proto", async () => {
@@ -35,7 +38,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("basic message", () => {
-    beforeAll(() => runPlugin("basic_message.proto"));
     const expectedElmFileName = "Proto/BasicMessage.elm";
 
     it("generates a valid elm file for basic_message.proto", async () => {
@@ -53,10 +55,21 @@ describe("protoc-gen-elm", () => {
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
+
+    it("is compatable with protobufjs", async () => {
+      await roundtripRunner(
+        { protoFileName: "basic_message", messageName: "BasicMessage" },
+        {
+          stringProperty: "str",
+          intProperty: 42,
+          floatProperty: 3.14,
+          boolProperty: true,
+        }
+      );
+    });
   });
 
   describe("oneof", () => {
-    beforeAll(() => runPlugin("oneof.proto"));
     const expectedElmFileName = "Proto/Oneof.elm";
 
     it("generates a valid elm file for oneof.proto", async () => {
@@ -74,10 +87,20 @@ describe("protoc-gen-elm", () => {
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
+
+    it("is compatable with protobufjs", async () => {
+      await roundtripRunner(
+        {
+          protoFileName: "oneof",
+          messageName: "OneOf",
+          elmModuleName: "Oneof",
+        },
+        { anInt: 69 }
+      );
+    });
   });
 
   describe("multiple oneof", () => {
-    beforeAll(() => runPlugin("multiple_oneof.proto"));
     const expectedElmFileName = "Proto/MultipleOneof.elm";
 
     it("generates a valid elm file for multiple_oneof.proto", async () => {
@@ -97,7 +120,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("package", () => {
-    beforeAll(() => runPlugin("package.proto"));
     const expectedElmFileName = "Proto/Package.elm";
 
     it("generates a valid elm file for package.proto", async () => {
@@ -114,7 +136,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("import", () => {
-    beforeAll(() => runPlugin(["imported.proto", "importing.proto"]));
     const expectedElmFileNames = ["Proto/Imported.elm", "Proto/Importing.elm"];
 
     it("generates a valid elm file for imported.proto and importing.proto", async () => {
@@ -147,7 +168,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("enum imports", () => {
-    beforeAll(() => runPlugin(["imported_enum.proto", "importing_enum.proto"]));
     const expectedElmFileNames = [
       "Proto/ImportedEnum.elm",
       "Proto/ImportingEnum.elm",
@@ -181,9 +201,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("subdirectory", () => {
-    beforeAll(() =>
-      runPlugin(["subdir/imported.proto", "subdir/importing.proto"])
-    );
     const expectedElmFileName = [
       "Proto/Subdir/Imported.elm",
       "Proto/Subdir/Importing.elm",
@@ -210,7 +227,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("subdirectory imports", () => {
-    beforeAll(() => runPlugin(["package.proto", "subdir/package.proto"]));
     const expectedElmFileName = [
       "Proto/Package.elm",
       "Proto/Subdir/Package.elm",
@@ -234,7 +250,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("maps", () => {
-    beforeAll(() => runPlugin("map.proto"));
     const expectedElmFileName = "Proto/Map.elm";
 
     it("generates a valid elm file for maps", async () => {
@@ -252,10 +267,19 @@ describe("protoc-gen-elm", () => {
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
+
+    it("is compatable with protobufjs", async () => {
+      await roundtripRunner(
+        { protoFileName: "map", messageName: "Bar", elmModuleName: "Map" },
+        {
+          foos: { a: { abc: "test" }, cd: { abc: "bla" } },
+          idk: { 1: "one", 5: "five" },
+        }
+      );
+    });
   });
 
   describe("map_in_package", () => {
-    beforeAll(() => runPlugin("map_in_package.proto"));
     const expectedElmFileName = "Proto/MapInPackage.elm";
 
     it("generates a valid elm file for maps", async () => {
@@ -276,7 +300,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("nested declarations", () => {
-    beforeAll(() => runPlugin("nested.proto"));
     const expectedElmFileName = "Proto/Nested.elm";
 
     it("generates a valid elm file for nested messages and enums", async () => {
@@ -297,14 +320,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("recursive declarations", () => {
-    beforeAll(() =>
-      runPlugin([
-        "recursive.proto",
-        "recursive_importing.proto",
-        "recursive_imported.proto",
-      ])
-    );
-
     it("generates a valid elm file for recursive messages", async () => {
       await compileElm("Proto/Recursive.elm");
     });
@@ -335,7 +350,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("weird names", () => {
-    beforeAll(() => runPlugin("weird_names.proto"));
     const expectedElmFileName = "Proto/WeirdNames.elm";
 
     it("generates a valid elm file even with weird casing conventions", async () => {
@@ -344,7 +358,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("proto2 enums", () => {
-    beforeAll(() => runPlugin("proto2_enum.proto"));
     const expectedElmFileName = "Proto/Proto2Enum.elm";
 
     it("generates a valid elm file for proto2 enum", async () => {
@@ -353,7 +366,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("proto2 required", () => {
-    beforeAll(() => runPlugin("proto2_required.proto"));
     const expectedElmFileName = "Proto/Proto2Required.elm";
 
     it("generates a valid elm file for proto2 enum", async () => {
@@ -362,7 +374,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("proto2 group", () => {
-    beforeAll(() => runPlugin("proto2_group.proto"));
     const expectedElmFileName = "Proto/Proto2Group.elm";
 
     it("generates a valid elm file for proto2 group", async () => {
@@ -371,7 +382,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("oneof with embedded types", () => {
-    beforeAll(() => runPlugin("oneof_embedded.proto"));
     const expectedElmFileName = "Proto/OneofEmbedded.elm";
 
     it("generates a valid elm file for embedded types", async () => {
@@ -380,14 +390,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("multiple imports", () => {
-    beforeAll(() =>
-      runPlugin([
-        "multiple_imports1.proto",
-        "multiple_imports2.proto",
-        "multiple_imports3.proto",
-      ])
-    );
-
     it("generates a valid elm file for multiple imports", async () => {
       await compileElm([
         "Proto/MultipleImports1.elm",
@@ -398,8 +400,6 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("nested oneofs", () => {
-    beforeAll(() => runPlugin(["nested_oneofs.proto"]));
-
     it("generates a valid elm file for proto2 group", async () => {
       await compileElm(["Proto/NestedOneofs.elm"]);
     });

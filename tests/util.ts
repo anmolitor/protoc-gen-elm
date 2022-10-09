@@ -1,4 +1,6 @@
 import cp from "child_process";
+import { Stats } from "fs";
+import fs from "fs/promises";
 import path from "path";
 
 const protoPath = path.join(__dirname, "proto");
@@ -15,7 +17,36 @@ const exec = (command: string): Promise<void> =>
     });
   });
 
-export const runPlugin = async (protoFileOrFiles: string | string[]) => {
+export const runPluginForAllFiles = async () => 
+  runPlugin(await getProtoFilesRecursive([protoPath]));
+
+
+const getProtoFilesRecursive = async (dirs: string[]): Promise<string[]> => {
+  const promises = dirs.map((dir) =>
+    fs
+      .readdir(dir)
+      .then((files) => files.map((fileName) => path.join(dir, fileName)))
+  );
+  const filePaths = (await Promise.all(promises)).flatMap((a) => a);
+  const withStats: [string, Stats][] = await Promise.all(
+    filePaths.map(async (filePath) => [filePath, await fs.stat(filePath)])
+  );
+  const protoFilePaths = withStats
+    .filter(
+      ([filePath, stats]) => stats.isFile() && filePath.endsWith(".proto")
+    )
+    .map(([filePath]) => filePath);
+  const nestedDirs = withStats
+    .filter(([, stats]) => stats.isDirectory())
+    .map(([filePath]) => filePath);
+
+  if (nestedDirs.length > 0) {
+    return [...protoFilePaths, ...(await getProtoFilesRecursive(nestedDirs))];
+  }
+  return protoFilePaths;  
+};
+
+const runPlugin = async (protoFileOrFiles: string | string[]) => {
   const args = Array.isArray(protoFileOrFiles)
     ? protoFileOrFiles.join(" ")
     : protoFileOrFiles;

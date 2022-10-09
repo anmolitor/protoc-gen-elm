@@ -2,7 +2,7 @@ import Parser from "parsimmon";
 import path from "path";
 import Protobuf from "protobufjs";
 import stripAnsi from "strip-ansi";
-import { Repl, startRepl } from "./repl";
+import { Repl } from "./repl";
 
 import { toBeDeepCloseTo, toMatchCloseTo } from "jest-matcher-deep-close-to";
 expect.extend({ toBeDeepCloseTo, toMatchCloseTo });
@@ -26,23 +26,16 @@ const replArrParser: Parser.Parser<number[]> = Parser.string("Just ")
   )
   .skip(Parser.all);
 
-describe("protobufjs compatability", () => {
-  let repl: Repl;
+export type RoundtripRunner = (
+  opts: { protoFileName: string; messageName: string; elmModuleName?: string },
+  testObj: any
+) => Promise<void>;
 
-  beforeAll(async () => {
-    repl = await startRepl();
-    console.log("Started elm repl.");
-  });
-
-  afterAll(async () => await repl.stop());
-
-  const runRoundtripTest = async (
-    {
-      protoFileName,
-      messageName,
-      elmModuleName = messageName,
-    }: { protoFileName: string; messageName: string; elmModuleName?: string },
-    testObj: any
+export const makeRoundtripRunner =
+  (repl: Repl): RoundtripRunner =>
+  async (
+    { protoFileName, messageName, elmModuleName = messageName },
+    testObj
   ) => {
     const root = await Protobuf.load(
       path.join(__dirname, "proto", `${protoFileName}.proto`)
@@ -64,30 +57,3 @@ describe("protobufjs compatability", () => {
     );
     expect(decodedMessage).toMatchCloseTo(testObj);
   };
-
-  it("basic message", async () => {
-    await runRoundtripTest(
-      { protoFileName: "basic_message", messageName: "BasicMessage" },
-      {
-        stringProperty: "str",
-        intProperty: 42,
-        floatProperty: 3.14,
-        boolProperty: true,
-      }
-    );
-  });
-
-  it("one of", async () => {
-    await runRoundtripTest(
-      { protoFileName: "oneof", messageName: "OneOf", elmModuleName: "Oneof" },
-      { anInt: 69 }
-    );
-  });
-
-  it("one of", async () => {
-    await runRoundtripTest(
-      { protoFileName: "oneof", messageName: "OneOf", elmModuleName: "Oneof" },
-      { anInt: 69 }
-    );
-  });
-});
