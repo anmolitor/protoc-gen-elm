@@ -57,7 +57,7 @@ export interface Repl {
   write: (command: string) => Promise<string>;
   writeMultiple: (...commands: string[]) => Promise<string[]>;
   getFreshVariable: () => string;
-  stop: () => void;
+  stop: () => Promise<void>;
 }
 
 /**
