@@ -2,7 +2,7 @@ syntax="proto3";
 
 import "subdir/imported.proto";
 
-message Nested {
+message NestedSubDir {
   string normalProperty = 1;
   SubImported nestedProperty = 2;
 }

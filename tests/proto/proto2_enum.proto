@@ -1,4 +1,6 @@
+syntax = "proto2";
+
 enum Proto2 {
-  OptionA = 0;
-  OptionB = 1;
+  OptionA2 = 0;
+  OptionB2 = 1;
 }

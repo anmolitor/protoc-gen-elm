@@ -17,9 +17,13 @@ const exec = (command: string): Promise<void> =>
     });
   });
 
-export const runPluginForAllFiles = async () => 
-  runPlugin(await getProtoFilesRecursive([protoPath]));
-
+export const runPluginForAllFiles = async () => {
+  const files = await getProtoFilesRecursive([protoPath]);
+  const withoutProtoPathPrefix = files.map((file) =>
+    file.replace(`${protoPath}${path.sep}`, "")
+  );
+  await runPlugin(withoutProtoPathPrefix);
+};
 
 const getProtoFilesRecursive = async (dirs: string[]): Promise<string[]> => {
   const promises = dirs.map((dir) =>
@@ -43,7 +47,7 @@ const getProtoFilesRecursive = async (dirs: string[]): Promise<string[]> => {
   if (nestedDirs.length > 0) {
     return [...protoFilePaths, ...(await getProtoFilesRecursive(nestedDirs))];
   }
-  return protoFilePaths;  
+  return protoFilePaths;
 };
 
 const runPlugin = async (protoFileOrFiles: string | string[]) => {

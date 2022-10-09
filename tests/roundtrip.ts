@@ -37,19 +37,27 @@ export const makeRoundtripRunner =
     { protoFileName, messageName, elmModuleName = messageName },
     testObj
   ) => {
+    // encode given test object with protobufjs
     const root = await Protobuf.load(
       path.join(__dirname, "proto", `${protoFileName}.proto`)
     );
     const Message = root.lookupType(messageName);
-    Message.verify(testObj);
+    const err = Message.verify(testObj);
+    if (err) {
+      throw new Error(err);
+    }
     const bytes = Message.encode(Message.create(testObj)).finish();
     const asArray = bufferToArr(bytes);
+
+    // import generated elm modules, decode bytes and re-encode them
     await repl.importModules(`Proto.${elmModuleName}`, "ByteUtil");
     const result = await repl
       .write(
         `ByteUtil.makeRoundtrip Proto.${elmModuleName}.decode${messageName} Proto.${elmModuleName}.encode${messageName} [${asArray}]`
       )
       .then(stripAnsi);
+
+    // check that the bytes are the same and decoding the bytes with protobufjs yields the original test object
     const arrayAfterwards = replArrParser.tryParse(result);
     expect(arrayAfterwards).toEqual(asArray);
     const decodedMessage = Message.toObject(

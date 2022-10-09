@@ -4,7 +4,7 @@ import Elm.CodeGen as C
 import Elm.Syntax.Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.TypeAnnotation exposing (TypeAnnotation)
-import Model exposing (Primitive(..))
+import Model exposing (IntFlavor(..), Primitive(..))
 
 
 encoder : TypeAnnotation -> TypeAnnotation
@@ -15,6 +15,26 @@ encoder encodedType =
 int32 : Expression
 int32 =
     C.fqFun moduleName "int32"
+
+
+sint32 : Expression
+sint32 =
+    C.fqFun moduleName "sint32"
+
+
+uint32 : Expression
+uint32 =
+    C.fqFun moduleName "uint32"
+
+
+fixed32 : Expression
+fixed32 =
+    C.fqFun moduleName "fixed32"
+
+
+sfixed32 : Expression
+sfixed32 =
+    C.fqFun moduleName "sfixed32"
 
 
 dict : Expression
@@ -30,6 +50,7 @@ bool =
 float : Expression
 float =
     C.fqFun moduleName "float"
+
 
 double : Expression
 double =
@@ -59,8 +80,20 @@ list =
 forPrimitive : Primitive -> Expression
 forPrimitive prim =
     case prim of
-        Prim_Int ->
+        Prim_Int Int32 ->
             int32
+
+        Prim_Int SInt32 ->
+            sint32
+
+        Prim_Int UInt32 ->
+            uint32
+
+        Prim_Int Fixed32 ->
+            fixed32
+
+        Prim_Int SFixed32 ->
+            sfixed32
 
         Prim_Bool ->
             bool

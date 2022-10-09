@@ -1,6 +1,6 @@
 syntax = "proto3";
 
 enum SomeEnum {
-  OptionA = 0;
-  OptionB = 1;
+  OptionAImported = 0;
+  OptionBImported = 1;
 }

@@ -1,4 +1,4 @@
-module Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldNumber, FieldType(..), Map, Message, OneOf, Package, Primitive(..), TypeKind(..))
+module Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldNumber, FieldType(..), IntFlavor(..), Map, Message, OneOf, Package, Primitive(..), TypeKind(..))
 
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.NonEmpty exposing (NonEmpty)
@@ -63,18 +63,26 @@ type TypeKind
 
 type FieldType
     = -- Primitive Type, Method in protobuf/[en/de]code to use, default value
-      Primitive Primitive String Default
+      Primitive Primitive Default
     | Embedded { dataType : DataType, moduleName : ModuleName, typeKind : TypeKind }
     | Enumeration { dataType : DataType, moduleName : ModuleName, values : List DataType, default : DataType }
 
 
 type Primitive
     = Prim_String
-    | Prim_Int
+    | Prim_Int IntFlavor
     | Prim_Float
     | Prim_Bool
     | Prim_Bytes
     | Prim_Double
+
+
+type IntFlavor
+    = Int32
+    | SInt32
+    | UInt32
+    | Fixed32
+    | SFixed32
 
 
 type Field

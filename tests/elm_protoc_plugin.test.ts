@@ -11,7 +11,7 @@ describe("protoc-gen-elm", () => {
     console.log("Cleaning /generated folder");
     fs.rmSync(generatedPath, { recursive: true, force: true });
     fs.mkdirSync(generatedPath);
-    runPluginForAllFiles();
+    await runPluginForAllFiles();
 
     repl = await startRepl();
     await repl.importModules("Protobuf.Decode as D", "Protobuf.Encode as E");
@@ -180,7 +180,9 @@ describe("protoc-gen-elm", () => {
     it("generates working code for imported_enum.proto", async () => {
       await repl.importModules("Proto.ImportedEnum");
       const freshVar = repl.getFreshVariable();
-      await repl.write(`${freshVar} = Proto.ImportedEnum.SomeEnum_OptionA`);
+      await repl.write(
+        `${freshVar} = Proto.ImportedEnum.SomeEnum_OptionAImported`
+      );
       const output = await repl.write(
         `(Proto.ImportedEnum.encodeSomeEnum ${freshVar} |> E.encode |> D.decode Proto.ImportedEnum.decodeSomeEnum) == Just ${freshVar}`
       );
@@ -191,7 +193,9 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto.ImportedEnum", "Proto.ImportingEnum");
       const inner = repl.getFreshVariable();
       const outer = repl.getFreshVariable();
-      await repl.write(`${inner} = Proto.ImportedEnum.SomeEnum_OptionB`);
+      await repl.write(
+        `${inner} = Proto.ImportedEnum.SomeEnum_OptionBImported`
+      );
       await repl.write(`${outer} = { someEnum = ${inner} }`);
       const output = await repl.write(
         `(Proto.ImportingEnum.encodeMsg ${outer} |> E.encode |> D.decode Proto.ImportingEnum.decodeMsg) == Just ${outer}`
@@ -217,10 +221,10 @@ describe("protoc-gen-elm", () => {
       );
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = Proto.Subdir.Importing.Nested "b" (Just <| Proto.Subdir.Imported.SubImported "a" False)`
+        `${freshVar} = Proto.Subdir.Importing.NestedSubDir "b" (Just <| Proto.Subdir.Imported.SubImported "a" False)`
       );
       const output = await repl.write(
-        `(Proto.Subdir.Importing.encodeNested ${freshVar} |> E.encode |> D.decode Proto.Subdir.Importing.decodeNested) == Just ${freshVar}`
+        `(Proto.Subdir.Importing.encodeNestedSubDir ${freshVar} |> E.encode |> D.decode Proto.Subdir.Importing.decodeNestedSubDir) == Just ${freshVar}`
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
@@ -402,6 +406,19 @@ describe("protoc-gen-elm", () => {
   describe("nested oneofs", () => {
     it("generates a valid elm file for proto2 group", async () => {
       await compileElm(["Proto/NestedOneofs.elm"]);
+    });
+  });
+
+  describe("int types", () => {
+    it("generates a valid elm file for ints", async () => {
+      await compileElm(["Proto/Ints.elm"]);
+    });
+
+    it("is compatable with protobufjs", async () => {
+      await roundtripRunner(
+        { protoFileName: "ints", messageName: "Ints" },
+        { int32: 123, sint32: 123, sfixed32: 123, uint32: 123, fixed32: 123 }
+      );
     });
   });
 });

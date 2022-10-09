@@ -9,7 +9,7 @@ import List.NonEmpty as NonEmpty
 import Mapper.Name as Name
 import Mapper.Struct as Struct exposing (Struct)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
-import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), Primitive(..))
+import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Primitive(..))
 import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, unwrapDescriptorProto_)
 import Set exposing (Set)
 
@@ -291,7 +291,7 @@ message syntax typeRefs prefixer descriptor =
             (case getFromMaps fieldDescriptor of
                 Just { key, value } ->
                     case key of
-                        Primitive _ _ _ ->
+                        Primitive _ _ ->
                             Ok <| MapField fieldDescriptor.number key value
 
                         _ ->
@@ -449,46 +449,46 @@ fieldType : DataType -> FieldDescriptorProto -> TypeRefs -> Res FieldType
 fieldType parentDataType descriptor typeRefs =
     case descriptor.type_ of
         FieldDescriptorProto_Type_TYPEDOUBLE ->
-            Ok <| Primitive Prim_Double "double" <| defaultNumber descriptor
+            Ok <| Primitive Prim_Double <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEFLOAT ->
-            Ok <| Primitive Prim_Float "float" <| defaultNumber descriptor
+            Ok <| Primitive Prim_Float <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEINT64 ->
-            Ok <| Primitive Prim_Int "int32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int Int32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEINT32 ->
-            Ok <| Primitive Prim_Int "int32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int Int32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEUINT64 ->
-            Ok <| Primitive Prim_Int "uint32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int UInt32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEUINT32 ->
-            Ok <| Primitive Prim_Int "uint32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int UInt32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEFIXED64 ->
-            Ok <| Primitive Prim_Int "fixed32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int Fixed32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEFIXED32 ->
-            Ok <| Primitive Prim_Int "fixed32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int Fixed32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPESFIXED64 ->
-            Ok <| Primitive Prim_Int "sfixed32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int SFixed32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPESFIXED32 ->
-            Ok <| Primitive Prim_Int "sfixed32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int SFixed32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPESINT64 ->
-            Ok <| Primitive Prim_Int "sint32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int SInt32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPESINT32 ->
-            Ok <| Primitive Prim_Int "sint32" <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int SInt32) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEBOOL ->
-            Ok <| Primitive Prim_Bool "bool" <| defaultBool descriptor
+            Ok <| Primitive Prim_Bool <| defaultBool descriptor
 
         FieldDescriptorProto_Type_TYPESTRING ->
-            Ok <| Primitive Prim_String "string" <| defaultString descriptor
+            Ok <| Primitive Prim_String <| defaultString descriptor
 
         FieldDescriptorProto_Type_TYPEGROUP ->
             handleMessage parentDataType descriptor.typeName typeRefs
@@ -497,7 +497,7 @@ fieldType parentDataType descriptor typeRefs =
             handleMessage parentDataType descriptor.typeName typeRefs
 
         FieldDescriptorProto_Type_TYPEBYTES ->
-            Ok <| Primitive Prim_Bytes "bytes" <| defaultBytes descriptor
+            Ok <| Primitive Prim_Bytes <| defaultBytes descriptor
 
         FieldDescriptorProto_Type_TYPEENUM ->
             lookForTypeRef descriptor.typeName typeRefs

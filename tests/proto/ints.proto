@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+message Ints {
+  int32 int32 = 1;
+  sint32 sint32 = 2;
+  sfixed32 sfixed32 = 3;
+  uint32 uint32 = 4;
+  fixed32 fixed32 = 5;
+}

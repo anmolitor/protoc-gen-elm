@@ -19,7 +19,7 @@ forPrimitive prim =
         Prim_Bool ->
             C.boolAnn
 
-        Prim_Int ->
+        Prim_Int _ ->
             C.intAnn
 
         Prim_Float ->

@@ -50,7 +50,7 @@ suite =
                                       , isTopLevel = True
                                       , fields =
                                             [ ( "test"
-                                              , NormalField 0 Optional (Primitive Prim_Bool "bool" "False")
+                                              , NormalField 0 Optional (Primitive Prim_Bool "False")
                                               )
                                             , ( "test2"
                                               , NormalField 0 Optional (Embedded { dataType = "OtherMsg", moduleName = [], typeKind = Alias })

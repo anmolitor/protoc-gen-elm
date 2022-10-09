@@ -129,7 +129,7 @@ fieldDeclarations ( _, field ) =
                 typeForFieldType : FieldType -> C.TypeAnnotation
                 typeForFieldType ft =
                     case ft of
-                        Primitive prim _ _ ->
+                        Primitive prim _ ->
                             Meta.Type.forPrimitive prim
 
                         Embedded e ->
@@ -151,7 +151,7 @@ fieldDeclarations ( _, field ) =
 fieldTypeToDefaultValue : FieldType -> C.Expression
 fieldTypeToDefaultValue fieldType =
     case fieldType of
-        Primitive _ _ defaultValue ->
+        Primitive _ defaultValue ->
             C.val defaultValue
 
         Embedded _ ->
@@ -166,13 +166,13 @@ toDefaultValue field =
     case field of
         NormalField _ cardinality fieldType ->
             case ( cardinality, fieldType ) of
-                ( Optional, Primitive _ _ defaultValue ) ->
+                ( Optional, Primitive _ defaultValue ) ->
                     C.val defaultValue
 
                 ( Repeated, _ ) ->
                     C.list []
 
-                ( Required, Primitive _ _ defaultValue ) ->
+                ( Required, Primitive _ defaultValue ) ->
                     C.val defaultValue
 
                 ( Optional, Embedded _ ) ->
@@ -219,7 +219,7 @@ toDecoder ( fieldName, field ) =
         fieldTypeToDecoder : FieldType -> Cardinality -> C.Expression
         fieldTypeToDecoder fieldType cardinality =
             case ( cardinality, fieldType ) of
-                ( _, Primitive dataType _ _ ) ->
+                ( _, Primitive dataType _ ) ->
                     Meta.Decode.forPrimitive dataType
 
                 ( Optional, Embedded e ) ->
@@ -291,7 +291,7 @@ toDecoder ( fieldName, field ) =
                                     [ Meta.Decode.map
                                     , C.val optionName
                                     , case fieldType of
-                                        Primitive p _ _ ->
+                                        Primitive p _ ->
                                             Meta.Decode.forPrimitive p
 
                                         Embedded e ->
@@ -325,7 +325,7 @@ toEncoder ( fieldName, field ) =
         fieldTypeToEncoder : Cardinality -> FieldType -> C.Expression
         fieldTypeToEncoder cardinality fieldType =
             case ( cardinality, fieldType ) of
-                ( Optional, Primitive dataType _ _ ) ->
+                ( Optional, Primitive dataType _ ) ->
                     Meta.Encode.forPrimitive dataType
 
                 ( Optional, Embedded e ) ->
@@ -338,7 +338,7 @@ toEncoder ( fieldName, field ) =
                 ( Optional, Enumeration enum ) ->
                     C.fqFun enum.moduleName (Common.encoderName enum.dataType)
 
-                ( Required, Primitive dataType _ _ ) ->
+                ( Required, Primitive dataType _ ) ->
                     Meta.Encode.forPrimitive dataType
 
                 ( Required, Embedded e ) ->
@@ -347,7 +347,7 @@ toEncoder ( fieldName, field ) =
                 ( Required, Enumeration enum ) ->
                     C.fqFun enum.moduleName (Common.encoderName enum.dataType)
 
-                ( Repeated, Primitive dataType _ _ ) ->
+                ( Repeated, Primitive dataType _ ) ->
                     C.apply [ Meta.Encode.list, Meta.Encode.forPrimitive dataType ]
 
                 ( Repeated, Embedded e ) ->
@@ -388,7 +388,7 @@ toEncoder ( fieldName, field ) =
 fieldTypeToTypeAnnotation : FieldType -> C.TypeAnnotation
 fieldTypeToTypeAnnotation fieldType =
     case fieldType of
-        Primitive dataType _ _ ->
+        Primitive dataType _ ->
             Meta.Type.forPrimitive dataType
 
         Embedded e ->
@@ -411,7 +411,7 @@ fieldToTypeAnnotation field =
     let
         cardinalityModifier cardinality fieldType =
             case ( cardinality, fieldType ) of
-                ( Optional, Primitive _ _ _ ) ->
+                ( Optional, Primitive _ _ ) ->
                     identity
 
                 ( Optional, Enumeration _ ) ->

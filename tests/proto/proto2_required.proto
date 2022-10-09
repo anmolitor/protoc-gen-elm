@@ -1,12 +1,14 @@
-enum Enum {
+syntax = "proto2";
+
+enum Enum2 {
   A = 5;
   B = 10;
 }
 
-message Msg {}
+message Msg2 {}
 
 message Required {
   required string field1 = 1;
   required bytes field2 = 2;
-  required Msg field3 = 3;
+  required Msg2 field3 = 3;
 }
