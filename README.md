@@ -28,13 +28,13 @@ The following table gives an overview of how `.proto` types correspond to Elm ty
 | `double`      | `Float`                             | `0`                                                                      |
 | `float`       | `Float`                             | `0`                                                                      |
 | `int32`       | `Int`                               | `0`                                                                      |
-| `int64`       | `Int`\*                             | `0`                                                                      |
+| `int64`       | `Int64`\*                           | `0`                                                                      |
 | `uint32`      | `Int`                               | `0`                                                                      |
-| `uint64`      | `Int`\*                             | `0`                                                                      |
+| `uint64`      | `Int64`\*                           | `0`                                                                      |
 | `sint32`      | `Int`                               | `0`                                                                      |
-| `sint64`      | `Int`\*                             | `0`                                                                      |
+| `sint64`      | `Int64`\*                           | `0`                                                                      |
 | `fixed32`     | `Int`                               | `0`                                                                      |
-| `fixed64`     | `Int`\*                             | `0`                                                                      |
+| `fixed64`     | `Int64`\*                           | `0`                                                                      |
 | `bool`        | `Bool`                              | `False`                                                                  |
 | `string`      | `String`                            | `""`                                                                     |
 | `bytes`       | `Bytes.Bytes`                       | Empty bytes sequence                                                     |
@@ -50,7 +50,7 @@ The following table gives an overview of how `.proto` types correspond to Elm ty
 | `reserved`    | N/A                                 |                                                                          |
 | `extensions`  | N/A                                 |                                                                          |
 
-\*) 64-bit integers are processed as 32-bit integers, see [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest#known-limitations)
+\*) 64-bit integers are defined in [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers) in `Protobuf.Types.Int64`.
 
 \*\*) Some default values can be overridden in `proto2` specifications
 
