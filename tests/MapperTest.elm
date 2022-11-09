@@ -1,5 +1,6 @@
 module MapperTest exposing (..)
 
+import Elm.CodeGen as C
 import Expect
 import Mapper
 import Mapper.Syntax exposing (Syntax(..))
@@ -50,7 +51,7 @@ suite =
                                       , isTopLevel = True
                                       , fields =
                                             [ ( "test"
-                                              , NormalField 0 Optional (Primitive Prim_Bool "False")
+                                              , NormalField 0 Optional (Primitive Prim_Bool <| C.val "False")
                                               )
                                             , ( "test2"
                                               , NormalField 0 Optional (Embedded { dataType = "OtherMsg", moduleName = [], typeKind = Alias })

@@ -1,4 +1,5 @@
 import fs from "fs";
+import long from "long";
 import { Repl, startRepl } from "./repl";
 import { makeRoundtripRunner, RoundtripRunner } from "./roundtrip";
 import { compileElm, generatedPath, runPluginForAllFiles } from "./util";
@@ -57,14 +58,16 @@ describe("protoc-gen-elm", () => {
     });
 
     it("is compatable with protobufjs", async () => {
+      const msg = {
+        stringProperty: "str",
+        intProperty: 42,
+        floatProperty: 3.14,
+        boolProperty: true,
+      };
       await roundtripRunner(
         { protoFileName: "basic_message", messageName: "BasicMessage" },
-        {
-          stringProperty: "str",
-          intProperty: 42,
-          floatProperty: 3.14,
-          boolProperty: true,
-        }
+        msg,
+        (actual) => expect(actual).toMatchCloseTo(msg)
       );
     });
   });
@@ -417,7 +420,18 @@ describe("protoc-gen-elm", () => {
     it("is compatable with protobufjs", async () => {
       await roundtripRunner(
         { protoFileName: "ints", messageName: "Ints" },
-        { int32: 123, sint32: 123, sfixed32: 123, uint32: 123, fixed32: 123 }
+        {
+          int32: 123,
+          sint32: 123,
+          sfixed32: 123,
+          uint32: 123,
+          fixed32: 123,
+          int64: long.fromInt(2 ^ 33),
+          sint64: long.fromInt(2 ^ 33),
+          sfixed64: long.fromInt(2 ^ 33),
+          uint64: long.fromInt(2 ^ 33, true),
+          fixed64: long.fromInt(2 ^ 33, true),
+        }
       );
     });
   });

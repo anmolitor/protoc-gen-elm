@@ -6,4 +6,9 @@ message Ints {
   sfixed32 sfixed32 = 3;
   uint32 uint32 = 4;
   fixed32 fixed32 = 5;
+  int64 int64 = 6;
+  sint64 sint64 = 7;
+  sfixed64 sfixed64 = 8;
+  uint64 uint64 = 9;
+  fixed64 fixed64 = 10;
 }

@@ -19,8 +19,11 @@ forPrimitive prim =
         Prim_Bool ->
             C.boolAnn
 
-        Prim_Int _ ->
+        Prim_Int32 _ ->
             C.intAnn
+
+        Prim_Int64 _ ->
+            C.fqTyped [ "Protobuf", "Types", "Int64" ] "Int64" []
 
         Prim_Float ->
             C.floatAnn

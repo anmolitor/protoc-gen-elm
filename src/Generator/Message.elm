@@ -152,7 +152,7 @@ fieldTypeToDefaultValue : FieldType -> C.Expression
 fieldTypeToDefaultValue fieldType =
     case fieldType of
         Primitive _ defaultValue ->
-            C.val defaultValue
+            defaultValue
 
         Embedded _ ->
             Meta.Basics.nothing
@@ -167,13 +167,13 @@ toDefaultValue field =
         NormalField _ cardinality fieldType ->
             case ( cardinality, fieldType ) of
                 ( Optional, Primitive _ defaultValue ) ->
-                    C.val defaultValue
+                    defaultValue
 
                 ( Repeated, _ ) ->
                     C.list []
 
                 ( Required, Primitive _ defaultValue ) ->
-                    C.val defaultValue
+                    defaultValue
 
                 ( Optional, Embedded _ ) ->
                     Meta.Basics.nothing

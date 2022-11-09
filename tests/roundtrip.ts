@@ -28,14 +28,16 @@ const replArrParser: Parser.Parser<number[]> = Parser.string("Just ")
 
 export type RoundtripRunner = (
   opts: { protoFileName: string; messageName: string; elmModuleName?: string },
-  testObj: any
+  testObj: any,
+  expectation?: (actual: any) => void
 ) => Promise<void>;
 
 export const makeRoundtripRunner =
   (repl: Repl): RoundtripRunner =>
   async (
     { protoFileName, messageName, elmModuleName = messageName },
-    testObj
+    testObj,
+    expectation = (actual) => expect(actual).toEqual(testObj)
   ) => {
     // encode given test object with protobufjs
     const root = await Protobuf.load(
@@ -63,5 +65,5 @@ export const makeRoundtripRunner =
     const decodedMessage = Message.toObject(
       Message.decode(arrToBytes(arrayAfterwards))
     );
-    expect(decodedMessage).toMatchCloseTo(testObj);
+    expectation(decodedMessage);
   };

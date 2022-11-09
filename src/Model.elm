@@ -1,5 +1,6 @@
 module Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldNumber, FieldType(..), IntFlavor(..), Map, Message, OneOf, Package, Primitive(..), TypeKind(..))
 
+import Elm.CodeGen as C
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.NonEmpty exposing (NonEmpty)
 import Set exposing (Set)
@@ -53,7 +54,7 @@ type alias DataType =
 
 
 type alias Default =
-    String
+    C.Expression
 
 
 type TypeKind
@@ -70,7 +71,8 @@ type FieldType
 
 type Primitive
     = Prim_String
-    | Prim_Int IntFlavor
+    | Prim_Int32 IntFlavor
+    | Prim_Int64 IntFlavor
     | Prim_Float
     | Prim_Bool
     | Prim_Bytes
@@ -78,11 +80,11 @@ type Primitive
 
 
 type IntFlavor
-    = Int32
-    | SInt32
-    | UInt32
-    | Fixed32
-    | SFixed32
+    = Int_
+    | SInt
+    | UInt
+    | Fixed
+    | SFixed
 
 
 type Field

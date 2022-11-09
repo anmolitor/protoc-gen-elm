@@ -2,13 +2,14 @@ module Mapper exposing (definedTypesInFileDescriptor, definedTypesInMessageDescr
 
 import Dict exposing (Dict)
 import Dict.Extra
-import Elm.CodeGen exposing (ModuleName)
+import Elm.CodeGen as C exposing (ModuleName)
 import Errors exposing (Error(..), Res)
 import List.Extra
 import List.NonEmpty as NonEmpty
 import Mapper.Name as Name
 import Mapper.Struct as Struct exposing (Struct)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
+import Meta.Encode
 import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Primitive(..))
 import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, unwrapDescriptorProto_)
 import Set exposing (Set)
@@ -455,34 +456,34 @@ fieldType parentDataType descriptor typeRefs =
             Ok <| Primitive Prim_Float <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEINT64 ->
-            Ok <| Primitive (Prim_Int Int32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int64 Int_) <| defaultInt64 descriptor
 
         FieldDescriptorProto_Type_TYPEINT32 ->
-            Ok <| Primitive (Prim_Int Int32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int32 Int_) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEUINT64 ->
-            Ok <| Primitive (Prim_Int UInt32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int64 UInt) <| defaultInt64 descriptor
 
         FieldDescriptorProto_Type_TYPEUINT32 ->
-            Ok <| Primitive (Prim_Int UInt32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int32 UInt) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEFIXED64 ->
-            Ok <| Primitive (Prim_Int Fixed32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int64 Fixed) <| defaultInt64 descriptor
 
         FieldDescriptorProto_Type_TYPEFIXED32 ->
-            Ok <| Primitive (Prim_Int Fixed32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int32 Fixed) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPESFIXED64 ->
-            Ok <| Primitive (Prim_Int SFixed32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int64 SFixed) <| defaultInt64 descriptor
 
         FieldDescriptorProto_Type_TYPESFIXED32 ->
-            Ok <| Primitive (Prim_Int SFixed32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int32 SFixed) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPESINT64 ->
-            Ok <| Primitive (Prim_Int SInt32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int64 SInt) <| defaultInt64 descriptor
 
         FieldDescriptorProto_Type_TYPESINT32 ->
-            Ok <| Primitive (Prim_Int SInt32) <| defaultNumber descriptor
+            Ok <| Primitive (Prim_Int32 SInt) <| defaultNumber descriptor
 
         FieldDescriptorProto_Type_TYPEBOOL ->
             Ok <| Primitive Prim_Bool <| defaultBool descriptor
@@ -532,33 +533,39 @@ fieldType parentDataType descriptor typeRefs =
 -- DEFAULTS
 
 
-defaultBool : FieldDescriptorProto -> String
+defaultBool : FieldDescriptorProto -> C.Expression
 defaultBool descriptor =
     if descriptor.defaultValue == "true" then
-        "True"
+        C.val "True"
 
     else
-        "False"
+        C.val "False"
 
 
-defaultBytes : FieldDescriptorProto -> String
+defaultBytes : FieldDescriptorProto -> C.Expression
 defaultBytes descriptor =
     -- TODO c escaped bytes, see https://github.com/golang/protobuf/pull/427/files
-    "(Protobuf.Encode.encode <| Protobuf.Encode.string \"" ++ descriptor.defaultValue ++ "\")"
+    C.applyBinOp (C.fqFun [ "Protobuf", "Encode" ] "encode") C.pipel <|
+        C.apply [ Meta.Encode.string, C.string descriptor.defaultValue ]
 
 
-defaultNumber : FieldDescriptorProto -> String
+defaultNumber : FieldDescriptorProto -> C.Expression
 defaultNumber descriptor =
     if descriptor.defaultValue == "" then
-        "0"
+        C.int 0
 
     else
-        descriptor.defaultValue
+        C.val descriptor.defaultValue
 
 
-defaultString : FieldDescriptorProto -> String
+defaultInt64 : FieldDescriptorProto -> C.Expression
+defaultInt64 descriptor =
+    C.apply [ C.fqFun [ "Protobuf", "Types", "Int64" ] "fromInts", C.int 0, defaultNumber descriptor ]
+
+
+defaultString : FieldDescriptorProto -> C.Expression
 defaultString descriptor =
-    "\"" ++ descriptor.defaultValue ++ "\""
+    C.string descriptor.defaultValue
 
 
 cardinality : FieldDescriptorProto_Label -> Cardinality

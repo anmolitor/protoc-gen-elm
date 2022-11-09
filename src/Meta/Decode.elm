@@ -52,6 +52,31 @@ sfixed32 =
     C.fqFun moduleName "sfixed32"
 
 
+int64 : Expression
+int64 =
+    C.fqFun moduleName "int64"
+
+
+sint64 : Expression
+sint64 =
+    C.fqFun moduleName "sint64"
+
+
+uint64 : Expression
+uint64 =
+    C.fqFun moduleName "uint64"
+
+
+fixed64 : Expression
+fixed64 =
+    C.fqFun moduleName "fixed64"
+
+
+sfixed64 : Expression
+sfixed64 =
+    C.fqFun moduleName "sfixed64"
+
+
 string : Expression
 string =
     C.fqFun moduleName "string"
@@ -117,20 +142,35 @@ forPrimitive prim =
         Prim_Float ->
             float
 
-        Prim_Int Int32 ->
+        Prim_Int32 Int_ ->
             int32
 
-        Prim_Int SInt32 ->
+        Prim_Int32 SInt ->
             sint32
 
-        Prim_Int UInt32 ->
+        Prim_Int32 UInt ->
             uint32
 
-        Prim_Int Fixed32 ->
+        Prim_Int32 Fixed ->
             fixed32
 
-        Prim_Int SFixed32 ->
+        Prim_Int32 SFixed ->
             sfixed32
+
+        Prim_Int64 Int_ ->
+            int64
+
+        Prim_Int64 SInt ->
+            sint64
+
+        Prim_Int64 UInt ->
+            uint64
+
+        Prim_Int64 Fixed ->
+            fixed64
+
+        Prim_Int64 SFixed ->
+            sfixed64
 
         Prim_Double ->
             double
