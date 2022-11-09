@@ -7,6 +7,7 @@ import Ports
 import Proto.Google.Protobuf.Compiler.Plugin exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
 import Protobuf.Decode as Decode
 import Protobuf.Encode as Encode
+import Protobuf.Types.Int64
 
 
 main : Program Versions Model Msg
@@ -93,4 +94,4 @@ version v =
 
 fail : String -> CodeGeneratorResponse
 fail err =
-    CodeGeneratorResponse err 3 []
+    CodeGeneratorResponse err (Protobuf.Types.Int64.fromInts 0 3) []

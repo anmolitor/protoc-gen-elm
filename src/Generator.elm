@@ -15,6 +15,7 @@ import Mapper.Struct exposing (Struct)
 import Model exposing (Field(..))
 import Proto.Google.Protobuf.Compiler.Plugin exposing (CodeGeneratorRequest, CodeGeneratorResponse, CodeGeneratorResponse_File)
 import Proto.Google.Protobuf.Descriptor exposing (FileDescriptorProto)
+import Protobuf.Types.Int64
 import Result.Extra
 import Set
 
@@ -38,7 +39,7 @@ requestToResponse versions req =
                 ( file, errors ) =
                     Result.Extra.partition fileResults
             in
-            { error = Errors.MultipleErrors errors |> Errors.format, supportedFeatures = 3, file = file }
+            { error = Errors.MultipleErrors errors |> Errors.format, supportedFeatures = Protobuf.Types.Int64.fromInts 0 3, file = file }
 
         files =
             convert versions req.fileToGenerate req.protoFile
