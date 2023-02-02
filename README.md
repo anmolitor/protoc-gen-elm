@@ -71,6 +71,25 @@ protoc --elm_out=src greeter.proto
 elm reactor
 ```
 
+## Well-known types
+
+If you want to use protobufs [well-known-types](https://developers.google.com/protocol-buffers/docs/reference/google.protobuf), 
+you need to include the paths to the proto files in the compilation.
+
+Example: If this is your proto file `test.proto` which uses the well-known type `Timestamp`,
+```
+import "google/protobuf/timestamp.proto";
+
+message TestMessage {
+  google.protobuf.Timestamp timestamp = 1;
+}
+```
+
+the `protoc` invocation will need to include the path to the well-known types .proto file.
+```
+protoc --elm_out=. test.proto /usr/local/include/google/protobuf/timestamp.proto
+```
+
 ## Limitations
 
 - All limitations of [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest#known-limitations) apply;
