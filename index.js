@@ -26,7 +26,11 @@ function getLibraryVersion() {
 const pluginVersion = getPluginVersion();
 const libraryVersion = getLibraryVersion();
 const app = Elm.Main.init({
-  flags: { plugin: pluginVersion, library: libraryVersion },
+  flags: {
+    plugin: pluginVersion,
+    library: libraryVersion,
+    grpcOn: process.env.ENABLE_GRPC_UNSTABLE === "true",
+  },
 });
 
 function sendToGenerator(request) {

@@ -10,8 +10,8 @@ import Mapper.Name as Name
 import Mapper.Struct as Struct exposing (Struct)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
 import Meta.Encode
-import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Primitive(..))
-import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, unwrapDescriptorProto_)
+import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, Primitive(..), Service)
+import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, unwrapDescriptorProto_)
 import Set exposing (Set)
 
 
@@ -23,6 +23,16 @@ type DefinedType
     = -- name, references to further types
       Message String (Set String)
     | Enum String (List String)
+
+
+getDefinedTypeName : DefinedType -> String
+getDefinedTypeName definedType =
+    case definedType of
+        Message name _ ->
+            name
+
+        Enum name _ ->
+            name
 
 
 type alias PackageName =
@@ -86,8 +96,8 @@ definedTypesInFileDescriptor descriptor =
         ++ List.concatMap definedTypesInMessageDescriptor descriptor.messageType
 
 
-mapMain : List FileDescriptorProto -> List ( String, Res Struct )
-mapMain descriptors =
+mapMain : Bool -> List FileDescriptorProto -> List ( String, Res Struct )
+mapMain grpcOn descriptors =
     let
         dict : Dict String ( PackageName, DefinedTypes )
         dict =
@@ -109,18 +119,45 @@ mapMain descriptors =
                             |> Dict.Extra.fromListDedupe (++)
                         )
 
+                    mapMethod : MethodDescriptorProto -> Res Method
+                    mapMethod { name, inputType, outputType } =
+                        Result.map2
+                            (\( definedInputType, inputTypeModuleName ) ( definedOutputType, outputTypeModuleName ) ->
+                                { name = name
+                                , reqType = ( inputTypeModuleName, getDefinedTypeName definedInputType )
+                                , resType = ( outputTypeModuleName, getDefinedTypeName definedOutputType )
+                                }
+                            )
+                            (lookForTypeRef inputType typeRefs)
+                            (lookForTypeRef outputType typeRefs)
+
+                    mapService : ServiceDescriptorProto -> Res Service
+                    mapService service =
+                        Errors.combineMap mapMethod service.method
+                            |> Result.map
+                                (\methods ->
+                                    { name = service.name
+                                    , package = descriptor.package
+                                    , methods = methods
+                                    }
+                                )
+
                     syntax =
                         parseSyntax descriptor.syntax
                 in
                 ( descriptor.name
-                , Result.map
-                    (Struct.append
-                        { enums = List.map (enum syntax emptyPrefixer) descriptor.enumType
-                        , messages = []
-                        }
-                        << Struct.concat
+                , Result.map2
+                    (\messageStructs services ->
+                        Struct.append
+                            { enums = List.map (enum syntax emptyPrefixer) descriptor.enumType
+                            , messages = []
+                            , services = services
+                            }
+                        <|
+                            Struct.concat messageStructs
                     )
                     (Errors.combineMap (message syntax typeRefs emptyPrefixer) descriptor.messageType)
+                    (if grpcOn then Errors.combineMap mapService descriptor.service else Ok [])
                 )
             )
 
@@ -353,6 +390,7 @@ message syntax typeRefs prefixer descriptor =
                           }
                         ]
                     , enums = List.map (enum syntax (addPrefix descriptor.name prefixer)) descriptor.enumType
+                    , services = []
                     }
                 )
                 fieldsMetaResult

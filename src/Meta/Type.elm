@@ -10,6 +10,16 @@ dict k v =
     C.fqTyped [ "Dict" ] "Dict" [ k, v ]
 
 
+result : TypeAnnotation -> TypeAnnotation -> TypeAnnotation
+result e a =
+    C.fqTyped [ "Result" ] "Result" [ e, a ]
+
+
+cmd : TypeAnnotation -> TypeAnnotation
+cmd v =
+    C.fqTyped [ "Platform" ] "Cmd" [ v ]
+
+
 forPrimitive : Primitive -> TypeAnnotation
 forPrimitive prim =
     case prim of

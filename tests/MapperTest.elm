@@ -1,11 +1,13 @@
 module MapperTest exposing (..)
 
 import Elm.CodeGen as C
+import Errors exposing (Res)
 import Expect
 import Mapper
+import Mapper.Struct exposing (Struct)
 import Mapper.Syntax exposing (Syntax(..))
 import Model exposing (Cardinality(..), Field(..), FieldType(..), Primitive(..), TypeKind(..))
-import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, EnumValueDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MessageOptions)
+import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, EnumValueDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MessageOptions, MethodDescriptorProto)
 import Test exposing (Test, describe, test)
 
 
@@ -14,35 +16,9 @@ suite =
     describe "Mapper"
         [ test "converts a single file descriptor correctly" <|
             \_ ->
-                Mapper.mapMain
-                    [ { defaultFileDescriptorProto
-                        | name = "test.proto"
-                        , messageType =
-                            [ { defaultDescriptorProto
-                                | name = "OtherMsg"
-                                , enumType =
-                                    [ { defaultEnumDescriptorProto
-                                        | name = "AnEnum"
-                                        , value =
-                                            [ enumValue "Bla" 0
-                                            , enumValue "Blub" 2
-                                            ]
-                                      }
-                                    ]
-                              }
-                            , { defaultDescriptorProto
-                                | name = "Msg"
-                                , field =
-                                    [ { defaultFieldDescriptorProto | name = "test" }
-                                    , { defaultFieldDescriptorProto | name = "test2", type_ = FieldDescriptorProto_Type_TYPEMESSAGE, typeName = ".OtherMsg" }
-                                    , { defaultFieldDescriptorProto | name = "test3", type_ = FieldDescriptorProto_Type_TYPEENUM, typeName = ".OtherMsg.AnEnum" }
-                                    , { defaultFieldDescriptorProto | name = "test4", type_ = FieldDescriptorProto_Type_TYPEMESSAGE, typeName = ".Msg" }
-                                    ]
-                              }
-                            ]
-                      }
-                    ]
-                    |> Expect.equal
+                let
+                    expected : List ( String, Res Struct )
+                    expected =
                         [ ( "test.proto"
                           , Ok
                                 { messages =
@@ -66,9 +42,54 @@ suite =
                                       }
                                     ]
                                 , enums = [ { dataType = "OtherMsg_AnEnum", fields = ( ( 0, "OtherMsg_AnEnum_Bla" ), [ ( 2, "OtherMsg_AnEnum_Blub" ) ] ), isTopLevel = False, withUnrecognized = True } ]
+                                , services = [ { name = "SomeService", package = "testpackage", methods = [ { name = "SomeMethod", reqType = ( [], "OtherMsg" ), resType = ( [], "AnEnum" ) } ] } ]
                                 }
                           )
                         ]
+                in
+                Mapper.mapMain True
+                    [ { defaultFileDescriptorProto
+                        | name = "test.proto"
+                        , package = "testpackage"
+                        , messageType =
+                            [ { defaultDescriptorProto
+                                | name = "OtherMsg"
+                                , enumType =
+                                    [ { defaultEnumDescriptorProto
+                                        | name = "AnEnum"
+                                        , value =
+                                            [ enumValue "Bla" 0
+                                            , enumValue "Blub" 2
+                                            ]
+                                      }
+                                    ]
+                              }
+                            , { defaultDescriptorProto
+                                | name = "Msg"
+                                , field =
+                                    [ { defaultFieldDescriptorProto | name = "test" }
+                                    , { defaultFieldDescriptorProto | name = "test2", type_ = FieldDescriptorProto_Type_TYPEMESSAGE, typeName = ".OtherMsg" }
+                                    , { defaultFieldDescriptorProto | name = "test3", type_ = FieldDescriptorProto_Type_TYPEENUM, typeName = ".OtherMsg.AnEnum" }
+                                    , { defaultFieldDescriptorProto | name = "test4", type_ = FieldDescriptorProto_Type_TYPEMESSAGE, typeName = ".Msg" }
+                                    ]
+                              }
+                            ]
+                        , service =
+                            [ { name = "SomeService"
+                              , options = Nothing
+                              , method =
+                                    [ { defaultMethodDescriptorProto
+                                        | inputType = ".OtherMsg"
+                                        , outputType = ".OtherMsg.AnEnum"
+                                        , name = "SomeMethod"
+                                      }
+                                    ]
+                              }
+                            ]
+                      }
+                    ]
+                    |> Expect.equal
+                        expected
         , test "converts dependant file descriptors correctly" <|
             \_ ->
                 let
@@ -111,7 +132,7 @@ suite =
                                 ]
                         }
                 in
-                Mapper.mapMain [ file1, file2, file3 ]
+                Mapper.mapMain True [ file1, file2, file3 ]
                     |> Expect.equal
                         [ ( "test.proto"
                           , Ok <|
@@ -120,6 +141,7 @@ suite =
                                     , { dataType = "Msg", isTopLevel = True, fields = [] }
                                     ]
                                 , enums = []
+                                , services = []
                                 }
                           )
                         , ( "no_package.proto"
@@ -128,6 +150,7 @@ suite =
                                     [ { dataType = "Abc", isTopLevel = True, fields = [] }
                                     ]
                                 , enums = []
+                                , services = []
                                 }
                           )
                         , ( "importing.proto"
@@ -142,6 +165,7 @@ suite =
                                       }
                                     ]
                                 , enums = []
+                                , services = []
                                 }
                           )
                         ]
@@ -193,6 +217,17 @@ defaultFieldDescriptorProto =
     , jsonName = ""
     , options = Nothing
     , proto3Optional = False
+    }
+
+
+defaultMethodDescriptorProto : MethodDescriptorProto
+defaultMethodDescriptorProto =
+    { name = ""
+    , inputType = ""
+    , outputType = ""
+    , options = Nothing
+    , clientStreaming = False
+    , serverStreaming = False
     }
 
 

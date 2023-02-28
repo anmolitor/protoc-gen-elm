@@ -1,4 +1,21 @@
-module Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldNumber, FieldType(..), IntFlavor(..), Map, Message, OneOf, Package, Primitive(..), TypeKind(..))
+module Model exposing
+    ( Cardinality(..)
+    , DataType
+    , Enum
+    , Field(..)
+    , FieldName
+    , FieldNumber
+    , FieldType(..)
+    , IntFlavor(..)
+    , Map
+    , Message
+    , Method
+    , OneOf
+    , Package
+    , Primitive(..)
+    , Service
+    , TypeKind(..)
+    )
 
 import Elm.CodeGen as C
 import Elm.Syntax.ModuleName exposing (ModuleName)
@@ -12,6 +29,20 @@ type alias Package =
     , messages : List Message
     , enums : List Enum
     , imports : Set String
+    }
+
+
+type alias Service =
+    { name : String
+    , methods : List Method
+    , package : String
+    }
+
+
+type alias Method =
+    { name : String
+    , reqType : ( C.ModuleName, String )
+    , resType : ( C.ModuleName, String )
     }
 
 

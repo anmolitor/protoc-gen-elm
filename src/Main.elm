@@ -22,6 +22,7 @@ main =
 type alias Versions =
     { plugin : String
     , library : String
+    , grpcOn : Bool
     }
 
 

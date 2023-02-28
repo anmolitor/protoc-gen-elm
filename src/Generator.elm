@@ -9,6 +9,7 @@ import Generator.Declarations exposing (removeDuplicateDeclarations)
 import Generator.Enum as Enum
 import Generator.Import as Import
 import Generator.Message as Message
+import Generator.Service as Service
 import Mapper as Mapper
 import Mapper.Name as Name
 import Mapper.Struct exposing (Struct)
@@ -27,11 +28,17 @@ type alias Versions =
     }
 
 
+type alias Flags =
+    { grpcOn : Bool
+    }
+
+
 requestToResponse :
     Versions
+    -> Flags
     -> CodeGeneratorRequest
     -> CodeGeneratorResponse
-requestToResponse versions req =
+requestToResponse versions flags req =
     let
         filesToResponse : List (Res CodeGeneratorResponse_File) -> CodeGeneratorResponse
         filesToResponse fileResults =
@@ -42,7 +49,7 @@ requestToResponse versions req =
             { error = Errors.MultipleErrors errors |> Errors.format, supportedFeatures = Protobuf.Types.Int64.fromInts 0 3, file = file }
 
         files =
-            convert versions req.fileToGenerate req.protoFile
+            convert versions flags req.fileToGenerate req.protoFile
     in
     files |> List.map (Result.map generate) |> filesToResponse
 
@@ -56,14 +63,14 @@ generate file =
     }
 
 
-convert : Versions -> List String -> List FileDescriptorProto -> List (Res C.File)
-convert versions fileNames descriptors =
+convert : Versions -> Flags -> List String -> List FileDescriptorProto -> List (Res C.File)
+convert versions flags fileNames descriptors =
     let
         files : List ( String, Res Struct )
         files =
             descriptors
                 |> List.filter (.name >> (\name -> List.member name fileNames))
-                |> Mapper.mapMain
+                |> Mapper.mapMain flags.grpcOn
     in
     files
         |> List.map
@@ -77,6 +84,7 @@ convert versions fileNames descriptors =
                             declarations =
                                 List.concatMap Enum.toAST struct.enums
                                     ++ List.concatMap Message.toAST struct.messages
+                                    ++ List.concatMap Service.toAST struct.services
                         in
                         Ok <|
                             C.file
