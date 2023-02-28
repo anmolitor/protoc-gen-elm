@@ -85,7 +85,7 @@ map versions request =
             , compiler = Maybe.withDefault "unknown version" (Maybe.map version request.compilerVersion)
             }
     in
-    Generator.requestToResponse allVersions request
+    Generator.requestToResponse allVersions { grpcOn = versions.grpcOn } request
 
 
 version : Version -> String
