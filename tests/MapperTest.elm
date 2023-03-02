@@ -42,7 +42,7 @@ suite =
                                       }
                                     ]
                                 , enums = [ { dataType = "OtherMsg_AnEnum", fields = ( ( 0, "OtherMsg_AnEnum_Bla" ), [ ( 2, "OtherMsg_AnEnum_Blub" ) ] ), isTopLevel = False, withUnrecognized = True } ]
-                                , services = [ { name = "SomeService", package = "testpackage", methods = [ { name = "SomeMethod", reqType = ( [], "OtherMsg" ), resType = ( [], "AnEnum" ) } ] } ]
+                                , services = [ { name = "SomeService", package = "testpackage", methods = [ { name = "SomeMethod", reqType = ( [], "OtherMsg" ), resType = ( [], "OtherMsg_AnEnum" ) } ] } ]
                                 }
                           )
                         ]
