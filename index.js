@@ -29,7 +29,7 @@ const app = Elm.Main.init({
   flags: {
     plugin: pluginVersion,
     library: libraryVersion,
-    grpcOn: process.env.ENABLE_GRPC_UNSTABLE === "true",
+    grpcOn: process.env.EXPERIMENTAL_GRPC === "true",
   },
 });
 

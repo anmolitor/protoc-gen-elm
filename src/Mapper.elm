@@ -119,21 +119,27 @@ mapMain grpcOn descriptors =
                             |> Dict.Extra.fromListDedupe (++)
                         )
 
-                    mapMethod : MethodDescriptorProto -> Res Method
-                    mapMethod { name, inputType, outputType } =
-                        Result.map2
-                            (\( definedInputType, inputTypeModuleName ) ( definedOutputType, outputTypeModuleName ) ->
-                                { name = name
-                                , reqType = ( inputTypeModuleName, getDefinedTypeName definedInputType )
-                                , resType = ( outputTypeModuleName, getDefinedTypeName definedOutputType )
-                                }
-                            )
-                            (lookForTypeRef inputType typeRefs)
-                            (lookForTypeRef outputType typeRefs)
+                    mapMethod : MethodDescriptorProto -> Maybe (Res Method)
+                    mapMethod { name, inputType, outputType, serverStreaming, clientStreaming } =
+                        if serverStreaming || clientStreaming then
+                            Nothing
+
+                        else
+                            Just <|
+                                Result.map2
+                                    (\( definedInputType, inputTypeModuleName ) ( definedOutputType, outputTypeModuleName ) ->
+                                        { name = name
+                                        , reqType = ( inputTypeModuleName, getDefinedTypeName definedInputType )
+                                        , resType = ( outputTypeModuleName, getDefinedTypeName definedOutputType )
+                                        }
+                                    )
+                                    (lookForTypeRef inputType typeRefs)
+                                    (lookForTypeRef outputType typeRefs)
 
                     mapService : ServiceDescriptorProto -> Res Service
                     mapService service =
-                        Errors.combineMap mapMethod service.method
+                        List.filterMap mapMethod service.method
+                            |> Errors.combineMap identity
                             |> Result.map
                                 (\methods ->
                                     { name = service.name
@@ -157,7 +163,12 @@ mapMain grpcOn descriptors =
                             Struct.concat messageStructs
                     )
                     (Errors.combineMap (message syntax typeRefs emptyPrefixer) descriptor.messageType)
-                    (if grpcOn then Errors.combineMap mapService descriptor.service else Ok [])
+                    (if grpcOn then
+                        Errors.combineMap mapService descriptor.service
+
+                     else
+                        Ok []
+                    )
                 )
             )
 
