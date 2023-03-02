@@ -25,35 +25,29 @@ methodToAST service method =
             C.emptyDocComment
                 |> C.markdown
                     (String.concat
-                        [ "Calls the GRPC method '"
+                        [ "A template for a gRPC call to the method '"
                         , method.name
-                        , "' with the given `"
+                        , "' sending a `"
                         , reqType
+                        , "` to get back a `"
+                        , resType
                         , "`."
                         ]
                     )
 
-        callbackTypeAnn =
-            C.funAnn
-                (Meta.Type.result (C.fqTyped [ "Grpc" ] "Error" [])
-                    (C.fqTyped resModule resType [])
-                )
-                (C.typeVar "msg")
-
         typeAnn =
-            C.funAnn (C.fqTyped reqModule reqType [])
-                (C.funAnn callbackTypeAnn (Meta.Type.cmd <| C.typeVar "msg"))
+            C.fqTyped [ "Grpc", "Internal" ] "Rpc" [ C.fqTyped reqModule reqType [], C.fqTyped resModule resType [] ]
 
         expr =
             C.apply
-                [ C.fqFun [ "Grpc" ] "send"
+                [ C.fqFun [ "Grpc", "Internal" ] "Rpc"
                 , C.record
                     [ ( "service", C.string service.name )
                     , ( "package", C.string service.package )
                     , ( "rpcName", C.string method.name )
+                    , ( "encoder", C.fqVal reqModule <| Generator.Common.encoderName reqType )
+                    , ( "decoder", C.fqVal resModule <| Generator.Common.decoderName resType )
                     ]
-                , C.fqVal reqModule <| Generator.Common.encoderName reqType
-                , C.fqVal resModule <| Generator.Common.decoderName resType
                 ]
     in
     C.funDecl (Just comment)

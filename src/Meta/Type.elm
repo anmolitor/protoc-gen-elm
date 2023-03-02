@@ -17,7 +17,7 @@ result e a =
 
 cmd : TypeAnnotation -> TypeAnnotation
 cmd v =
-    C.fqTyped [ "Platform" ] "Cmd" [ v ]
+    C.fqTyped [ "Platform", "Cmd" ] "Cmd" [ v ]
 
 
 forPrimitive : Primitive -> TypeAnnotation
