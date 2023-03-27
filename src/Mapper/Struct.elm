@@ -1,12 +1,13 @@
 module Mapper.Struct exposing (..)
 
-import Model exposing (Enum, Message, Service)
+import Model exposing (Enum, Message, OneOf, Service)
 
 
 type alias Struct =
     { messages : List Message
     , enums : List Enum
     , services : List Service
+    , oneOfs : List ( String, OneOf )
     }
 
 
@@ -15,14 +16,16 @@ empty =
     { messages = []
     , enums = []
     , services = []
+    , oneOfs = []
     }
 
 
 append : Struct -> Struct -> Struct
-append { messages, enums, services } struct =
+append { messages, enums, services, oneOfs } struct =
     { messages = struct.messages ++ messages
     , enums = struct.enums ++ enums
     , services = struct.services ++ services
+    , oneOfs = struct.oneOfs ++ oneOfs
     }
 
 

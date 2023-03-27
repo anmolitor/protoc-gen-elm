@@ -3,7 +3,6 @@ module Generator.Service exposing (..)
 import Elm.CodeGen as C
 import Generator.Common
 import Mapper.Name
-import Meta.Type
 import Model exposing (Method, Service)
 
 

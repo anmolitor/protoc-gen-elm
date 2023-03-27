@@ -11,7 +11,6 @@ module Model exposing
     , Message
     , Method
     , OneOf
-    , Package
     , Primitive(..)
     , Service
     , TypeKind(..)
@@ -20,16 +19,6 @@ module Model exposing
 import Elm.CodeGen as C
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.NonEmpty exposing (NonEmpty)
-import Set exposing (Set)
-
-
-type alias Package =
-    { name : String
-    , files : List String
-    , messages : List Message
-    , enums : List Enum
-    , imports : Set String
-    }
 
 
 type alias Service =
@@ -48,14 +37,12 @@ type alias Method =
 
 type alias Message =
     { dataType : DataType
-    , isTopLevel : Bool
     , fields : List ( FieldName, Field )
     }
 
 
 type alias Enum =
     { dataType : DataType
-    , isTopLevel : Bool
     , withUnrecognized : Bool
     , fields : NonEmpty ( Int, String )
     }

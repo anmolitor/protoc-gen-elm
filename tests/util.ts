@@ -25,6 +25,13 @@ export const runPluginForAllFiles = async () => {
   await runPlugin(withoutProtoPathPrefix);
 };
 
+export const runPluginSelectively = async (files: string[]) => {
+  const withoutProtoPathPrefix = files.map((file) =>
+    file.replace(`${protoPath}${path.sep}`, "")
+  );
+  await runPlugin(withoutProtoPathPrefix);
+}
+
 const getProtoFilesRecursive = async (dirs: string[]): Promise<string[]> => {
   const promises = dirs.map((dir) =>
     fs

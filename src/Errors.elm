@@ -68,6 +68,13 @@ map2 f res1 res2 =
             Err (MultipleErrors [ err1, err2 ])
 
 
+map3 : (a -> b -> c -> d) -> Res a -> Res b -> Res c -> Res d
+map3 f res1 res2 res3 =
+    map2 f res1 res2
+    |> map2 (|>) res3
+    
+
+
 combine : List (Res a) -> Res (List a)
 combine =
     List.foldr (map2 (::)) (Ok [])

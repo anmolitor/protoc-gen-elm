@@ -1,6 +1,7 @@
 module Generator.Common exposing (..)
 
 import Elm.CodeGen as C
+import Model exposing (FieldName)
 
 
 decoderName : String -> String
@@ -31,3 +32,11 @@ encoderDocumentation typeName =
 defaultDocumentation : String -> C.Comment C.DocComment
 defaultDocumentation typeName =
     C.emptyDocComment |> C.markdown ("Default for " ++ typeName ++ ". Should only be used for 'required' decoders as an initial value.")
+
+
+setter : FieldName -> C.Expression
+setter fieldName =
+    C.parens <|
+        C.lambda
+            [ C.varPattern "a", C.varPattern "r" ]
+            (C.update "r" [ ( fieldName, C.val "a" ) ])

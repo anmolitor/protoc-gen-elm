@@ -1,6 +1,6 @@
 module Generator.Message exposing (..)
 
-import Elm.CodeGen as C
+import Elm.CodeGen as C exposing (ModuleName)
 import Generator.Common as Common
 import Meta.Basics
 import Meta.Decode
@@ -9,15 +9,18 @@ import Meta.Type
 import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldType(..), Map, Message, TypeKind(..))
 
 
-toAST : Message -> List C.Declaration
-toAST msg =
+toAST : ModuleName -> Message -> List C.Declaration
+toAST moduleName msg =
     let
         type_ : C.Declaration
         type_ =
             C.aliasDecl (Just <| messageDocumentation msg.dataType)
                 msg.dataType
                 []
-                (C.recordAnn <| List.map (Tuple.mapSecond fieldToTypeAnnotation) msg.fields)
+                (C.recordAnn <| List.map (Tuple.mapSecond (fieldToTypeAnnotation nestedModuleName)) msg.fields)
+
+        nestedModuleName =
+            moduleName ++ [ msg.dataType ]
 
         encoder : C.Declaration
         encoder =
@@ -31,7 +34,7 @@ toAST msg =
                     C.varPattern "value"
                 ]
                 (Meta.Encode.message
-                    (List.map toEncoder msg.fields)
+                    (List.map (toEncoder nestedModuleName) msg.fields)
                 )
 
         decoder : C.Declaration
@@ -42,7 +45,7 @@ toAST msg =
                 (C.apply
                     [ Meta.Decode.message
                     , C.val <| Common.defaultName msg.dataType
-                    , C.list <| List.map toDecoder msg.fields
+                    , C.list <| List.map (toDecoder nestedModuleName) msg.fields
                     ]
                 )
 
@@ -78,14 +81,6 @@ mapComment map =
 getter : FieldName -> C.Expression
 getter fieldName =
     C.accessFun <| "." ++ fieldName
-
-
-setter : FieldName -> C.Expression
-setter fieldName =
-    C.parens <|
-        C.lambda
-            [ C.varPattern "a", C.varPattern "r" ]
-            (C.update "r" [ ( fieldName, C.val "a" ) ])
 
 
 fieldDeclarations : ( FieldName, Field ) -> List C.Declaration
@@ -125,27 +120,7 @@ fieldDeclarations ( _, field ) =
             []
 
         OneOfField dataType options ->
-            let
-                typeForFieldType : FieldType -> C.TypeAnnotation
-                typeForFieldType ft =
-                    case ft of
-                        Primitive prim _ ->
-                            Meta.Type.forPrimitive prim
-
-                        Embedded e ->
-                            C.fqTyped e.moduleName e.dataType []
-
-                        Enumeration enum ->
-                            C.fqTyped enum.moduleName enum.dataType []
-
-                type_ =
-                    C.customTypeDecl
-                        (Just <| oneofDocumentation dataType)
-                        dataType
-                        []
-                        (List.map (\( _, innerDataType, innerFieldType ) -> ( innerDataType, [ typeForFieldType innerFieldType ] )) options)
-            in
-            [ type_ ]
+            []
 
 
 fieldTypeToDefaultValue : FieldType -> C.Expression
@@ -199,47 +174,8 @@ toDefaultValue field =
             Meta.Basics.nothing
 
 
-toDecoder : ( FieldName, Field ) -> C.Expression
-toDecoder ( fieldName, field ) =
-    let
-        embeddedDecoder : { dataType : DataType, moduleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
-        embeddedDecoder e =
-            (case e.typeKind of
-                Alias ->
-                    identity
-
-                Type ->
-                    C.parens
-                        << C.applyBinOp (C.apply [ Meta.Decode.map, C.val <| recursiveDataTypeName e.dataType ]) C.pipel
-                        << C.applyBinOp Meta.Decode.lazy C.pipel
-                        << C.lambda [ C.allPattern ]
-            )
-                (C.fqFun e.moduleName (Common.decoderName e.dataType))
-
-        fieldTypeToDecoder : FieldType -> Cardinality -> C.Expression
-        fieldTypeToDecoder fieldType cardinality =
-            case ( cardinality, fieldType ) of
-                ( _, Primitive dataType _ ) ->
-                    Meta.Decode.forPrimitive dataType
-
-                ( Optional, Embedded e ) ->
-                    C.parens
-                        (C.apply
-                            [ Meta.Decode.map
-                            , Meta.Basics.just
-                            , embeddedDecoder e
-                            ]
-                        )
-
-                ( Required, Embedded e ) ->
-                    embeddedDecoder e
-
-                ( Repeated, Embedded e ) ->
-                    embeddedDecoder e
-
-                ( _, Enumeration enum ) ->
-                    C.fqFun enum.moduleName (Common.decoderName enum.dataType)
-    in
+toDecoder : C.ModuleName -> ( FieldName, Field ) -> C.Expression
+toDecoder moduleName ( fieldName, field ) =
     case field of
         NormalField number cardinality fieldType ->
             case cardinality of
@@ -248,7 +184,7 @@ toDecoder ( fieldName, field ) =
                         [ Meta.Decode.optional
                         , C.int number
                         , fieldTypeToDecoder fieldType cardinality
-                        , setter fieldName
+                        , Common.setter fieldName
                         ]
 
                 Required ->
@@ -256,7 +192,7 @@ toDecoder ( fieldName, field ) =
                         [ Meta.Decode.required
                         , C.int number
                         , fieldTypeToDecoder fieldType cardinality
-                        , setter fieldName
+                        , Common.setter fieldName
                         ]
 
                 Repeated ->
@@ -265,7 +201,7 @@ toDecoder ( fieldName, field ) =
                         , C.int number
                         , fieldTypeToDecoder fieldType cardinality
                         , getter fieldName
-                        , setter fieldName
+                        , Common.setter fieldName
                         ]
 
         MapField number key value ->
@@ -276,86 +212,58 @@ toDecoder ( fieldName, field ) =
                 , fieldTypeToDecoder key Optional
                 , fieldTypeToDecoder value Optional
                 , C.accessFun <| "." ++ fieldName
-                , setter fieldName
+                , Common.setter fieldName
                 ]
 
-        OneOfField _ options ->
+        OneOfField dataType options ->
             C.apply
-                [ Meta.Decode.oneOf
-                , C.list
-                    (List.map
-                        (\( fieldNumber, optionName, fieldType ) ->
-                            C.tuple
-                                [ C.int fieldNumber
-                                , C.apply
-                                    [ Meta.Decode.map
-                                    , C.val optionName
-                                    , case fieldType of
-                                        Primitive p _ ->
-                                            Meta.Decode.forPrimitive p
-
-                                        Embedded e ->
-                                            C.fqFun e.moduleName (Common.decoderName e.dataType)
-
-                                        Enumeration enum ->
-                                            C.fqFun enum.moduleName (Common.decoderName enum.dataType)
-                                    ]
-                                ]
-                        )
-                        options
-                    )
-                , setter fieldName
+                [ C.fqFun moduleName (Common.decoderName dataType)
+                , Common.setter fieldName
                 ]
 
 
-toEncoder : ( FieldName, Field ) -> C.Expression
-toEncoder ( fieldName, field ) =
-    let
-        embeddedEncoder : { dataType : DataType, moduleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
-        embeddedEncoder e =
-            (case e.typeKind of
-                Alias ->
-                    identity
+embeddedDecoder : { dataType : DataType, moduleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
+embeddedDecoder e =
+    (case e.typeKind of
+        Alias ->
+            identity
 
-                Type ->
-                    C.parens << C.applyBinOp (C.fun <| recursiveUnwrapName e.dataType) C.composer
-            )
-                (C.fqFun e.moduleName (Common.encoderName e.dataType))
+        Type ->
+            C.parens
+                << C.applyBinOp (C.apply [ Meta.Decode.map, C.val <| recursiveDataTypeName e.dataType ]) C.pipel
+                << C.applyBinOp Meta.Decode.lazy C.pipel
+                << C.lambda [ C.allPattern ]
+    )
+        (C.fqFun e.moduleName (Common.decoderName e.dataType))
 
-        fieldTypeToEncoder : Cardinality -> FieldType -> C.Expression
-        fieldTypeToEncoder cardinality fieldType =
-            case ( cardinality, fieldType ) of
-                ( Optional, Primitive dataType _ ) ->
-                    Meta.Encode.forPrimitive dataType
 
-                ( Optional, Embedded e ) ->
-                    C.parens <|
-                        C.applyBinOp
-                            (C.apply [ Meta.Basics.mapMaybe, embeddedEncoder e ])
-                            C.composer
-                            (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
+fieldTypeToDecoder : FieldType -> Cardinality -> C.Expression
+fieldTypeToDecoder fieldType cardinality =
+    case ( cardinality, fieldType ) of
+        ( _, Primitive dataType _ ) ->
+            Meta.Decode.forPrimitive dataType
 
-                ( Optional, Enumeration enum ) ->
-                    C.fqFun enum.moduleName (Common.encoderName enum.dataType)
+        ( Optional, Embedded e ) ->
+            C.parens
+                (C.apply
+                    [ Meta.Decode.map
+                    , Meta.Basics.just
+                    , embeddedDecoder e
+                    ]
+                )
 
-                ( Required, Primitive dataType _ ) ->
-                    Meta.Encode.forPrimitive dataType
+        ( Required, Embedded e ) ->
+            embeddedDecoder e
 
-                ( Required, Embedded e ) ->
-                    embeddedEncoder e
+        ( Repeated, Embedded e ) ->
+            embeddedDecoder e
 
-                ( Required, Enumeration enum ) ->
-                    C.fqFun enum.moduleName (Common.encoderName enum.dataType)
+        ( _, Enumeration enum ) ->
+            C.fqFun enum.moduleName (Common.decoderName enum.dataType)
 
-                ( Repeated, Primitive dataType _ ) ->
-                    C.apply [ Meta.Encode.list, Meta.Encode.forPrimitive dataType ]
 
-                ( Repeated, Embedded e ) ->
-                    C.apply [ Meta.Encode.list, embeddedEncoder e ]
-
-                ( Repeated, Enumeration enum ) ->
-                    C.apply [ Meta.Encode.list, C.fqFun enum.moduleName (Common.encoderName enum.dataType) ]
-    in
+toEncoder : C.ModuleName -> ( FieldName, Field ) -> C.Expression
+toEncoder moduleName ( fieldName, field ) =
     -- TODO i need to access fields of "value" variable in a better way
     case field of
         NormalField number cardinality fieldType ->
@@ -372,17 +280,55 @@ toEncoder ( fieldName, field ) =
                     ]
                 ]
 
-        OneOfField _ options ->
-            C.caseExpr (C.access (C.val "value") fieldName)
-                (( C.namedPattern "Nothing" [], C.tuple [ C.int 0, Meta.Encode.none ] )
-                    :: List.map
-                        (\( fieldNumber, optionName, fieldType ) ->
-                            ( C.namedPattern "Just" [ C.parensPattern (C.namedPattern optionName [ C.varPattern "innerValue" ]) ]
-                            , C.tuple [ C.int fieldNumber, C.apply [ fieldTypeToEncoder Required fieldType, C.val "innerValue" ] ]
-                            )
-                        )
-                        options
-                )
+        OneOfField dataType options ->
+            C.apply [ C.fqFun moduleName (Common.encoderName dataType), C.access (C.val "value") fieldName ]
+
+
+embeddedEncoder : { dataType : DataType, moduleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
+embeddedEncoder e =
+    (case e.typeKind of
+        Alias ->
+            identity
+
+        Type ->
+            C.parens << C.applyBinOp (C.fun <| recursiveUnwrapName e.dataType) C.composer
+    )
+        (C.fqFun e.moduleName (Common.encoderName e.dataType))
+
+
+fieldTypeToEncoder : Cardinality -> FieldType -> C.Expression
+fieldTypeToEncoder cardinality fieldType =
+    case ( cardinality, fieldType ) of
+        ( Optional, Primitive dataType _ ) ->
+            Meta.Encode.forPrimitive dataType
+
+        ( Optional, Embedded e ) ->
+            C.parens <|
+                C.applyBinOp
+                    (C.apply [ Meta.Basics.mapMaybe, embeddedEncoder e ])
+                    C.composer
+                    (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
+
+        ( Optional, Enumeration enum ) ->
+            C.fqFun enum.moduleName (Common.encoderName enum.dataType)
+
+        ( Required, Primitive dataType _ ) ->
+            Meta.Encode.forPrimitive dataType
+
+        ( Required, Embedded e ) ->
+            embeddedEncoder e
+
+        ( Required, Enumeration enum ) ->
+            C.fqFun enum.moduleName (Common.encoderName enum.dataType)
+
+        ( Repeated, Primitive dataType _ ) ->
+            C.apply [ Meta.Encode.list, Meta.Encode.forPrimitive dataType ]
+
+        ( Repeated, Embedded e ) ->
+            C.apply [ Meta.Encode.list, embeddedEncoder e ]
+
+        ( Repeated, Enumeration enum ) ->
+            C.apply [ Meta.Encode.list, C.fqFun enum.moduleName (Common.encoderName enum.dataType) ]
 
 
 fieldTypeToTypeAnnotation : FieldType -> C.TypeAnnotation
@@ -406,8 +352,8 @@ fieldTypeToTypeAnnotation fieldType =
             C.fqTyped enum.moduleName enum.dataType []
 
 
-fieldToTypeAnnotation : Field -> C.TypeAnnotation
-fieldToTypeAnnotation field =
+fieldToTypeAnnotation : ModuleName -> Field -> C.TypeAnnotation
+fieldToTypeAnnotation moduleName field =
     let
         cardinalityModifier cardinality fieldType =
             case ( cardinality, fieldType ) of
@@ -436,7 +382,7 @@ fieldToTypeAnnotation field =
             Meta.Type.dict (fieldTypeToTypeAnnotation key) (cardinalityModifier Optional value <| fieldTypeToTypeAnnotation value)
 
         OneOfField dataType _ ->
-            C.maybeAnn <| C.typed dataType []
+            C.maybeAnn <| C.fqTyped moduleName dataType []
 
 
 recursiveDataTypeName : String -> String

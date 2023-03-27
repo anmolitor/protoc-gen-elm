@@ -7,10 +7,11 @@ import Errors exposing (Error(..), Res)
 import List.Extra
 import List.NonEmpty as NonEmpty
 import Mapper.Name as Name
+import Mapper.Package as Package exposing (Packages)
 import Mapper.Struct as Struct exposing (Struct)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
 import Meta.Encode
-import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, Primitive(..), Service)
+import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
 import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, unwrapDescriptorProto_)
 import Set exposing (Set)
 
@@ -96,7 +97,7 @@ definedTypesInFileDescriptor descriptor =
         ++ List.concatMap definedTypesInMessageDescriptor descriptor.messageType
 
 
-mapMain : Bool -> List FileDescriptorProto -> List ( String, Res Struct )
+mapMain : Bool -> List FileDescriptorProto -> List ( String, Res Packages )
 mapMain grpcOn descriptors =
     let
         dict : Dict String ( PackageName, DefinedTypes )
@@ -115,7 +116,7 @@ mapMain grpcOn descriptors =
                         , dict
                             |> Dict.filter (\name _ -> List.member name descriptor.dependency)
                             |> Dict.toList
-                            |> List.map (\( name, ( packageName, types ) ) -> ( packageName, [ ( Name.module_ name, types ) ] ))
+                            |> List.map (\( name, ( packageName_, types ) ) -> ( packageName_, [ ( Name.module_ name, types ) ] ))
                             |> Dict.Extra.fromListDedupe (++)
                         )
 
@@ -150,19 +151,23 @@ mapMain grpcOn descriptors =
 
                     syntax =
                         parseSyntax descriptor.syntax
+
+                    packageName =
+                        Name.module_ descriptor.package
                 in
                 ( descriptor.name
                 , Result.map2
-                    (\messageStructs services ->
-                        Struct.append
-                            { enums = List.map (enum syntax emptyPrefixer) descriptor.enumType
+                    (\messagePackages services ->
+                        Package.addPackage packageName
+                            { enums = List.map (enum syntax) descriptor.enumType
                             , messages = []
                             , services = services
+                            , oneOfs = []
                             }
                         <|
-                            Struct.concat messageStructs
+                            Package.concat messagePackages
                     )
-                    (Errors.combineMap (message syntax typeRefs emptyPrefixer) descriptor.messageType)
+                    (Errors.combineMap (message packageName syntax typeRefs) descriptor.messageType)
                     (if grpcOn then
                         Errors.combineMap mapService descriptor.service
 
@@ -258,42 +263,19 @@ splitNonEmpty l =
 -}
 
 
-type alias Prefixer =
-    String -> String
-
-
-isEmptyPrefixer : Prefixer -> Bool
-isEmptyPrefixer p =
-    p "" == ""
-
-
-emptyPrefixer : Prefixer
-emptyPrefixer =
-    identity
-
-
-addPrefix : String -> Prefixer -> Prefixer
-addPrefix prefix prefixer str =
-    [ prefixer "", prefix, str ]
-        |> List.filter (not << String.isEmpty)
-        |> String.join "."
-
-
-enum : Syntax -> Prefixer -> EnumDescriptorProto -> Enum
-enum syntax prefixer descriptor =
+enum : Syntax -> EnumDescriptorProto -> Enum
+enum syntax descriptor =
     let
         name =
-            prefixer descriptor.name
-                |> Name.type_
+            Name.type_ descriptor.name
 
         fields =
             descriptor.value
-                |> List.map (\value -> ( value.number, addPrefix descriptor.name prefixer value.name |> Name.type_ ))
+                |> List.map (\value -> ( value.number, name ++ "_" ++ Name.type_ value.name ))
                 |> List.Extra.uncons
                 |> Maybe.withDefault ( ( 0, name ), [] )
     in
     { dataType = name
-    , isTopLevel = prefixer "" == ""
     , withUnrecognized = syntax == Proto3
     , fields = fields
     }
@@ -311,12 +293,11 @@ isAMap =
     since they could potentially overlap otherwise.
 
 -}
-message : Syntax -> TypeRefs -> Prefixer -> DescriptorProto -> Res Struct
-message syntax typeRefs prefixer descriptor =
+message : List String -> Syntax -> TypeRefs -> DescriptorProto -> Res Packages
+message packageName_ syntax typeRefs descriptor =
     let
         name =
-            prefixer descriptor.name
-                |> Name.type_
+            Name.type_ descriptor.name
 
         removePackageName : String -> TypeRefs -> String
         removePackageName typeName ( packageName, _, _ ) =
@@ -374,7 +355,7 @@ message syntax typeRefs prefixer descriptor =
                             ( [ field1 ], [ field2 ] ) ->
                                 case ( fieldType name field1 typeRefs, fieldType name field2 typeRefs ) of
                                     ( Ok t1, Ok t2 ) ->
-                                        Just ( addPrefix descriptor.name prefixer d.name, { key = t1, value = t2 } )
+                                        Just ( descriptor.name ++ "_" ++ d.name, { key = t1, value = t2 } )
 
                                     _ ->
                                         Nothing
@@ -384,11 +365,14 @@ message syntax typeRefs prefixer descriptor =
                     )
                 |> Dict.fromList
 
-        nested : Res Struct
+        nestedPackageName =
+            packageName_ ++ [ Name.type_ descriptor.name ]
+
+        nested : Res Packages
         nested =
             List.filter (not << isAMap) nestedTypes
-                |> Errors.combineMap (message syntax typeRefs (addPrefix descriptor.name prefixer))
-                |> Result.map Struct.concat
+                |> Errors.combineMap (message nestedPackageName syntax typeRefs)
+                |> Result.map Package.concat
 
         mainStruct : Res Struct
         mainStruct =
@@ -396,13 +380,24 @@ message syntax typeRefs prefixer descriptor =
                 (\fieldsMeta ->
                     { messages =
                         [ { dataType = name
-                          , isTopLevel = isEmptyPrefixer prefixer
-                          , fields = messageFields oneOfFieldNames fieldsMeta (addPrefix descriptor.name prefixer)
+                          , fields = messageFields oneOfFieldNames fieldsMeta { prefix = name ++ "_" }
                           }
                         ]
-                    , enums = List.map (enum syntax (addPrefix descriptor.name prefixer)) descriptor.enumType
+                    , enums = List.map (enum syntax) descriptor.enumType
                     , services = []
+                    , oneOfs = []
                     }
+                )
+                fieldsMetaResult
+
+        oneofPackage =
+            Result.map
+                (\fieldsMeta ->
+                    if List.isEmpty oneOfFieldNames then
+                        identity
+
+                    else
+                        Package.addPackage nestedPackageName (oneofStruct oneOfFieldNames fieldsMeta)
                 )
                 fieldsMetaResult
 
@@ -410,18 +405,33 @@ message syntax typeRefs prefixer descriptor =
         oneOfFieldNames =
             List.map .name descriptor.oneofDecl
     in
-    Errors.map2 Struct.append mainStruct nested
+    Errors.map3 (\mainS addOneOfPackage nestedPackage -> Package.addPackage packageName_ mainS nestedPackage |> addOneOfPackage)
+        mainStruct
+        oneofPackage
+        nested
 
 
 
 -- FIELD
 
 
-messageFields : List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> Prefixer -> List ( FieldName, Field )
-messageFields oneOfFieldNames fieldsMeta prefixer =
+oneofStruct : List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> Struct
+oneofStruct oneOfFieldNames fieldsMeta =
     let
         oneOfFields =
-            List.indexedMap (oneOfField fieldsMeta prefixer) oneOfFieldNames
+            List.indexedMap (oneOfFieldPackage fieldsMeta) oneOfFieldNames
+
+        base =
+            Struct.empty
+    in
+    { base | oneOfs = oneOfFields }
+
+
+messageFields : List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> { prefix : String } -> List ( FieldName, Field )
+messageFields oneOfFieldNames fieldsMeta prefix =
+    let
+        oneOfFields =
+            List.indexedMap (oneOfField fieldsMeta prefix) oneOfFieldNames
     in
     fieldsMeta
         |> List.filterMap
@@ -435,21 +445,37 @@ messageFields oneOfFieldNames fieldsMeta prefixer =
         |> List.Extra.uniqueBy Tuple.first
 
 
-oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int } -> Prefixer -> Int -> String -> ( FieldName, Field )
-oneOfField fields prefixer index name =
+oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int } -> { prefix : String } -> Int -> String -> ( FieldName, Field )
+oneOfField fields { prefix } index name =
     List.filter (\field -> field.oneOfIndex == index) fields
         |> List.map .field
         |> List.filterMap
             (\( fieldName, field ) ->
                 case field of
                     NormalField fieldNumber _ type_ ->
-                        Just ( fieldNumber, Name.type_ <| prefixer fieldName, type_ )
+                        Just ( fieldNumber, prefix ++ Name.type_ name ++ "_" ++ Name.type_ fieldName, type_ )
 
                     _ ->
                         Nothing
             )
-        |> OneOfField (Name.type_ <| prefixer name)
+        |> OneOfField (Name.type_ name)
         |> Tuple.pair (Name.field name)
+
+
+oneOfFieldPackage : List { field : ( FieldName, Field ), oneOfIndex : Int } -> Int -> String -> ( String, OneOf )
+oneOfFieldPackage fields index name =
+    List.filter (\field -> field.oneOfIndex == index) fields
+        |> List.map .field
+        |> List.filterMap
+            (\( fieldName, field ) ->
+                case field of
+                    NormalField fieldNumber _ type_ ->
+                        Just ( fieldNumber, Name.type_ fieldName, type_ )
+
+                    _ ->
+                        Nothing
+            )
+        |> Tuple.pair (Name.type_ name)
 
 
 handleMessage : DataType -> String -> TypeRefs -> Res FieldType

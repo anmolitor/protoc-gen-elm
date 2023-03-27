@@ -7,20 +7,31 @@ import String.Extra
 
 module_ : String -> ModuleName
 module_ descriptorName =
-    String.split "/" descriptorName
-        |> List.Extra.unconsLast
-        |> Maybe.map (\( name, segments ) -> segments ++ [ removeExtension name ])
-        |> Maybe.withDefault []
-        |> List.map String.Extra.classify
-        |> (::) "Proto"
+    if descriptorName == "" then
+        [ "Proto" ]
+
+    else
+        String.split "/" descriptorName
+            |> List.Extra.unconsLast
+            |> Maybe.map (\( name, segments ) -> segments ++ [ removeExtension name ])
+            |> Maybe.withDefault []
+            |> List.map String.Extra.classify
+            |> (::) "Proto"
 
 
 removeExtension : String -> String
-removeExtension =
-    String.split "."
-        >> List.Extra.init
-        >> Maybe.withDefault []
-        >> String.join "."
+removeExtension str =
+    case String.split "." str of
+        [] ->
+            ""
+
+        [ single ] ->
+            single
+
+        other ->
+            List.Extra.init other
+                |> Maybe.withDefault []
+                |> String.join "."
 
 
 type_ : String -> String

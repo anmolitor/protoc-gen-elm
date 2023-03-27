@@ -1,5 +1,7 @@
 syntax="proto3";
 
+package multiple_oneof;
+
 message Oneof1 {
   oneof msg {
     string OptionA = 1;

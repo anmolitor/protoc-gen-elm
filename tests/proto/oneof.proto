@@ -1,5 +1,7 @@
 syntax="proto3";
 
+package oneof;
+
 message OneOf {
   oneof msg {
     string aString = 1;
