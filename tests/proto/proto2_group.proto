@@ -1,5 +1,7 @@
 syntax = "proto2";
 
+package proto2_group;
+
 message Message2 {
   repeated group Group = 1 {
     required string a = 2;

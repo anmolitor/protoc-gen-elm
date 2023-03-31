@@ -1,18 +1,18 @@
 module Generator.Service exposing (..)
 
-import Elm.CodeGen as C
-import Generator.Common
+import Elm.CodeGen as C exposing (ModuleName)
+import Generator.Common as Common
 import Mapper.Name
 import Model exposing (Method, Service)
 
 
-toAST : Service -> List C.Declaration
-toAST service =
-    List.map (methodToAST { name = service.name, package = service.package }) service.methods
+toAST : ModuleName -> Service -> List C.Declaration
+toAST currentModuleName service =
+    List.map (methodToAST currentModuleName { name = service.name, package = service.package }) service.methods
 
 
-methodToAST : { name : String, package : String } -> Method -> C.Declaration
-methodToAST service method =
+methodToAST : ModuleName -> { name : String, package : String } -> Method -> C.Declaration
+methodToAST currentModuleName service method =
     let
         ( reqModule, reqType ) =
             method.reqType
@@ -35,7 +35,11 @@ methodToAST service method =
                     )
 
         typeAnn =
-            C.fqTyped [ "Grpc", "Internal" ] "Rpc" [ C.fqTyped reqModule reqType [], C.fqTyped resModule resType [] ]
+            C.fqTyped [ "Grpc", "Internal" ]
+                "Rpc"
+                [ Common.mayFq currentModuleName C.fqTyped reqModule reqType []
+                , Common.mayFq currentModuleName C.fqTyped resModule resType []
+                ]
 
         expr =
             C.apply
@@ -44,8 +48,8 @@ methodToAST service method =
                     [ ( "service", C.string service.name )
                     , ( "package", C.string service.package )
                     , ( "rpcName", C.string method.name )
-                    , ( "encoder", C.fqVal reqModule <| Generator.Common.encoderName reqType )
-                    , ( "decoder", C.fqVal resModule <| Generator.Common.decoderName resType )
+                    , ( "encoder", Common.mayFq currentModuleName C.fqVal reqModule <| Common.encoderName reqType )
+                    , ( "decoder", Common.mayFq currentModuleName C.fqVal resModule <| Common.decoderName resType )
                     ]
                 ]
     in

@@ -1,8 +1,9 @@
 module Generator.OneOf exposing (..)
 
-import Elm.CodeGen as C
+import Elm.CodeGen as C exposing (ModuleName)
 import Generator.Common as Common
-import Generator.Message exposing (fieldTypeToEncoder)
+import Generator.Message exposing (fieldTypeToEncoder, fieldTypeToTypeAnnotation)
+import Mapper.Name
 import Meta.Basics
 import Meta.Decode
 import Meta.Encode
@@ -10,27 +11,79 @@ import Meta.Type
 import Model exposing (Cardinality(..), FieldType(..), OneOf)
 
 
+reexportAST : ModuleName -> ( String, OneOf ) -> List C.Declaration
+reexportAST moduleName ( dataType, opts ) =
+    let
+        type_ =
+            C.customTypeDecl (Just <| oneofDocumentation dataType)
+                dataType
+                []
+                (List.map (\( _, optionName, optionType ) -> ( optionName, [ fieldTypeToTypeAnnotation optionType ] )) opts)
+
+        fromInternal =
+            C.funDecl (Just <| C.emptyDocComment)
+                (Just <|
+                    C.funAnn
+                        (C.fqTyped Common.internalsModule
+                            (Mapper.Name.internalize ( moduleName, dataType ))
+                            []
+                        )
+                        (C.typed dataType [])
+                )
+                ("fromInternal" ++ dataType)
+                [ C.varPattern "data_" ]
+                (C.caseExpr (C.val "data_")
+                    (List.map
+                        (\( _, optionName, _ ) ->
+                            ( C.fqNamedPattern Common.internalsModule
+                                (Mapper.Name.internalize ( moduleName, optionName ))
+                                [ C.varPattern "n_" ]
+                            , C.apply [ C.val optionName, C.val "n_" ]
+                            )
+                        )
+                        opts
+                    )
+                )
+
+        toInternal =
+            C.funDecl (Just <| C.emptyDocComment)
+                (Just <|
+                    C.funAnn
+                        (C.typed dataType [])
+                        (C.fqTyped Common.internalsModule
+                            (Mapper.Name.internalize ( moduleName, dataType ))
+                            []
+                        )
+                )
+                ("toInternal" ++ dataType)
+                [ C.varPattern "data_" ]
+                (C.caseExpr (C.val "data_")
+                    (List.map
+                        (\( _, optionName, _ ) ->
+                            ( C.namedPattern optionName [ C.varPattern "n_" ]
+                            , C.apply
+                                [ C.fqVal Common.internalsModule
+                                    (Mapper.Name.internalize ( moduleName, optionName ))
+                                , C.val "n_"
+                                ]
+                            )
+                        )
+                        opts
+                    )
+                )
+    in
+    [ type_, fromInternal, toInternal ]
+
+
 toAST : ( String, OneOf ) -> List C.Declaration
 toAST ( dataType, opts ) =
     let
-        typeForFieldType : FieldType -> C.TypeAnnotation
-        typeForFieldType ft =
-            case ft of
-                Primitive prim _ ->
-                    Meta.Type.forPrimitive prim
-
-                Embedded e ->
-                    C.fqTyped e.moduleName e.dataType []
-
-                Enumeration enum ->
-                    C.fqTyped enum.moduleName enum.dataType []
-
         type_ =
             C.customTypeDecl
                 (Just <| oneofDocumentation dataType)
                 dataType
                 []
-                (List.map (\( _, innerDataType, innerFieldType ) -> ( innerDataType, [ typeForFieldType innerFieldType ] )) opts)
+                (List.map (\( _, optionName, innerFieldType ) -> ( optionName, [ fieldTypeToTypeAnnotation innerFieldType ] )) opts)
 
         encoder =
             C.funDecl Nothing
@@ -76,10 +129,10 @@ toAST ( dataType, opts ) =
                                                 Meta.Decode.forPrimitive p
 
                                             Embedded e ->
-                                                C.fqFun e.moduleName (Common.decoderName e.dataType)
+                                                C.fun <| Common.decoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )
 
-                                            Enumeration enum ->
-                                                C.fqFun enum.moduleName (Common.decoderName enum.dataType)
+                                            Enumeration e ->
+                                                C.fun <| Common.decoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )
                                         ]
                                     ]
                             )

@@ -1,11 +1,41 @@
-module Mapper.Package exposing (Packages, addPackage, append, concat, empty)
+module Mapper.Package exposing (Packages, addPackage, append, concat, empty, unify)
 
 import Dict exposing (Dict)
+import List.NonEmpty as NonEmpty
+import Mapper.Name as Name
 import Mapper.Struct as Struct exposing (Struct)
 
 
 type alias Packages =
     Dict (List String) Struct
+
+
+unify : Packages -> Struct
+unify packages =
+    Dict.toList packages
+        |> Struct.concatMap
+            (\( moduleName, struct ) ->
+                { messages = List.map (\message -> { message | dataType = Name.internalize ( moduleName, message.dataType ) }) struct.messages
+                , enums =
+                    List.map
+                        (\enum ->
+                            { enum
+                                | dataType = Name.internalize ( moduleName, enum.dataType )
+                                , fields = NonEmpty.map (Tuple.mapSecond <| \optionName -> Name.internalize ( moduleName, optionName )) enum.fields
+                            }
+                        )
+                        struct.enums
+                , services = struct.services
+                , oneOfs =
+                    List.map
+                        (\( name, oneOf ) ->
+                            ( Name.internalize ( moduleName, name )
+                            , List.map (\( index, optName, optType ) -> ( index, Name.internalize ( moduleName, optName ), optType )) oneOf
+                            )
+                        )
+                        struct.oneOfs
+                }
+            )
 
 
 empty : Packages

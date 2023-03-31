@@ -1,6 +1,7 @@
 module Generator.Common exposing (..)
 
 import Elm.CodeGen as C
+import Mapper.Name
 import Model exposing (FieldName)
 
 
@@ -40,3 +41,13 @@ setter fieldName =
         C.lambda
             [ C.varPattern "a", C.varPattern "r" ]
             (C.update "r" [ ( fieldName, C.val "a" ) ])
+
+
+mayFq : C.ModuleName -> (C.ModuleName -> String -> a) -> C.ModuleName -> String -> a
+mayFq ownName f qualifiedName name =
+    f [] <| Mapper.Name.internalize ( qualifiedName, name )
+
+
+internalsModule : C.ModuleName
+internalsModule =
+    [ "Proto", "Internals_" ]

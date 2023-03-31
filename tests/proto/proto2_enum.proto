@@ -1,5 +1,7 @@
 syntax = "proto2";
 
+package proto2_enum;
+
 enum Proto2 {
   OptionA2 = 0;
   OptionB2 = 1;

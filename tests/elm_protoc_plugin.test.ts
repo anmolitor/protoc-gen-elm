@@ -1,4 +1,5 @@
 import fs from "fs";
+import long from "long";
 import { Repl, startRepl } from "./repl";
 import { makeRoundtripRunner, RoundtripRunner } from "./roundtrip";
 import { compileElm, generatedPath, runPluginSelectively } from "./util";
@@ -19,6 +20,28 @@ describe("protoc-gen-elm", () => {
       "basic_message.proto",
       "oneof.proto",
       "multiple_oneof.proto",
+      "package.proto",
+      "imported.proto",
+      "importing.proto",
+      "imported_enum.proto",
+      "importing_enum.proto",
+      "subdir/imported.proto",
+      "subdir/importing.proto",
+      "subdir/package.proto",
+      "map.proto",
+      "map_in_package.proto",
+      "recursive.proto",
+      "recursive_imported.proto",
+      "recursive_importing.proto",
+      "weird_names.proto",
+      "proto2_enum.proto",
+      "proto2_group.proto",
+      "proto2_required.proto",
+      "multiple_imports1.proto",
+      "multiple_imports2.proto",
+      "multiple_imports3.proto",
+      "ints.proto",
+      "oneof_embedded.proto",
     ]);
 
     repl = await startRepl();
@@ -39,9 +62,9 @@ describe("protoc-gen-elm", () => {
     it("generates working encoders and decoders", async () => {
       await repl.importModules("Proto");
       const output = await repl.write(
-        "Proto.encodeAnEnum Proto.AnEnum_OptionB |> E.encode |> D.decode Proto.decodeAnEnum"
+        "Proto.encodeAnEnum Proto.OptionB |> E.encode |> D.decode Proto.decodeAnEnum"
       );
-      expect(output).toEqual(expect.stringMatching(/Just.+AnEnum_OptionB/));
+      expect(output).toEqual(expect.stringMatching(/Just.+OptionB/));
     });
   });
 
@@ -56,7 +79,7 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto.BasicMessage");
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = Proto.BasicMessage.BasicMessage "hi" 5 6.0 True`
+        `${freshVar} = { stringProperty = "hi", intProperty = 5, floatProperty = 6.0, boolProperty = True }`
       );
       const output = await repl.write(
         `(Proto.BasicMessage.encodeBasicMessage ${freshVar} |> E.encode |> D.decode Proto.BasicMessage.decodeBasicMessage) == Just ${freshVar}`
@@ -72,7 +95,11 @@ describe("protoc-gen-elm", () => {
         boolProperty: true,
       };
       await roundtripRunner(
-        { protoFileName: "basic_message", messageName: "BasicMessage" },
+        {
+          protoFileName: "basic_message",
+          messageName: "BasicMessage",
+          elmModuleName: "Proto.BasicMessage",
+        },
         msg,
         (actual) => expect(actual).toMatchCloseTo(msg)
       );
@@ -91,7 +118,7 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto.Oneof", "Proto.Oneof.OneOf");
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { msg = Just <| Proto.Oneof.OneOf.AString "test" }`
+        `${freshVar} = { msg = Just <| Proto.Oneof.OneOf.toInternalMsg <| Proto.Oneof.OneOf.AString "test" }`
       );
       const output = await repl.write(
         `(Proto.Oneof.encodeOneOf ${freshVar} |> E.encode |> D.decode Proto.Oneof.decodeOneOf) == Just ${freshVar}`
@@ -104,7 +131,7 @@ describe("protoc-gen-elm", () => {
         {
           protoFileName: "oneof",
           messageName: "OneOf",
-          elmModuleName: "Oneof",
+          elmModuleName: "Proto.Oneof",
         },
         { anInt: 69 }
       );
@@ -128,7 +155,7 @@ describe("protoc-gen-elm", () => {
       );
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { msg = Just <| Proto.MultipleOneof.Oneof1.OptionA "a" }`
+        `${freshVar} = { msg = Just <| Proto.MultipleOneof.Oneof1.toInternalMsg <| Proto.MultipleOneof.Oneof1.OptionA "a" }`
       );
       await repl.write(
         `(Proto.MultipleOneof.encodeOneof1 ${freshVar} |> E.encode |> D.decode Proto.MultipleOneof.decodeOneof1) == Just ${freshVar}`
@@ -136,189 +163,179 @@ describe("protoc-gen-elm", () => {
     });
   });
 
-  // describe("package", () => {
-  //   const expectedElmFileName = "Proto/Package.elm";
+  describe("package", () => {
+    const expectedElmFileName = "Proto/Any.elm";
 
-  //   it("generates a valid elm file for package.proto", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
+    it("generates a valid elm file for package.proto", async () => {
+      await compileElm(expectedElmFileName);
+    });
 
-  //   it("generates working code for package.proto", async () => {
-  //     await repl.importModules("Proto.Package");
-  //     const output = await repl.write(
-  //       "(Proto.Package.encodeTest Proto.Package.Test |> E.encode |> D.decode Proto.Package.decodeTest) == Just Proto.Package.Test"
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
-  // });
+    it("generates working code for package.proto", async () => {
+      await repl.importModules("Proto.Any");
+      const output = await repl.write(
+        "(Proto.Any.encodeTest {} |> E.encode |> D.decode Proto.Any.decodeTest) == Just {}"
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
 
-  // describe("import", () => {
-  //   const expectedElmFileNames = ["Proto/Imported.elm", "Proto/Importing.elm"];
+  describe("import", () => {
+    const expectedElmFileNames = ["Proto/Imported.elm", "Proto/Importing.elm"];
 
-  //   it("generates a valid elm file for imported.proto and importing.proto", async () => {
-  //     await compileElm(expectedElmFileNames);
-  //   });
+    it("generates a valid elm file for imported.proto and importing.proto", async () => {
+      await compileElm(expectedElmFileNames);
+    });
 
-  //   it("generates working code for imported.proto", async () => {
-  //     await repl.importModules("Proto.Imported");
-  //     const freshVar = repl.getFreshVariable();
-  //     await repl.write(`${freshVar} = { first = "test", second = True }`);
-  //     const output = await repl.write(
-  //       `(Proto.Imported.encodeImported ${freshVar} |> E.encode |> D.decode Proto.Imported.decodeImported) == Just ${freshVar}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
+    it("generates working code for imported.proto", async () => {
+      await repl.importModules("Proto.Imported");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(`${freshVar} = { first = "test", second = True }`);
+      const output = await repl.write(
+        `(Proto.Imported.encodeImported ${freshVar} |> E.encode |> D.decode Proto.Imported.decodeImported) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
 
-  //   it("generates working code for importing.proto", async () => {
-  //     await repl.importModules("Proto.Imported", "Proto.Importing");
-  //     const inner = repl.getFreshVariable();
-  //     const outer = repl.getFreshVariable();
-  //     await repl.write(`${inner} = { first = "test", second = True }`);
-  //     await repl.write(
-  //       `${outer} = { normalProperty = "a", nestedProperty = Just ${inner} }`
-  //     );
-  //     const output = await repl.write(
-  //       `(Proto.Importing.encodeNested ${outer} |> E.encode |> D.decode Proto.Importing.decodeNested) == Just ${outer}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
-  // });
+    it("generates working code for importing.proto", async () => {
+      await repl.importModules("Proto.Imported", "Proto.Importing");
+      const inner = repl.getFreshVariable();
+      const outer = repl.getFreshVariable();
+      await repl.write(`${inner} = { first = "test", second = True }`);
+      await repl.write(
+        `${outer} = { normalProperty = "a", nestedProperty = Just ${inner} }`
+      );
+      const output = await repl.write(
+        `(Proto.Importing.encodeNested ${outer} |> E.encode |> D.decode Proto.Importing.decodeNested) == Just ${outer}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
 
-  // describe("enum imports", () => {
-  //   const expectedElmFileNames = [
-  //     "Proto/ImportedEnum.elm",
-  //     "Proto/ImportingEnum.elm",
-  //   ];
+  describe("enum imports", () => {
+    const expectedElmFileNames = [
+      "Proto/ImportedEnum.elm",
+      "Proto/ImportingEnum.elm",
+    ];
 
-  //   it("generates a valid elm file for imported_enum.proto and importing_enum.proto", async () => {
-  //     await compileElm(expectedElmFileNames);
-  //   });
+    it("generates a valid elm file for imported_enum.proto and importing_enum.proto", async () => {
+      await compileElm(expectedElmFileNames);
+    });
 
-  //   it("generates working code for imported_enum.proto", async () => {
-  //     await repl.importModules("Proto.ImportedEnum");
-  //     const freshVar = repl.getFreshVariable();
-  //     await repl.write(
-  //       `${freshVar} = Proto.ImportedEnum.SomeEnum_OptionAImported`
-  //     );
-  //     const output = await repl.write(
-  //       `(Proto.ImportedEnum.encodeSomeEnum ${freshVar} |> E.encode |> D.decode Proto.ImportedEnum.decodeSomeEnum) == Just ${freshVar}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
+    it("generates working code for imported_enum.proto", async () => {
+      await repl.importModules("Proto.ImportedEnum");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(`${freshVar} = Proto.ImportedEnum.OptionAImported`);
+      const output = await repl.write(
+        `(Proto.ImportedEnum.encodeSomeEnum ${freshVar} |> E.encode |> D.decode Proto.ImportedEnum.decodeSomeEnum) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
 
-  //   it("generates working code for importing_enum.proto", async () => {
-  //     await repl.importModules("Proto.ImportedEnum", "Proto.ImportingEnum");
-  //     const inner = repl.getFreshVariable();
-  //     const outer = repl.getFreshVariable();
-  //     await repl.write(
-  //       `${inner} = Proto.ImportedEnum.SomeEnum_OptionBImported`
-  //     );
-  //     await repl.write(`${outer} = { someEnum = ${inner} }`);
-  //     const output = await repl.write(
-  //       `(Proto.ImportingEnum.encodeMsg ${outer} |> E.encode |> D.decode Proto.ImportingEnum.decodeMsg) == Just ${outer}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
-  // });
+    it("generates working code for importing_enum.proto", async () => {
+      await repl.importModules("Proto.ImportedEnum", "Proto.ImportingEnum");
+      const inner = repl.getFreshVariable();
+      const outer = repl.getFreshVariable();
+      await repl.write(`${inner} = Proto.ImportedEnum.OptionBImported`);
+      await repl.write(
+        `${outer} = { someEnum = Proto.ImportedEnum.toInternalSomeEnum ${inner} }`
+      );
+      const output = await repl.write(
+        `(Proto.ImportingEnum.encodeMsg ${outer} |> E.encode |> D.decode Proto.ImportingEnum.decodeMsg) == Just ${outer}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
 
-  // describe("subdirectory", () => {
-  //   const expectedElmFileName = [
-  //     "Proto/Subdir/Imported.elm",
-  //     "Proto/Subdir/Importing.elm",
-  //   ];
+  describe("subdirectory", () => {
+    const expectedElmFileName = [
+      "Proto/Subimported.elm",
+      "Proto/Subimporting.elm",
+    ];
 
-  //   it("generates a valid elm file for files in subdirectory", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
+    it("generates a valid elm file for files in subdirectory", async () => {
+      await compileElm(expectedElmFileName);
+    });
 
-  //   it("generates working code for files in subdirectory", async () => {
-  //     await repl.importModules(
-  //       "Proto.Subdir.Imported",
-  //       "Proto.Subdir.Importing"
-  //     );
-  //     const freshVar = repl.getFreshVariable();
-  //     await repl.write(
-  //       `${freshVar} = Proto.Subdir.Importing.NestedSubDir "b" (Just <| Proto.Subdir.Imported.SubImported "a" False)`
-  //     );
-  //     const output = await repl.write(
-  //       `(Proto.Subdir.Importing.encodeNestedSubDir ${freshVar} |> E.encode |> D.decode Proto.Subdir.Importing.decodeNestedSubDir) == Just ${freshVar}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
-  // });
+    it("generates working code for files in subdirectory", async () => {
+      await repl.importModules("Proto.Subimported", "Proto.Subimporting");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(
+        `${freshVar} = { normalProperty = "b", nestedProperty = Just { first = "a", second = False } }`
+      );
+      const output = await repl.write(
+        `(Proto.Subimporting.encodeNestedSubDir ${freshVar} |> E.encode |> D.decode Proto.Subimporting.decodeNestedSubDir) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
 
-  // describe("subdirectory imports", () => {
-  //   const expectedElmFileName = [
-  //     "Proto/Package.elm",
-  //     "Proto/Subdir/Package.elm",
-  //   ];
+  describe("subdirectory imports", () => {
+    const expectedElmFileName = ["Proto/Any.elm", "Proto/Pkg.elm"];
 
-  //   it("generates a valid elm file for files in subdirectory", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
+    it("generates a valid elm file for files in subdirectory", async () => {
+      await compileElm(expectedElmFileName);
+    });
 
-  //   it("generates working code for files in subdirectory", async () => {
-  //     await repl.importModules("Proto.Subdir.Package", "Proto.Package");
-  //     const freshVar = repl.getFreshVariable();
-  //     await repl.write(
-  //       `${freshVar} = Proto.Subdir.Package.Something (Just Proto.Package.Test) True`
-  //     );
-  //     const output = await repl.write(
-  //       `(Proto.Subdir.Package.encodeSomething ${freshVar} |> E.encode |> D.decode Proto.Subdir.Package.decodeSomething) == Just ${freshVar}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
-  // });
+    it("generates working code for files in subdirectory", async () => {
+      await repl.importModules("Proto.Any", "Proto.Pkg");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(`${freshVar} = { sub = Just {}, other = True }`);
+      const output = await repl.write(
+        `(Proto.Pkg.encodeSomething ${freshVar} |> E.encode |> D.decode Proto.Pkg.decodeSomething) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
 
-  // describe("maps", () => {
-  //   const expectedElmFileName = "Proto/Map.elm";
+  describe("maps", () => {
+    const expectedElmFileName = "Proto/Map.elm";
 
-  //   it("generates a valid elm file for maps", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
+    it("generates a valid elm file for maps", async () => {
+      await compileElm(expectedElmFileName);
+    });
 
-  //   it("generates working code for maps", async () => {
-  //     await repl.importModules("Proto.Map", "Dict");
-  //     const freshVar = repl.getFreshVariable();
-  //     await repl.write(
-  //       `${freshVar} = Proto.Map.Bar (Dict.singleton "test" (Just <| Proto.Map.Foo "hi")) (Dict.fromList [(1, "a"), (5, "b")])`
-  //     );
-  //     const output = await repl.write(
-  //       `(Proto.Map.encodeBar ${freshVar} |> E.encode |> D.decode Proto.Map.decodeBar) == Just ${freshVar}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
+    it("generates working code for maps", async () => {
+      await repl.importModules("Proto", "Dict");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(
+        `${freshVar} = { foos = Dict.singleton "test" (Just { abc = "hi" } ), idk = Dict.fromList [(1, "a"), (5, "b")] }`
+      );
+      const output = await repl.write(
+        `(Proto.encodeBar ${freshVar} |> E.encode |> D.decode Proto.decodeBar) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
 
-  //   it("is compatable with protobufjs", async () => {
-  //     await roundtripRunner(
-  //       { protoFileName: "map", messageName: "Bar", elmModuleName: "Map" },
-  //       {
-  //         foos: { a: { abc: "test" }, cd: { abc: "bla" } },
-  //         idk: { 1: "one", 5: "five" },
-  //       }
-  //     );
-  //   });
-  // });
+    it("is compatable with protobufjs", async () => {
+      await roundtripRunner(
+        { protoFileName: "map", messageName: "Bar", elmModuleName: "Proto" },
+        {
+          foos: { a: { abc: "test" }, cd: { abc: "bla" } },
+          idk: { 1: "one", 5: "five" },
+        }
+      );
+    });
+  });
 
-  // describe("map_in_package", () => {
-  //   const expectedElmFileName = "Proto/MapInPackage.elm";
+  describe("map_in_package", () => {
+    const expectedElmFileName = "Proto/Map.elm";
 
-  //   it("generates a valid elm file for maps", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
+    it("generates a valid elm file for maps", async () => {
+      await compileElm(expectedElmFileName);
+    });
 
-  //   it("generates working code for maps", async () => {
-  //     await repl.importModules("Proto.MapInPackage", "Dict");
-  //     const freshVar = repl.getFreshVariable();
-  //     await repl.write(
-  //       `${freshVar} = Proto.MapInPackage.Bar (Dict.singleton "test" (Just <| Proto.MapInPackage.Foo "hi"))`
-  //     );
-  //     const output = await repl.write(
-  //       `(Proto.MapInPackage.encodeBar ${freshVar} |> E.encode |> D.decode Proto.MapInPackage.decodeBar) == Just ${freshVar}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
-  // });
+    it("generates working code for maps", async () => {
+      await repl.importModules("Proto.Map", "Dict");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(
+        `${freshVar} = { foos = Dict.singleton "test" (Just  { abc = "hi" }) }`
+      );
+      const output = await repl.write(
+        `(Proto.Map.encodeBar ${freshVar} |> E.encode |> D.decode Proto.Map.decodeBar) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
 
   // describe("nested declarations", () => {
   //   const expectedElmFileName = "Proto/Nested.elm";
@@ -328,10 +345,10 @@ describe("protoc-gen-elm", () => {
   //   });
 
   //   it("generates working code for nested messages and enums", async () => {
-  //     await repl.importModules("Proto.Nested");
+  //     await repl.importModules("Proto.Nested", "Proto.Nested.TopLevel", "Proto.Nested.TopLevel.LevelOne", "Proto.Nested.TopLevel.LevelOne.LevelTwo");
   //     const freshVar = repl.getFreshVariable();
   //     await repl.write(
-  //       `${freshVar} = Proto.Nested.Test Proto.Nested.TopLevel_LevelOne_LevelTwo_EnumLevelTwo_A`
+  //       `${freshVar} = Proto.Nested.Test Proto.Nested.TopLevel.LevelOne.LevelTwo.A`
   //     );
   //     const output = await repl.write(
   //       `(Proto.Nested.encodeTest ${freshVar} |> E.encode |> D.decode Proto.Nested.decodeTest) == Just ${freshVar}`
@@ -340,85 +357,84 @@ describe("protoc-gen-elm", () => {
   //   });
   // });
 
-  // describe("recursive declarations", () => {
-  //   it("generates a valid elm file for recursive messages", async () => {
-  //     await compileElm("Proto/Recursive.elm");
-  //   });
+  describe("recursive declarations", () => {
+    it("generates a valid elm file for recursive messages", async () => {
+      await compileElm("Proto/Recursive.elm");
+    });
 
-  //   it("generates a valid elm file for imported recursive messages", async () => {
-  //     await compileElm([
-  //       "Proto/RecursiveImported.elm",
-  //       "Proto/RecursiveImporting.elm",
-  //     ]);
-  //   });
+    it("generates a valid elm file for imported recursive messages", async () => {
+      await compileElm([
+        "Proto/RecursiveImported.elm",
+        "Proto/RecursiveImporting.elm",
+      ]);
+    });
 
-  //   it("generates working code for recursive messages", async () => {
-  //     await repl.importModules("Proto.Recursive");
-  //     const innerRec = repl.getFreshVariable();
-  //     const other = repl.getFreshVariable();
-  //     const outerRec = repl.getFreshVariable();
-  //     await repl.write(`${innerRec} = { rec = [], other = Nothing }`);
-  //     await repl.write(`${other} = { rec = Just ${innerRec} }`);
-  //     await repl.write(
-  //       `${outerRec} = { rec = [Proto.Recursive.Recursive_ ${innerRec}], other = Just (Proto.Recursive.Other_ ${other}) }`
-  //     );
+    it("generates working code for recursive messages", async () => {
+      await repl.importModules("Proto.Recursive");
+      const innerRec = repl.getFreshVariable();
+      const other = repl.getFreshVariable();
+      const outerRec = repl.getFreshVariable();
+      await repl.write(`${innerRec} = { rec = [], other = Nothing }`);
+      await repl.write(`${other} = { rec = Just ${innerRec} }`);
+      await repl.write(
+        `${outerRec} = { rec = [Proto.Recursive.wrapRecursive ${innerRec}], other = Just (Proto.Recursive.wrapOther ${other}) }`
+      );
 
-  //     const output = await repl.write(
-  //       `(Proto.Recursive.encodeRecursive ${outerRec} |> E.encode |> D.decode Proto.Recursive.decodeRecursive) == Just ${outerRec}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
-  // });
+      const output = await repl.write(
+        `(Proto.Recursive.encodeRecursive ${outerRec} |> E.encode |> D.decode Proto.Recursive.decodeRecursive) == Just ${outerRec}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
 
-  // describe("weird names", () => {
-  //   const expectedElmFileName = "Proto/WeirdNames.elm";
+  describe("weird names", () => {
+    const expectedElmFileName = "Proto/WeirdNames.elm";
 
-  //   it("generates a valid elm file even with weird casing conventions", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
-  // });
+    it("generates a valid elm file even with weird casing conventions", async () => {
+      await compileElm(expectedElmFileName);
+    });
+  });
 
-  // describe("proto2 enums", () => {
-  //   const expectedElmFileName = "Proto/Proto2Enum.elm";
+  describe("proto2 enums", () => {
+    const expectedElmFileName = "Proto/Proto2Enum.elm";
 
-  //   it("generates a valid elm file for proto2 enum", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
-  // });
+    it("generates a valid elm file for proto2 enum", async () => {
+      await compileElm(expectedElmFileName);
+    });
+  });
 
-  // describe("proto2 required", () => {
-  //   const expectedElmFileName = "Proto/Proto2Required.elm";
+  describe("proto2 required", () => {
+    const expectedElmFileName = "Proto/Proto2Required.elm";
 
-  //   it("generates a valid elm file for proto2 enum", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
-  // });
+    it("generates a valid elm file for proto2 enum", async () => {
+      await compileElm(expectedElmFileName);
+    });
+  });
 
-  // describe("proto2 group", () => {
-  //   const expectedElmFileName = "Proto/Proto2Group.elm";
+  describe("proto2 group", () => {
+    const expectedElmFileName = "Proto/Proto2Group.elm";
 
-  //   it("generates a valid elm file for proto2 group", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
-  // });
+    it("generates a valid elm file for proto2 group", async () => {
+      await compileElm(expectedElmFileName);
+    });
+  });
 
-  // describe("oneof with embedded types", () => {
-  //   const expectedElmFileName = "Proto/OneofEmbedded.elm";
+  describe("oneof with embedded types", () => {
+    const expectedElmFileName = "Proto/OneofEmbedded.elm";
 
-  //   it("generates a valid elm file for embedded types", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
-  // });
+    it("generates a valid elm file for embedded types", async () => {
+      await compileElm(expectedElmFileName);
+    });
+  });
 
-  // describe("multiple imports", () => {
-  //   it("generates a valid elm file for multiple imports", async () => {
-  //     await compileElm([
-  //       "Proto/MultipleImports1.elm",
-  //       "Proto/MultipleImports2.elm",
-  //       "Proto/MultipleImports3.elm",
-  //     ]);
-  //   });
-  // });
+  describe("multiple imports", () => {
+    it("generates a valid elm file for multiple imports", async () => {
+      await compileElm([
+        "Proto/MultipleImports1.elm",
+        "Proto/MultipleImports2.elm",
+      ]);
+    });
+  });
 
   // describe("nested oneofs", () => {
   //   it("generates a valid elm file for proto2 group", async () => {
@@ -426,27 +442,31 @@ describe("protoc-gen-elm", () => {
   //   });
   // });
 
-  // describe("int types", () => {
-  //   it("generates a valid elm file for ints", async () => {
-  //     await compileElm(["Proto/Ints.elm"]);
-  //   });
+  describe("int types", () => {
+    it("generates a valid elm file for ints", async () => {
+      await compileElm(["Proto/Ints.elm"]);
+    });
 
-  //   it("is compatable with protobufjs", async () => {
-  //     await roundtripRunner(
-  //       { protoFileName: "ints", messageName: "Ints" },
-  //       {
-  //         int32: 123,
-  //         sint32: 123,
-  //         sfixed32: 123,
-  //         uint32: 123,
-  //         fixed32: 123,
-  //         int64: long.fromInt(2 ^ 33),
-  //         sint64: long.fromInt(2 ^ 33),
-  //         sfixed64: long.fromInt(2 ^ 33),
-  //         uint64: long.fromInt(2 ^ 33, true),
-  //         fixed64: long.fromInt(2 ^ 33, true),
-  //       }
-  //     );
-  //   });
-  // });
+    it("is compatable with protobufjs", async () => {
+      await roundtripRunner(
+        {
+          protoFileName: "ints",
+          messageName: "Ints",
+          elmModuleName: "Proto.Ints",
+        },
+        {
+          int32: 123,
+          sint32: 123,
+          sfixed32: 123,
+          uint32: 123,
+          fixed32: 123,
+          int64: long.fromInt(2 ^ 33),
+          sint64: long.fromInt(2 ^ 33),
+          sfixed64: long.fromInt(2 ^ 33),
+          uint64: long.fromInt(2 ^ 33, true),
+          fixed64: long.fromInt(2 ^ 33, true),
+        }
+      );
+    });
+  });
 });

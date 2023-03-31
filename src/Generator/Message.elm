@@ -2,6 +2,7 @@ module Generator.Message exposing (..)
 
 import Elm.CodeGen as C exposing (ModuleName)
 import Generator.Common as Common
+import Mapper.Name
 import Meta.Basics
 import Meta.Decode
 import Meta.Encode
@@ -9,18 +10,37 @@ import Meta.Type
 import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldType(..), Map, Message, TypeKind(..))
 
 
-toAST : ModuleName -> Message -> List C.Declaration
-toAST moduleName msg =
+reexportAST : ModuleName -> Message -> List C.Declaration
+reexportAST moduleName msg =
+    let
+        type_ =
+            C.aliasDecl (Just <| messageDocumentation msg.dataType) msg.dataType [] <|
+                C.fqTyped Common.internalsModule (Mapper.Name.internalize ( moduleName, msg.dataType )) []
+
+        encoder =
+            C.valDecl (Just <| Common.encoderDocumentation msg.dataType)
+                (Just <| Meta.Encode.encoder (C.typed msg.dataType []))
+                (Common.encoderName msg.dataType)
+                (C.fqVal Common.internalsModule <| Common.encoderName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
+
+        decoder =
+            C.valDecl (Just <| Common.decoderDocumentation msg.dataType)
+                (Just <| Meta.Decode.decoder (C.typed msg.dataType []))
+                (Common.decoderName msg.dataType)
+                (C.fqVal Common.internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
+    in
+    [ type_, encoder, decoder ] ++ List.concatMap fieldDeclarationsReexport msg.fields
+
+
+toAST : Message -> List C.Declaration
+toAST msg =
     let
         type_ : C.Declaration
         type_ =
             C.aliasDecl (Just <| messageDocumentation msg.dataType)
                 msg.dataType
                 []
-                (C.recordAnn <| List.map (Tuple.mapSecond (fieldToTypeAnnotation nestedModuleName)) msg.fields)
-
-        nestedModuleName =
-            moduleName ++ [ msg.dataType ]
+                (C.recordAnn <| List.map (Tuple.mapSecond fieldToTypeAnnotation) msg.fields)
 
         encoder : C.Declaration
         encoder =
@@ -34,7 +54,7 @@ toAST moduleName msg =
                     C.varPattern "value"
                 ]
                 (Meta.Encode.message
-                    (List.map (toEncoder nestedModuleName) msg.fields)
+                    (List.map toEncoder msg.fields)
                 )
 
         decoder : C.Declaration
@@ -45,7 +65,7 @@ toAST moduleName msg =
                 (C.apply
                     [ Meta.Decode.message
                     , C.val <| Common.defaultName msg.dataType
-                    , C.list <| List.map (toDecoder nestedModuleName) msg.fields
+                    , C.list <| List.map toDecoder msg.fields
                     ]
                 )
 
@@ -58,18 +78,6 @@ toAST moduleName msg =
     in
     [ type_, encoder, decoder, default ]
         ++ List.concatMap fieldDeclarations msg.fields
-
-
-mapToAST : Map -> List C.Declaration
-mapToAST map =
-    let
-        type_ =
-            C.aliasDecl (Just <| mapComment map)
-                map.dataType
-                []
-                (C.fqTyped [ "Dict" ] "Dict" [ fieldTypeToTypeAnnotation map.key, fieldTypeToTypeAnnotation map.value ])
-    in
-    [ type_ ]
 
 
 mapComment : Map -> C.Comment C.DocComment
@@ -94,10 +102,10 @@ fieldDeclarations ( _, field ) =
                 Type ->
                     let
                         recursiveWrapperName =
-                            recursiveDataTypeName embedded.dataType
+                            recursiveDataTypeName (Mapper.Name.internalize ( embedded.moduleName, embedded.dataType ))
 
                         wrappedAnn =
-                            C.fqTyped embedded.moduleName embedded.dataType []
+                            C.typed (Mapper.Name.internalize ( embedded.moduleName, embedded.dataType )) []
 
                         recursiveTypeWrapper : C.Declaration
                         recursiveTypeWrapper =
@@ -107,7 +115,7 @@ fieldDeclarations ( _, field ) =
                         unwrapper =
                             C.funDecl (Just <| recursiveUnwrapDocumentation embedded.dataType)
                                 (Just <| C.funAnn (C.typed recursiveWrapperName []) wrappedAnn)
-                                (recursiveUnwrapName embedded.dataType)
+                                (recursiveUnwrapName <| Mapper.Name.internalize ( embedded.moduleName, embedded.dataType ))
                                 [ C.namedPattern recursiveWrapperName [ C.varPattern "wrapped" ] ]
                                 (C.val "wrapped")
                     in
@@ -119,7 +127,65 @@ fieldDeclarations ( _, field ) =
         MapField _ _ _ ->
             []
 
-        OneOfField dataType options ->
+        OneOfField _ _ ->
+            []
+
+
+fieldDeclarationsReexport : ( FieldName, Field ) -> List C.Declaration
+fieldDeclarationsReexport ( _, field ) =
+    case field of
+        NormalField _ _ (Embedded embedded) ->
+            case embedded.typeKind of
+                Alias ->
+                    []
+
+                Type ->
+                    let
+                        recursiveWrapperName =
+                            recursiveDataTypeName embedded.dataType
+
+                        wrappedAnn =
+                            C.typed embedded.dataType []
+
+                        recursiveTypeWrapper : C.Declaration
+                        recursiveTypeWrapper =
+                            C.aliasDecl (Just <| recursiveDataTypeDocumentation embedded.dataType)
+                                recursiveWrapperName
+                                []
+                                (C.fqTyped Common.internalsModule
+                                    (Mapper.Name.internalize
+                                        ( embedded.moduleName, recursiveDataTypeName embedded.dataType )
+                                    )
+                                    []
+                                )
+
+                        wrapper : C.Declaration
+                        wrapper =
+                            C.valDecl (Just <| recursiveWrapDocumentation embedded.dataType)
+                                (Just <| C.funAnn wrappedAnn (C.typed recursiveWrapperName []))
+                                (recursiveWrapName embedded.dataType)
+                                (C.fqVal Common.internalsModule
+                                    (Mapper.Name.internalize
+                                        ( embedded.moduleName, recursiveDataTypeName embedded.dataType )
+                                    )
+                                )
+
+                        unwrapper : C.Declaration
+                        unwrapper =
+                            C.valDecl (Just <| recursiveUnwrapDocumentation embedded.dataType)
+                                (Just <| C.funAnn (C.typed recursiveWrapperName []) wrappedAnn)
+                                (recursiveUnwrapName embedded.dataType)
+                                (C.fqVal Common.internalsModule <| recursiveUnwrapName <| Mapper.Name.internalize ( embedded.moduleName, embedded.dataType ))
+                    in
+                    [ recursiveTypeWrapper, wrapper, unwrapper ]
+
+        NormalField _ _ _ ->
+            []
+
+        MapField _ _ _ ->
+            []
+
+        OneOfField _ _ ->
             []
 
 
@@ -133,7 +199,7 @@ fieldTypeToDefaultValue fieldType =
             Meta.Basics.nothing
 
         Enumeration enum ->
-            C.fqVal enum.moduleName enum.default
+            C.val (Common.defaultName <| Mapper.Name.internalize ( enum.moduleName, enum.dataType ))
 
 
 toDefaultValue : Field -> C.Expression
@@ -154,14 +220,14 @@ toDefaultValue field =
                     Meta.Basics.nothing
 
                 ( Required, Embedded e ) ->
-                    C.fqVal e.moduleName (Common.defaultName e.dataType)
+                    C.val (Common.defaultName <| Mapper.Name.internalize ( e.moduleName, e.dataType ))
                         |> (\val ->
                                 case e.typeKind of
                                     Alias ->
                                         val
 
                                     Type ->
-                                        C.apply [ C.val (recursiveDataTypeName e.dataType), val ]
+                                        C.apply [ C.val (recursiveDataTypeName <| Mapper.Name.internalize ( e.moduleName, e.dataType )), val ]
                            )
 
                 ( _, Enumeration enum ) ->
@@ -174,8 +240,8 @@ toDefaultValue field =
             Meta.Basics.nothing
 
 
-toDecoder : C.ModuleName -> ( FieldName, Field ) -> C.Expression
-toDecoder moduleName ( fieldName, field ) =
+toDecoder : ( FieldName, Field ) -> C.Expression
+toDecoder ( fieldName, field ) =
     case field of
         NormalField number cardinality fieldType ->
             case cardinality of
@@ -215,9 +281,9 @@ toDecoder moduleName ( fieldName, field ) =
                 , Common.setter fieldName
                 ]
 
-        OneOfField dataType options ->
+        OneOfField dataType oneOfModuleName ->
             C.apply
-                [ C.fqFun moduleName (Common.decoderName dataType)
+                [ C.fun (Common.decoderName <| Mapper.Name.internalize ( oneOfModuleName, dataType ))
                 , Common.setter fieldName
                 ]
 
@@ -230,11 +296,11 @@ embeddedDecoder e =
 
         Type ->
             C.parens
-                << C.applyBinOp (C.apply [ Meta.Decode.map, C.val <| recursiveDataTypeName e.dataType ]) C.pipel
+                << C.applyBinOp (C.apply [ Meta.Decode.map, C.val <| recursiveDataTypeName <| Mapper.Name.internalize ( e.moduleName, e.dataType ) ]) C.pipel
                 << C.applyBinOp Meta.Decode.lazy C.pipel
                 << C.lambda [ C.allPattern ]
     )
-        (C.fqFun e.moduleName (Common.decoderName e.dataType))
+        (C.fun (Common.decoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )))
 
 
 fieldTypeToDecoder : FieldType -> Cardinality -> C.Expression
@@ -259,12 +325,11 @@ fieldTypeToDecoder fieldType cardinality =
             embeddedDecoder e
 
         ( _, Enumeration enum ) ->
-            C.fqFun enum.moduleName (Common.decoderName enum.dataType)
+            C.fun (Common.decoderName <| Mapper.Name.internalize ( enum.moduleName, enum.dataType ))
 
 
-toEncoder : C.ModuleName -> ( FieldName, Field ) -> C.Expression
-toEncoder moduleName ( fieldName, field ) =
-    -- TODO i need to access fields of "value" variable in a better way
+toEncoder : ( FieldName, Field ) -> C.Expression
+toEncoder ( fieldName, field ) =
     case field of
         NormalField number cardinality fieldType ->
             C.tuple [ C.int number, C.apply [ fieldTypeToEncoder cardinality fieldType, C.access (C.val "value") fieldName ] ]
@@ -280,8 +345,8 @@ toEncoder moduleName ( fieldName, field ) =
                     ]
                 ]
 
-        OneOfField dataType options ->
-            C.apply [ C.fqFun moduleName (Common.encoderName dataType), C.access (C.val "value") fieldName ]
+        OneOfField dataType oneOfModuleName ->
+            C.apply [ C.fun (Common.encoderName <| Mapper.Name.internalize ( oneOfModuleName, dataType )), C.access (C.val "value") fieldName ]
 
 
 embeddedEncoder : { dataType : DataType, moduleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
@@ -291,9 +356,9 @@ embeddedEncoder e =
             identity
 
         Type ->
-            C.parens << C.applyBinOp (C.fun <| recursiveUnwrapName e.dataType) C.composer
+            C.parens << C.applyBinOp (C.fun <| recursiveUnwrapName <| Mapper.Name.internalize ( e.moduleName, e.dataType )) C.composer
     )
-        (C.fqFun e.moduleName (Common.encoderName e.dataType))
+        (C.fun (Common.encoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )))
 
 
 fieldTypeToEncoder : Cardinality -> FieldType -> C.Expression
@@ -310,7 +375,7 @@ fieldTypeToEncoder cardinality fieldType =
                     (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
 
         ( Optional, Enumeration enum ) ->
-            C.fqFun enum.moduleName (Common.encoderName enum.dataType)
+            C.fun (Common.encoderName <| Mapper.Name.internalize ( enum.moduleName, enum.dataType ))
 
         ( Required, Primitive dataType _ ) ->
             Meta.Encode.forPrimitive dataType
@@ -319,7 +384,7 @@ fieldTypeToEncoder cardinality fieldType =
             embeddedEncoder e
 
         ( Required, Enumeration enum ) ->
-            C.fqFun enum.moduleName (Common.encoderName enum.dataType)
+            C.fun (Common.encoderName <| Mapper.Name.internalize ( enum.moduleName, enum.dataType ))
 
         ( Repeated, Primitive dataType _ ) ->
             C.apply [ Meta.Encode.list, Meta.Encode.forPrimitive dataType ]
@@ -328,7 +393,7 @@ fieldTypeToEncoder cardinality fieldType =
             C.apply [ Meta.Encode.list, embeddedEncoder e ]
 
         ( Repeated, Enumeration enum ) ->
-            C.apply [ Meta.Encode.list, C.fqFun enum.moduleName (Common.encoderName enum.dataType) ]
+            C.apply [ Meta.Encode.list, C.fun (Common.encoderName <| Mapper.Name.internalize ( enum.moduleName, enum.dataType )) ]
 
 
 fieldTypeToTypeAnnotation : FieldType -> C.TypeAnnotation
@@ -338,22 +403,25 @@ fieldTypeToTypeAnnotation fieldType =
             Meta.Type.forPrimitive dataType
 
         Embedded e ->
-            C.fqTyped e.moduleName
-                (case e.typeKind of
-                    Alias ->
-                        e.dataType
+            C.typed
+                (Mapper.Name.internalize
+                    ( e.moduleName
+                    , case e.typeKind of
+                        Alias ->
+                            e.dataType
 
-                    Type ->
-                        recursiveDataTypeName e.dataType
+                        Type ->
+                            recursiveDataTypeName e.dataType
+                    )
                 )
                 []
 
         Enumeration enum ->
-            C.fqTyped enum.moduleName enum.dataType []
+            C.typed (Mapper.Name.internalize ( enum.moduleName, enum.dataType )) []
 
 
-fieldToTypeAnnotation : ModuleName -> Field -> C.TypeAnnotation
-fieldToTypeAnnotation moduleName field =
+fieldToTypeAnnotation : Field -> C.TypeAnnotation
+fieldToTypeAnnotation field =
     let
         cardinalityModifier cardinality fieldType =
             case ( cardinality, fieldType ) of
@@ -379,10 +447,11 @@ fieldToTypeAnnotation moduleName field =
                 (fieldTypeToTypeAnnotation fieldType)
 
         MapField _ key value ->
-            Meta.Type.dict (fieldTypeToTypeAnnotation key) (cardinalityModifier Optional value <| fieldTypeToTypeAnnotation value)
+            Meta.Type.dict (fieldTypeToTypeAnnotation key)
+                (cardinalityModifier Optional value <| fieldTypeToTypeAnnotation value)
 
-        OneOfField dataType _ ->
-            C.maybeAnn <| C.fqTyped moduleName dataType []
+        OneOfField dataType moduleName ->
+            C.maybeAnn <| C.typed (Mapper.Name.internalize ( moduleName, dataType )) []
 
 
 recursiveDataTypeName : String -> String
@@ -392,7 +461,12 @@ recursiveDataTypeName wrappedDataType =
 
 recursiveUnwrapName : String -> String
 recursiveUnwrapName wrappedDataType =
-    "unwrap" ++ recursiveDataTypeName wrappedDataType
+    "unwrap" ++ wrappedDataType
+
+
+recursiveWrapName : String -> String
+recursiveWrapName wrappedDataType =
+    "wrap" ++ wrappedDataType
 
 
 messageDocumentation : String -> C.Comment C.DocComment
@@ -417,4 +491,9 @@ recursiveDataTypeDocumentation wrappedDataType =
 
 recursiveUnwrapDocumentation : String -> C.Comment C.DocComment
 recursiveUnwrapDocumentation wrappedDataType =
-    C.emptyDocComment |> C.markdown ("Unwrap a `" ++ wrappedDataType ++ "` from its wrapper `" ++ recursiveDataTypeName wrappedDataType ++ "`")
+    C.emptyDocComment |> C.markdown ("Unwrap a `" ++ wrappedDataType ++ "` from its wrapper `" ++ recursiveDataTypeName wrappedDataType ++ ".`")
+
+
+recursiveWrapDocumentation : String -> C.Comment C.DocComment
+recursiveWrapDocumentation wrappedDataType =
+    C.emptyDocComment |> C.markdown ("Wrap a `" ++ wrappedDataType ++ "` into its wrapper `" ++ recursiveDataTypeName wrappedDataType ++ ".`")

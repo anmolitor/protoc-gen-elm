@@ -1,5 +1,7 @@
 syntax = "proto2";
 
+package proto2_required;
+
 enum Enum2 {
   A = 5;
   B = 10;

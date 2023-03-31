@@ -1,8 +1,10 @@
 syntax="proto3";
 
+package importing;
+
 import "imported.proto";
 
 message Nested {
   string normalProperty = 1;
-  Imported nestedProperty = 2;
+  imported.Imported nestedProperty = 2;
 }

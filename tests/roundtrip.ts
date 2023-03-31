@@ -27,7 +27,7 @@ const replArrParser: Parser.Parser<number[]> = Parser.string("Just ")
   .skip(Parser.all);
 
 export type RoundtripRunner = (
-  opts: { protoFileName: string; messageName: string; elmModuleName?: string },
+  opts: { protoFileName: string; messageName: string; elmModuleName: string },
   testObj: any,
   expectation?: (actual: any) => void
 ) => Promise<void>;
@@ -35,7 +35,7 @@ export type RoundtripRunner = (
 export const makeRoundtripRunner =
   (repl: Repl): RoundtripRunner =>
   async (
-    { protoFileName, messageName, elmModuleName = messageName },
+    { protoFileName, messageName, elmModuleName },
     testObj,
     expectation = (actual) => expect(actual).toEqual(testObj)
   ) => {
@@ -52,10 +52,10 @@ export const makeRoundtripRunner =
     const asArray = bufferToArr(bytes);
 
     // import generated elm modules, decode bytes and re-encode them
-    await repl.importModules(`Proto.${elmModuleName}`, "ByteUtil");
+    await repl.importModules(elmModuleName, "ByteUtil");
     const result = await repl
       .write(
-        `ByteUtil.makeRoundtrip Proto.${elmModuleName}.decode${messageName} Proto.${elmModuleName}.encode${messageName} [${asArray}]`
+        `ByteUtil.makeRoundtrip ${elmModuleName}.decode${messageName} ${elmModuleName}.encode${messageName} [${asArray}]`
       )
       .then(stripAnsi);
 

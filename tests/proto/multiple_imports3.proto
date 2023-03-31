@@ -1,9 +1,11 @@
 syntax="proto3";
 
+package multiple_imports_2;
+
 import "multiple_imports1.proto";
 import "multiple_imports2.proto";
 
 message Import3 {
-  Import1 i1 = 1;
+  multiple_imports_1.Import1 i1 = 1;
   Import2 i2 = 2;
 }

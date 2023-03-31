@@ -1,8 +1,10 @@
 syntax="proto3";
 
+package subimporting;
+
 import "subdir/imported.proto";
 
 message NestedSubDir {
   string normalProperty = 1;
-  SubImported nestedProperty = 2;
+  subimported.SubImported nestedProperty = 2;
 }

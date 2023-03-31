@@ -1,7 +1,9 @@
 syntax = "proto3";
 
+package importing_enum;
+
 import "imported_enum.proto";
 
 message Msg {
-  SomeEnum someEnum = 1;
+  imported_enum.SomeEnum someEnum = 1;
 }

@@ -1,13 +1,130 @@
-module Generator.Enum exposing (toAST)
+module Generator.Enum exposing (reexportAST, toAST)
 
-import Elm.CodeGen as C
+import Elm.CodeGen as C exposing (ModuleName)
 import Elm.Syntax.Expression exposing (Expression)
 import Elm.Syntax.Pattern exposing (Pattern)
-import List.NonEmpty as NonEmpty exposing (NonEmpty)
 import Generator.Common as Common
+import List.NonEmpty as NonEmpty exposing (NonEmpty)
+import Mapper.Name
 import Meta.Decode
 import Meta.Encode
 import Model exposing (Enum)
+
+
+reexportAST : ModuleName -> Enum -> List C.Declaration
+reexportAST moduleName enum =
+    let
+        fields =
+            NonEmpty.toList enum.fields
+                |> List.map Tuple.second
+
+        withUnrecognized f =
+            if enum.withUnrecognized then
+                f (enum.dataType ++ "Unrecognized_")
+
+            else
+                identity
+
+        type_ =
+            C.customTypeDecl (Just <| enumDocumentation enum.dataType)
+                enum.dataType
+                []
+                (List.map (\optionName -> ( optionName, [] )) fields
+                    |> withUnrecognized (\unrecognized constructors -> constructors ++ [ ( unrecognized, [ C.intAnn ] ) ])
+                )
+
+        fromInternal =
+            C.funDecl (Just <| C.emptyDocComment)
+                (Just <|
+                    C.funAnn
+                        (C.fqTyped Common.internalsModule
+                            (Mapper.Name.internalize ( moduleName, enum.dataType ))
+                            []
+                        )
+                        (C.typed enum.dataType [])
+                )
+                ("fromInternal" ++ enum.dataType)
+                [ C.varPattern "data_" ]
+                (C.caseExpr (C.val "data_")
+                    (List.map
+                        (\optionName ->
+                            ( C.fqNamedPattern Common.internalsModule
+                                (Mapper.Name.internalize ( moduleName, optionName ))
+                                []
+                            , C.val optionName
+                            )
+                        )
+                        fields
+                        |> withUnrecognized
+                            (\unrecognized cases ->
+                                cases
+                                    ++ [ ( C.fqNamedPattern Common.internalsModule
+                                            (Mapper.Name.internalize ( moduleName, unrecognized ))
+                                            [ C.varPattern "n_" ]
+                                         , C.apply [ C.val unrecognized, C.val "n_" ]
+                                         )
+                                       ]
+                            )
+                    )
+                )
+
+        toInternal =
+            C.funDecl (Just <| C.emptyDocComment)
+                (Just <|
+                    C.funAnn
+                        (C.typed enum.dataType [])
+                        (C.fqTyped Common.internalsModule
+                            (Mapper.Name.internalize ( moduleName, enum.dataType ))
+                            []
+                        )
+                )
+                ("toInternal" ++ enum.dataType)
+                [ C.varPattern "data_" ]
+                (C.caseExpr (C.val "data_")
+                    (List.map
+                        (\optionName ->
+                            ( C.namedPattern optionName []
+                            , C.fqVal Common.internalsModule
+                                (Mapper.Name.internalize ( moduleName, optionName ))
+                            )
+                        )
+                        fields
+                        |> withUnrecognized
+                            (\unrecognized cases ->
+                                cases
+                                    ++ [ ( C.namedPattern unrecognized [ C.varPattern "n_" ]
+                                         , C.apply
+                                            [ C.fqVal Common.internalsModule
+                                                (Mapper.Name.internalize ( moduleName, unrecognized ))
+                                            , C.val "n_"
+                                            ]
+                                         )
+                                       ]
+                            )
+                    )
+                )
+
+        encoder =
+            C.valDecl (Just <| Common.encoderDocumentation enum.dataType)
+                (Just <| Meta.Encode.encoder (C.typed enum.dataType []))
+                (Common.encoderName enum.dataType)
+                (C.applyBinOp (C.val <| "toInternal" ++ enum.dataType)
+                    C.composer
+                    (C.fqVal Common.internalsModule <| Common.encoderName <| Mapper.Name.internalize ( moduleName, enum.dataType ))
+                )
+
+        decoder =
+            C.valDecl (Just <| Common.decoderDocumentation enum.dataType)
+                (Just <| Meta.Decode.decoder (C.typed enum.dataType []))
+                (Common.decoderName enum.dataType)
+                (C.apply
+                    [ Meta.Decode.map
+                    , C.val <| "fromInternal" ++ enum.dataType
+                    , C.fqVal Common.internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, enum.dataType )
+                    ]
+                )
+    in
+    [ type_, decoder, encoder, fromInternal, toInternal ]
 
 
 toAST : Enum -> List C.Declaration
@@ -102,8 +219,20 @@ toAST enum =
                     C.pipel
                     (C.caseExpr (C.val "value") (NonEmpty.toList encodeCases))
                 )
+
+        defaultEnum =
+            NonEmpty.find (\( index, _ ) -> index == 0) enum.fields
+                |> Maybe.withDefault (NonEmpty.head enum.fields)
+                |> Tuple.second
+
+        default : C.Declaration
+        default =
+            C.valDecl (Just <| Common.defaultDocumentation enumName)
+                (Just <| C.typed enumName [])
+                (Common.defaultName enumName)
+                (C.val defaultEnum)
     in
-    [ type_, decoder, encoder ]
+    [ type_, decoder, encoder, default ]
 
 
 enumDocumentation : String -> C.Comment C.DocComment

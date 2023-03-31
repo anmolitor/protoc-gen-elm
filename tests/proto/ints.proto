@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package ints;
+
 message Ints {
   int32 int32 = 1;
   sint32 sint32 = 2;

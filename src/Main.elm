@@ -1,7 +1,9 @@
 module Main exposing (main)
 
 import Base64
+import Dict
 import Generator
+import Mapper exposing (TypeRefs)
 import Platform
 import Ports
 import Proto.Google.Protobuf.Compiler.Plugin exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
@@ -65,18 +67,22 @@ process model base64 =
                 |> Base64.toBytes
                 |> Maybe.andThen (Decode.decode decodeCodeGeneratorRequest)
 
-        response =
+        ( typeRefs, response ) =
             Maybe.map (map model.versions) request
-                |> Maybe.withDefault (fail <| "Failed parsing request from protoc. Here is the request in base64: " ++ base64)
+                |> Maybe.withDefault ( Dict.empty, fail <| "Failed parsing request from protoc. Here is the request in base64: " ++ base64 )
     in
-    encodeCodeGeneratorResponse response
-        |> Encode.encode
-        |> Base64.fromBytes
-        |> Maybe.withDefault ""
-        |> Ports.response
+    Cmd.batch
+        [ encodeCodeGeneratorResponse response
+            |> Encode.encode
+            |> Base64.fromBytes
+            |> Maybe.withDefault ""
+            |> Ports.response
+        , Ports.debug <| Debug.toString request
+        , Ports.debug <| Debug.toString typeRefs
+        ]
 
 
-map : Versions -> CodeGeneratorRequest -> CodeGeneratorResponse
+map : Versions -> CodeGeneratorRequest -> ( TypeRefs, CodeGeneratorResponse )
 map versions request =
     let
         allVersions =

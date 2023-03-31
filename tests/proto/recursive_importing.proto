@@ -1,7 +1,9 @@
 syntax="proto3";
 
+package recursive_importing;
+
 import "recursive_imported.proto";
 
 message Importing {
-  repeated Rec rec = 1;
+  repeated recursive_imported.Rec rec = 1;
 }

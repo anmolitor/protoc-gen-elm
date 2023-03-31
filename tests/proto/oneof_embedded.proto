@@ -1,5 +1,7 @@
 syntax="proto3";
 
+package oneof_embedded;
+
 message Message {
   bool idk = 1;
 }

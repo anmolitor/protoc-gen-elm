@@ -1,6 +1,6 @@
 syntax="proto3";
 
-package pack;
+package map;
 
 message Foo {
   string abc = 1;

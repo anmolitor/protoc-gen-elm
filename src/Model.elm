@@ -16,7 +16,7 @@ module Model exposing
     , TypeKind(..)
     )
 
-import Elm.CodeGen as C
+import Elm.CodeGen as C exposing (ModuleName)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.NonEmpty exposing (NonEmpty)
 
@@ -84,7 +84,7 @@ type FieldType
     = -- Primitive Type, Method in protobuf/[en/de]code to use, default value
       Primitive Primitive Default
     | Embedded { dataType : DataType, moduleName : ModuleName, typeKind : TypeKind }
-    | Enumeration { dataType : DataType, moduleName : ModuleName, values : List DataType, default : DataType }
+    | Enumeration { dataType : DataType, moduleName : ModuleName }
 
 
 type Primitive
@@ -108,7 +108,7 @@ type IntFlavor
 type Field
     = NormalField FieldNumber Cardinality FieldType
     | MapField FieldNumber FieldType FieldType
-    | OneOfField DataType OneOf
+    | OneOfField DataType ModuleName
 
 
 type Cardinality

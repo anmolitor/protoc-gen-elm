@@ -124,6 +124,7 @@ export const startRepl = async (): Promise<Repl> => {
           reject(err);
         } else {
           resolve();
+          console.log("Exited repl.");
         }
       });
       replProcess.stdin.write(":exit\n");

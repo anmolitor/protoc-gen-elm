@@ -12,7 +12,7 @@ import Generator.Import as Import
 import Generator.Message as Message
 import Generator.OneOf as OneOf
 import Generator.Service as Service
-import Mapper as Mapper
+import Mapper as Mapper exposing (TypeRefs)
 import Mapper.Name as Name
 import Mapper.Package as Package exposing (Packages)
 import Mapper.Struct exposing (Struct)
@@ -40,7 +40,7 @@ requestToResponse :
     Versions
     -> Flags
     -> CodeGeneratorRequest
-    -> CodeGeneratorResponse
+    -> ( TypeRefs, CodeGeneratorResponse )
 requestToResponse versions flags req =
     let
         filesToResponse : Res (List CodeGeneratorResponse_File) -> CodeGeneratorResponse
@@ -52,10 +52,10 @@ requestToResponse versions flags req =
                 Ok file ->
                     { error = "", supportedFeatures = Protobuf.Types.Int64.fromInts 0 3, file = file }
 
-        files =
+        ( typeRefs, files ) =
             convert versions flags req.fileToGenerate req.protoFile
     in
-    files |> Result.map (List.map generate) |> filesToResponse
+    files |> Result.map (List.map generate) |> filesToResponse |> Tuple.pair typeRefs
 
 
 generate : C.File -> CodeGeneratorResponse_File
@@ -67,26 +67,54 @@ generate file =
     }
 
 
-convert : Versions -> Flags -> List String -> List FileDescriptorProto -> Res (List C.File)
+convert : Versions -> Flags -> List String -> List FileDescriptorProto -> ( TypeRefs, Res (List C.File) )
 convert versions flags fileNames descriptors =
     let
+        ( typeRefs, _ ) =
+            descriptors
+                |> List.filter (.name >> (\name -> List.member name fileNames))
+                |> Mapper.mapMain flags.grpcOn
+
         files : Res Packages
         files =
             descriptors
                 |> List.filter (.name >> (\name -> List.member name fileNames))
                 |> Mapper.mapMain flags.grpcOn
+                |> Tuple.second
                 -- TODO we do not need the first el of the tuple anymore
                 |> Errors.combineMap Tuple.second
                 |> Result.map Package.concat
+
+        --|> Result.map (\packages -> Package.addPackage [ "Proto", "Internals_" ] (Package.unify packages) packages)
+        mkInternalsFile : Packages -> C.File
+        mkInternalsFile =
+            packageToFile [ "Proto", "Internals_" ] << Package.unify
 
         packageToFile : List String -> Struct -> C.File
         packageToFile packageName struct =
             let
                 declarations =
                     List.concatMap Enum.toAST struct.enums
-                        ++ List.concatMap (Message.toAST packageName) struct.messages
-                        ++ List.concatMap Service.toAST struct.services
+                        ++ List.concatMap Message.toAST struct.messages
+                        ++ List.concatMap (Service.toAST packageName) struct.services
                         ++ List.concatMap OneOf.toAST struct.oneOfs
+            in
+            C.file
+                (C.normalModule packageName [])
+                (List.map (\importedModule -> C.importStmt importedModule Nothing Nothing) (Set.toList <| Import.extractImports declarations))
+                (removeDuplicateDeclarations declarations)
+                --TODO restore filename here somehow
+                (C.emptyFileComment |> fileComment versions "filename" |> Just)
+
+        packageToReexportFile : List String -> Struct -> C.File
+        packageToReexportFile packageName struct =
+            let
+                declarations =
+                    List.concatMap (Enum.reexportAST packageName) struct.enums
+                        ++ List.concatMap (Message.reexportAST packageName) struct.messages
+                        ++ List.concatMap (OneOf.reexportAST packageName) struct.oneOfs
+
+                --++ List.concatMap (Service.toAST packageName) struct.services
             in
             C.file
                 (C.normalModule packageName [])
@@ -96,8 +124,9 @@ convert versions flags fileNames descriptors =
                 (C.emptyFileComment |> fileComment versions "filename" |> Just)
     in
     Result.map
-        (Dict.map packageToFile >> Dict.values)
+        (\packages -> Dict.map packageToReexportFile packages |> Dict.values |> (::) (mkInternalsFile packages))
         files
+        |> Tuple.pair typeRefs
 
 
 fileComment : Versions -> String -> C.Comment C.FileComment -> C.Comment C.FileComment

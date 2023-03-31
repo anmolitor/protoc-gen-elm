@@ -1,125 +1,65 @@
-module Mapper exposing (definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, splitNonEmpty)
+module Mapper exposing (TypeRefs, definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, splitNonEmpty)
 
 import Dict exposing (Dict)
-import Dict.Extra
 import Elm.CodeGen as C exposing (ModuleName)
 import Errors exposing (Error(..), Res)
 import List.Extra
-import List.NonEmpty as NonEmpty
 import Mapper.Name as Name
 import Mapper.Package as Package exposing (Packages)
 import Mapper.Struct as Struct exposing (Struct)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
 import Meta.Encode
-import Model exposing (Cardinality(..), DataType, Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
+import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
 import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, unwrapDescriptorProto_)
 import Set exposing (Set)
 
 
-type alias DefinedTypes =
-    List DefinedType
-
-
-type DefinedType
-    = -- name, references to further types
-      Message String (Set String)
-    | Enum String (List String)
-
-
-getDefinedTypeName : DefinedType -> String
-getDefinedTypeName definedType =
-    case definedType of
-        Message name _ ->
-            name
-
-        Enum name _ ->
-            name
-
-
-type alias PackageName =
-    String
-
-
 type alias TypeRefs =
-    ( -- Own PackageName
-      PackageName
-      -- Own Types
-    , DefinedTypes
-    , -- Types defined in package dependencies
-      Dict PackageName (List ( ModuleName, DefinedTypes ))
-    )
+    Dict ( ModuleName, String ) (Set ( ModuleName, String ))
 
 
-nestDefinedType : String -> DefinedType -> DefinedType
-nestDefinedType prefix definedType =
+definedTypesInMessageDescriptor : ModuleName -> DescriptorProto -> TypeRefs
+definedTypesInMessageDescriptor ownModuleName descriptor =
     let
-        nest name =
-            prefix ++ "." ++ name
+        types =
+            List.map .typeName descriptor.field
+                |> List.filter (not << String.isEmpty)
+                |> Set.fromList
+                |> Set.map Name.absoluteRef
+
+        nestedTypeRefs =
+            List.map unwrapDescriptorProto_ descriptor.nestedType
+                |> List.map (definedTypesInMessageDescriptor ownModuleName)
+                |> List.foldl Dict.union Dict.empty
     in
-    case definedType of
-        Message name deps ->
-            Message (nest name) deps
-
-        Enum name values ->
-            Enum (nest name) (List.map nest values)
+    Dict.insert ( ownModuleName, Name.type_ descriptor.name )
+        types
+        nestedTypeRefs
 
 
-elmNameDefinedType : DefinedType -> DefinedType
-elmNameDefinedType definedType =
-    case definedType of
-        Message name deps ->
-            Message (Name.type_ name) deps
-
-        Enum name values ->
-            Enum (Name.type_ name) (List.map Name.type_ values)
-
-
-definedTypesInEnumDescriptor : EnumDescriptorProto -> DefinedType
-definedTypesInEnumDescriptor descriptor =
-    Enum descriptor.name (List.map (.name >> (++) (descriptor.name ++ ".")) descriptor.value)
-
-
-definedTypesInMessageDescriptor : DescriptorProto -> DefinedTypes
-definedTypesInMessageDescriptor descriptor =
-    List.map unwrapDescriptorProto_ descriptor.nestedType
-        |> (\nested ->
-                Message descriptor.name (List.map .typeName descriptor.field |> List.filter (not << String.isEmpty) |> Set.fromList)
-                    :: (List.map (nestDefinedType descriptor.name) <|
-                            List.concatMap definedTypesInMessageDescriptor nested
-                                ++ List.map definedTypesInEnumDescriptor descriptor.enumType
-                       )
-           )
-
-
-definedTypesInFileDescriptor : FileDescriptorProto -> DefinedTypes
+definedTypesInFileDescriptor : FileDescriptorProto -> TypeRefs
 definedTypesInFileDescriptor descriptor =
-    List.map definedTypesInEnumDescriptor descriptor.enumType
-        ++ List.concatMap definedTypesInMessageDescriptor descriptor.messageType
+    let
+        moduleName =
+            Name.module_ descriptor.name
+    in
+    List.map (definedTypesInMessageDescriptor moduleName) descriptor.messageType
+        |> List.foldl Dict.union Dict.empty
 
 
-mapMain : Bool -> List FileDescriptorProto -> List ( String, Res Packages )
+mapMain : Bool -> List FileDescriptorProto -> ( TypeRefs, List ( String, Res Packages ) )
 mapMain grpcOn descriptors =
     let
-        dict : Dict String ( PackageName, DefinedTypes )
-        dict =
+        typeRefs : TypeRefs
+        typeRefs =
             descriptors
-                |> List.map (\descriptor -> ( descriptor.name, ( descriptor.package, definedTypesInFileDescriptor descriptor ) ))
-                |> Dict.fromList
+                |> List.map definedTypesInFileDescriptor
+                |> List.foldl Dict.union Dict.empty
     in
     descriptors
         |> List.map
             (\descriptor ->
                 let
-                    typeRefs =
-                        ( descriptor.package
-                        , definedTypesInFileDescriptor descriptor
-                        , dict
-                            |> Dict.filter (\name _ -> List.member name descriptor.dependency)
-                            |> Dict.toList
-                            |> List.map (\( name, ( packageName_, types ) ) -> ( packageName_, [ ( Name.module_ name, types ) ] ))
-                            |> Dict.Extra.fromListDedupe (++)
-                        )
-
                     mapMethod : MethodDescriptorProto -> Maybe (Res Method)
                     mapMethod { name, inputType, outputType, serverStreaming, clientStreaming } =
                         if serverStreaming || clientStreaming then
@@ -127,15 +67,11 @@ mapMain grpcOn descriptors =
 
                         else
                             Just <|
-                                Result.map2
-                                    (\( definedInputType, inputTypeModuleName ) ( definedOutputType, outputTypeModuleName ) ->
-                                        { name = name
-                                        , reqType = ( inputTypeModuleName, getDefinedTypeName definedInputType )
-                                        , resType = ( outputTypeModuleName, getDefinedTypeName definedOutputType )
-                                        }
-                                    )
-                                    (lookForTypeRef inputType typeRefs)
-                                    (lookForTypeRef outputType typeRefs)
+                                Ok <|
+                                    { name = name
+                                    , reqType = Name.absoluteRef inputType
+                                    , resType = Name.absoluteRef outputType
+                                    }
 
                     mapService : ServiceDescriptorProto -> Res Service
                     mapService service =
@@ -176,67 +112,7 @@ mapMain grpcOn descriptors =
                     )
                 )
             )
-
-
-lookForTypeRef : String -> TypeRefs -> Res ( DefinedType, ModuleName )
-lookForTypeRef name ( ownPackageName, ownModuleTypes, dependencies ) =
-    let
-        nameWithoutPrefixDot =
-            name |> String.dropLeft 1
-
-        nameWithoutOwnPackage =
-            if String.isEmpty ownPackageName then
-                nameWithoutPrefixDot
-
-            else
-                String.replace (ownPackageName ++ ".") "" nameWithoutPrefixDot
-
-        matchesString str definedType =
-            case definedType of
-                Message messageName _ ->
-                    str == messageName
-
-                Enum enumName _ ->
-                    str == enumName
-    in
-    case List.filter (matchesString nameWithoutOwnPackage) ownModuleTypes of
-        [ referencedType ] ->
-            Ok ( elmNameDefinedType referencedType, [] )
-
-        [] ->
-            let
-                dependencySearchResult =
-                    nameWithoutPrefixDot
-                        |> String.split "."
-                        |> (\segments -> ( [], segments ) :: splitNonEmpty segments)
-                        -- example: [("", "Test.Inner.Msg"), ("Test.Inner", "Msg"), ("Test", "Inner.Msg")]
-                        |> List.map (Tuple.mapBoth (String.join ".") (String.join "."))
-                        |> List.filterMap
-                            (\( packageName, typeName ) ->
-                                Dict.get packageName dependencies
-                                    |> Maybe.andThen
-                                        (List.filterMap
-                                            (\( modName, types ) ->
-                                                List.filter (matchesString typeName) types
-                                                    |> List.head
-                                                    |> Maybe.map (Tuple.pair modName)
-                                            )
-                                            >> List.head
-                                        )
-                            )
-            in
-            case dependencySearchResult of
-                [ ( moduleName, referencedType ) ] ->
-                    Ok ( elmNameDefinedType referencedType, moduleName )
-
-                [] ->
-                    Err <| NoTypeReferenceFound name
-
-                _ ->
-                    Err <| AmbiguousTypeReference name
-
-        _ ->
-            Err <| AmbiguousTypeReference name
+        |> Tuple.pair typeRefs
 
 
 {-| Split a list at all possible points that result in two non-empty lists.
@@ -271,7 +147,7 @@ enum syntax descriptor =
 
         fields =
             descriptor.value
-                |> List.map (\value -> ( value.number, name ++ "_" ++ Name.type_ value.name ))
+                |> List.map (\value -> ( value.number, Name.type_ value.name ))
                 |> List.Extra.uncons
                 |> Maybe.withDefault ( ( 0, name ), [] )
     in
@@ -293,25 +169,26 @@ isAMap =
     since they could potentially overlap otherwise.
 
 -}
-message : List String -> Syntax -> TypeRefs -> DescriptorProto -> Res Packages
+message : ModuleName -> Syntax -> TypeRefs -> DescriptorProto -> Res Packages
 message packageName_ syntax typeRefs descriptor =
     let
         name =
             Name.type_ descriptor.name
 
-        removePackageName : String -> TypeRefs -> String
-        removePackageName typeName ( packageName, _, _ ) =
-            if String.isEmpty packageName then
-                String.dropLeft 1 typeName
-
-            else
-                String.replace ("." ++ packageName ++ ".") "" typeName
-
         getFromMaps : FieldDescriptorProto -> Maybe { key : FieldType, value : FieldType }
         getFromMaps fieldDescriptor =
+            let
+                typeNameWithoutPackage =
+                    fieldDescriptor.typeName
+                        |> String.split "."
+                        |> List.reverse
+                        |> List.take 2
+                        |> List.reverse
+                        |> String.join "."
+            in
             case fieldDescriptor.type_ of
                 FieldDescriptorProto_Type_TYPEMESSAGE ->
-                    Dict.get (removePackageName fieldDescriptor.typeName typeRefs) maps
+                    Dict.get typeNameWithoutPackage maps
 
                 _ ->
                     Nothing
@@ -328,7 +205,7 @@ message packageName_ syntax typeRefs descriptor =
                             Err <| NonPrimitiveMapKey fieldDescriptor.typeName
 
                 Nothing ->
-                    fieldType name fieldDescriptor typeRefs
+                    fieldType typeRefs parentRef fieldDescriptor
                         |> Result.map (NormalField fieldDescriptor.number (cardinality fieldDescriptor.label))
             )
                 |> Result.map
@@ -345,6 +222,9 @@ message packageName_ syntax typeRefs descriptor =
         nestedTypes =
             List.map unwrapDescriptorProto_ descriptor.nestedType
 
+        parentRef =
+            ( packageName_, name )
+
         maps : Dict String { key : FieldType, value : FieldType }
         maps =
             nestedTypes
@@ -353,9 +233,9 @@ message packageName_ syntax typeRefs descriptor =
                     (\d ->
                         case ( List.filter (.number >> (==) 1) d.field, List.filter (.number >> (==) 2) d.field ) of
                             ( [ field1 ], [ field2 ] ) ->
-                                case ( fieldType name field1 typeRefs, fieldType name field2 typeRefs ) of
+                                case ( fieldType typeRefs parentRef field1, fieldType typeRefs parentRef field2 ) of
                                     ( Ok t1, Ok t2 ) ->
-                                        Just ( descriptor.name ++ "_" ++ d.name, { key = t1, value = t2 } )
+                                        Just ( descriptor.name ++ "." ++ d.name, { key = t1, value = t2 } )
 
                                     _ ->
                                         Nothing
@@ -380,7 +260,7 @@ message packageName_ syntax typeRefs descriptor =
                 (\fieldsMeta ->
                     { messages =
                         [ { dataType = name
-                          , fields = messageFields oneOfFieldNames fieldsMeta { prefix = name ++ "_" }
+                          , fields = messageFields nestedPackageName oneOfFieldNames fieldsMeta
                           }
                         ]
                     , enums = List.map (enum syntax) descriptor.enumType
@@ -427,11 +307,11 @@ oneofStruct oneOfFieldNames fieldsMeta =
     { base | oneOfs = oneOfFields }
 
 
-messageFields : List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> { prefix : String } -> List ( FieldName, Field )
-messageFields oneOfFieldNames fieldsMeta prefix =
+messageFields : ModuleName -> List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> List ( FieldName, Field )
+messageFields nestedModuleName oneOfFieldNames fieldsMeta =
     let
         oneOfFields =
-            List.indexedMap (oneOfField fieldsMeta prefix) oneOfFieldNames
+            List.map (oneOfField nestedModuleName) oneOfFieldNames
     in
     fieldsMeta
         |> List.filterMap
@@ -445,20 +325,9 @@ messageFields oneOfFieldNames fieldsMeta prefix =
         |> List.Extra.uniqueBy Tuple.first
 
 
-oneOfField : List { field : ( FieldName, Field ), oneOfIndex : Int } -> { prefix : String } -> Int -> String -> ( FieldName, Field )
-oneOfField fields { prefix } index name =
-    List.filter (\field -> field.oneOfIndex == index) fields
-        |> List.map .field
-        |> List.filterMap
-            (\( fieldName, field ) ->
-                case field of
-                    NormalField fieldNumber _ type_ ->
-                        Just ( fieldNumber, prefix ++ Name.type_ name ++ "_" ++ Name.type_ fieldName, type_ )
-
-                    _ ->
-                        Nothing
-            )
-        |> OneOfField (Name.type_ name)
+oneOfField : ModuleName -> String -> ( FieldName, Field )
+oneOfField nestedModuleName name =
+    OneOfField (Name.type_ name) nestedModuleName
         |> Tuple.pair (Name.field name)
 
 
@@ -478,51 +347,48 @@ oneOfFieldPackage fields index name =
         |> Tuple.pair (Name.type_ name)
 
 
-handleMessage : DataType -> String -> TypeRefs -> Res FieldType
-handleMessage parentDataType messageName typeRefs =
+handleMessage : ( ModuleName, String ) -> TypeRefs -> String -> FieldType
+handleMessage parentRef typeRefs messageName =
     let
-        searchForRecursionHelper : Set String -> String -> Bool
-        searchForRecursionHelper encounteredTypes currentName =
-            case lookForTypeRef currentName typeRefs of
-                Ok ( Message name fieldDeps, [] ) ->
-                    if Set.member name encounteredTypes then
-                        name == parentDataType
+        ( moduleName, dataType ) =
+            Name.absoluteRef messageName
+    in
+    Embedded
+        { dataType = dataType
+        , moduleName = moduleName
+        , typeKind =
+            if isRecursive typeRefs parentRef (Name.absoluteRef messageName) then
+                Model.Type
 
-                    else
-                        Set.toList fieldDeps
-                            |> List.any (searchForRecursionHelper <| Set.insert name encounteredTypes)
+            else
+                Model.Alias
+        }
 
-                _ ->
+
+isRecursive : TypeRefs -> ( ModuleName, String ) -> ( ModuleName, String ) -> Bool
+isRecursive typeRefs parentRef ref =
+    let
+        isRecursiveHelper encounteredTypes currRef =
+            case Dict.get currRef typeRefs of
+                Nothing ->
                     False
 
-        searchForRecursion : String -> Set String -> Bool
-        searchForRecursion name fieldDeps =
-            Set.toList fieldDeps
-                |> List.any (searchForRecursionHelper <| Set.singleton name)
+                Just nextRefs ->
+                    Set.toList nextRefs
+                        |> List.any
+                            (\nextRef ->
+                                if Set.member nextRef encounteredTypes then
+                                    nextRef == parentRef
+
+                                else
+                                    isRecursiveHelper (Set.insert currRef encounteredTypes) nextRef
+                            )
     in
-    case lookForTypeRef messageName typeRefs of
-        Ok ( Message name fieldDeps, moduleName ) ->
-            Ok <|
-                Embedded
-                    { dataType = name
-                    , moduleName = moduleName
-                    , typeKind =
-                        if searchForRecursion name fieldDeps then
-                            Model.Type
-
-                        else
-                            Model.Alias
-                    }
-
-        Ok ( Enum enumName _, _ ) ->
-            Err <| EnumReferenceInsteadOfMessage enumName
-
-        Err err ->
-            Err err
+    isRecursiveHelper Set.empty ref
 
 
-fieldType : DataType -> FieldDescriptorProto -> TypeRefs -> Res FieldType
-fieldType parentDataType descriptor typeRefs =
+fieldType : TypeRefs -> ( ModuleName, String ) -> FieldDescriptorProto -> Res FieldType
+fieldType typeRefs parentRef descriptor =
     case descriptor.type_ of
         FieldDescriptorProto_Type_TYPEDOUBLE ->
             Ok <| Primitive Prim_Double <| defaultNumber descriptor
@@ -567,41 +433,24 @@ fieldType parentDataType descriptor typeRefs =
             Ok <| Primitive Prim_String <| defaultString descriptor
 
         FieldDescriptorProto_Type_TYPEGROUP ->
-            handleMessage parentDataType descriptor.typeName typeRefs
+            Ok <| handleMessage parentRef typeRefs descriptor.typeName
 
         FieldDescriptorProto_Type_TYPEMESSAGE ->
-            handleMessage parentDataType descriptor.typeName typeRefs
+            Ok <| handleMessage parentRef typeRefs descriptor.typeName
 
         FieldDescriptorProto_Type_TYPEBYTES ->
             Ok <| Primitive Prim_Bytes <| defaultBytes descriptor
 
         FieldDescriptorProto_Type_TYPEENUM ->
-            lookForTypeRef descriptor.typeName typeRefs
-                |> Result.andThen
-                    (\( definedType, moduleName ) ->
-                        case definedType of
-                            Message messageName _ ->
-                                Err <| MessageReferenceInsteadOfEnum messageName
-
-                            Enum enumName values ->
-                                case NonEmpty.fromList values of
-                                    Just nonEmptyValues ->
-                                        Ok <|
-                                            Enumeration
-                                                { dataType = enumName
-                                                , values = values
-                                                , moduleName = moduleName
-                                                , default =
-                                                    if String.isEmpty descriptor.defaultValue then
-                                                        NonEmpty.head nonEmptyValues
-
-                                                    else
-                                                        enumName ++ "_" ++ Name.type_ descriptor.defaultValue
-                                                }
-
-                                    Nothing ->
-                                        Err <| NoEnumValues enumName
-                    )
+            let
+                ( moduleName, dataType ) =
+                    Name.absoluteRef descriptor.typeName
+            in
+            Ok <|
+                Enumeration
+                    { dataType = dataType
+                    , moduleName = moduleName
+                    }
 
 
 

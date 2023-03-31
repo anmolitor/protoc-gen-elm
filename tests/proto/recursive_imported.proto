@@ -1,5 +1,7 @@
 syntax="proto3";
 
+package recursive_imported;
+
 message Rec {
   repeated Rec rec = 1;
 }

@@ -1,5 +1,7 @@
 syntax="proto3";
 
+package subimported;
+
 message SubImported {
   string first = 1;
   bool second = 2;
