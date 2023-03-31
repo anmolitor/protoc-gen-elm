@@ -2,7 +2,7 @@ import fs from "fs";
 import long from "long";
 import { Repl, startRepl } from "./repl";
 import { makeRoundtripRunner, RoundtripRunner } from "./roundtrip";
-import { compileElm, generatedPath, runPluginSelectively } from "./util";
+import { compileElm, generatedPath, runPluginForAllFiles } from "./util";
 
 jest.setTimeout(20000);
 
@@ -14,35 +14,7 @@ describe("protoc-gen-elm", () => {
     console.log("Cleaning /generated folder");
     fs.rmSync(generatedPath, { recursive: true, force: true });
     fs.mkdirSync(generatedPath);
-    // await runPluginForAllFiles();
-    await runPluginSelectively([
-      "single_enum.proto",
-      "basic_message.proto",
-      "oneof.proto",
-      "multiple_oneof.proto",
-      "package.proto",
-      "imported.proto",
-      "importing.proto",
-      "imported_enum.proto",
-      "importing_enum.proto",
-      "subdir/imported.proto",
-      "subdir/importing.proto",
-      "subdir/package.proto",
-      "map.proto",
-      "map_in_package.proto",
-      "recursive.proto",
-      "recursive_imported.proto",
-      "recursive_importing.proto",
-      "weird_names.proto",
-      "proto2_enum.proto",
-      "proto2_group.proto",
-      "proto2_required.proto",
-      "multiple_imports1.proto",
-      "multiple_imports2.proto",
-      "multiple_imports3.proto",
-      "ints.proto",
-      "oneof_embedded.proto",
-    ]);
+    await runPluginForAllFiles();
 
     repl = await startRepl();
     await repl.importModules("Protobuf.Decode as D", "Protobuf.Encode as E");
@@ -111,14 +83,14 @@ describe("protoc-gen-elm", () => {
 
     it("generates a valid elm file for oneof.proto", async () => {
       await compileElm(expectedElmFileName);
-      await compileElm("Proto/Oneof/OneOf.elm");
+      await compileElm("Proto/Oneof/OneOf/Msg.elm");
     });
 
     it("generates the expected code for oneof.proto", async () => {
-      await repl.importModules("Proto.Oneof", "Proto.Oneof.OneOf");
+      await repl.importModules("Proto.Oneof", "Proto.Oneof.OneOf.Msg");
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { msg = Just <| Proto.Oneof.OneOf.toInternalMsg <| Proto.Oneof.OneOf.AString "test" }`
+        `${freshVar} = { msg = Just <| Proto.Oneof.OneOf.Msg.toInternalMsg <| Proto.Oneof.OneOf.Msg.AString "test" }`
       );
       const output = await repl.write(
         `(Proto.Oneof.encodeOneOf ${freshVar} |> E.encode |> D.decode Proto.Oneof.decodeOneOf) == Just ${freshVar}`
@@ -142,20 +114,23 @@ describe("protoc-gen-elm", () => {
     const expectedElmFileName = "Proto/MultipleOneof.elm";
 
     it("generates a valid elm file for multiple_oneof.proto", async () => {
-      await compileElm(expectedElmFileName);
-      await compileElm("Proto/MultipleOneof/Oneof1.elm");
-      await compileElm("Proto/MultipleOneof/Oneof2.elm");
+      await compileElm([
+        expectedElmFileName,
+        "Proto/MultipleOneof/Oneof1/Msg.elm",
+        "Proto/MultipleOneof/Oneof2/Msg.elm",
+        "Proto/MultipleOneof/Oneof2/Msg2.elm",
+        "Proto/MultipleOneof/Oneof2/Msg3.elm",
+      ]);
     });
 
     it("generates working code for multiple_oneof.proto", async () => {
       await repl.importModules(
         "Proto.MultipleOneof",
-        "Proto.MultipleOneof.Oneof1",
-        "Proto.MultipleOneof.Oneof2"
+        "Proto.MultipleOneof.Oneof1.Msg"
       );
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { msg = Just <| Proto.MultipleOneof.Oneof1.toInternalMsg <| Proto.MultipleOneof.Oneof1.OptionA "a" }`
+        `${freshVar} = { msg = Just <| Proto.MultipleOneof.Oneof1.Msg.toInternalMsg <| Proto.MultipleOneof.Oneof1.Msg.OptionA "a" }`
       );
       await repl.write(
         `(Proto.MultipleOneof.encodeOneof1 ${freshVar} |> E.encode |> D.decode Proto.MultipleOneof.decodeOneof1) == Just ${freshVar}`
@@ -337,25 +312,30 @@ describe("protoc-gen-elm", () => {
     });
   });
 
-  // describe("nested declarations", () => {
-  //   const expectedElmFileName = "Proto/Nested.elm";
+  describe("nested declarations", () => {
+    const expectedElmFileName = "Proto/Nested.elm";
 
-  //   it("generates a valid elm file for nested messages and enums", async () => {
-  //     await compileElm(expectedElmFileName);
-  //   });
+    it("generates a valid elm file for nested messages and enums", async () => {
+      await compileElm(expectedElmFileName);
+    });
 
-  //   it("generates working code for nested messages and enums", async () => {
-  //     await repl.importModules("Proto.Nested", "Proto.Nested.TopLevel", "Proto.Nested.TopLevel.LevelOne", "Proto.Nested.TopLevel.LevelOne.LevelTwo");
-  //     const freshVar = repl.getFreshVariable();
-  //     await repl.write(
-  //       `${freshVar} = Proto.Nested.Test Proto.Nested.TopLevel.LevelOne.LevelTwo.A`
-  //     );
-  //     const output = await repl.write(
-  //       `(Proto.Nested.encodeTest ${freshVar} |> E.encode |> D.decode Proto.Nested.decodeTest) == Just ${freshVar}`
-  //     );
-  //     expect(output).toEqual(expect.stringContaining("True"));
-  //   });
-  // });
+    it("generates working code for nested messages and enums", async () => {
+      await repl.importModules(
+        "Proto.Nested",
+        "Proto.Nested.TopLevel",
+        "Proto.Nested.TopLevel.LevelOne",
+        "Proto.Nested.TopLevel.LevelOne.LevelTwo"
+      );
+      const freshVar = repl.getFreshVariable();
+      await repl.write(
+        `${freshVar} = { property = Proto.Nested.TopLevel.LevelOne.LevelTwo.toInternalEnumLevelTwo Proto.Nested.TopLevel.LevelOne.LevelTwo.A }`
+      );
+      const output = await repl.write(
+        `(Proto.Nested.encodeTest ${freshVar} |> E.encode |> D.decode Proto.Nested.decodeTest) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
 
   describe("recursive declarations", () => {
     it("generates a valid elm file for recursive messages", async () => {
@@ -436,11 +416,11 @@ describe("protoc-gen-elm", () => {
     });
   });
 
-  // describe("nested oneofs", () => {
-  //   it("generates a valid elm file for proto2 group", async () => {
-  //     await compileElm(["Proto/NestedOneofs.elm"]);
-  //   });
-  // });
+  describe("nested oneofs", () => {
+    it("generates a valid elm file for nested oneofs", async () => {
+      await compileElm(["Proto/NestedOneofs.elm"]);
+    });
+  });
 
   describe("int types", () => {
     it("generates a valid elm file for ints", async () => {

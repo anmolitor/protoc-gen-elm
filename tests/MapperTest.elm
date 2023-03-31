@@ -1,14 +1,16 @@
 module MapperTest exposing (..)
 
+import Dict
 import Elm.CodeGen as C
 import Errors exposing (Res)
 import Expect
 import Mapper
-import Mapper.Struct exposing (Struct)
+import Mapper.Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..))
 import Model exposing (Cardinality(..), Field(..), FieldType(..), Primitive(..), TypeKind(..))
 import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, EnumValueDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MessageOptions, MethodDescriptorProto)
 import Test exposing (Test, describe, test)
+import Mapper.Package
 
 
 suite : Test
@@ -22,9 +24,8 @@ suite =
                         [ ( "test.proto"
                           , Ok
                                 { messages =
-                                    [ { dataType = "OtherMsg", isTopLevel = True, fields = [] }
+                                    [ { dataType = "OtherMsg", fields = [] }
                                     , { dataType = "Msg"
-                                      , isTopLevel = True
                                       , fields =
                                             [ ( "test"
                                               , NormalField 0 Optional (Primitive Prim_Bool <| C.val "False")
@@ -33,7 +34,7 @@ suite =
                                               , NormalField 0 Optional (Embedded { dataType = "OtherMsg", moduleName = [], typeKind = Alias })
                                               )
                                             , ( "test3"
-                                              , NormalField 0 Optional (Enumeration { dataType = "OtherMsg_AnEnum", moduleName = [], default = "OtherMsg_AnEnum_Bla", values = [ "OtherMsg_AnEnum_Bla", "OtherMsg_AnEnum_Blub" ] })
+                                              , NormalField 0 Optional (Enumeration { dataType = "OtherMsg_AnEnum", moduleName = [] })
                                               )
                                             , ( "test4"
                                               , NormalField 0 Optional (Embedded { dataType = "Msg", moduleName = [], typeKind = Type })
@@ -41,7 +42,8 @@ suite =
                                             ]
                                       }
                                     ]
-                                , enums = [ { dataType = "OtherMsg_AnEnum", fields = ( ( 0, "OtherMsg_AnEnum_Bla" ), [ ( 2, "OtherMsg_AnEnum_Blub" ) ] ), isTopLevel = False, withUnrecognized = True } ]
+                                , oneOfs = []
+                                , enums = [ { dataType = "OtherMsg_AnEnum", fields = ( ( 0, "OtherMsg_AnEnum_Bla" ), [ ( 2, "OtherMsg_AnEnum_Blub" ) ] ), withUnrecognized = True } ]
                                 , services = [ { name = "SomeService", package = "testpackage", methods = [ { name = "SomeMethod", reqType = ( [], "OtherMsg" ), resType = ( [], "OtherMsg_AnEnum" ) } ] } ]
                                 }
                           )
@@ -89,7 +91,7 @@ suite =
                       }
                     ]
                     |> Expect.equal
-                        expected
+                        (Debug.todo "" expected)
         , test "converts dependant file descriptors correctly" <|
             \_ ->
                 let
@@ -133,42 +135,33 @@ suite =
                         }
                 in
                 Mapper.mapMain True [ file1, file2, file3 ]
+                    |> List.map (Tuple.second >> Result.withDefault Dict.empty)
+                    |> Mapper.Package.concat
                     |> Expect.equal
-                        [ ( "test.proto"
-                          , Ok <|
-                                { messages =
-                                    [ { dataType = "Msg_OtherMsg", isTopLevel = False, fields = [] }
-                                    , { dataType = "Msg", isTopLevel = True, fields = [] }
-                                    ]
-                                , enums = []
-                                , services = []
+                        (Dict.fromList
+                            [ ( [ "Proto", "Some", "Pkg", "Name" ]
+                              , { empty | messages = [ { dataType = "Msg", fields = [] } ], enums = [], services = [] }
+                              )
+                            , ( [ "Proto", "Some", "Pkg", "Name", "Msg" ]
+                              , { empty | messages = [ { dataType = "OtherMsg", fields = [] } ], enums = [], services = [] }
+                              )
+                            , ( [ "Proto" ]
+                              , { empty
+                                    | messages =
+                                        [ { dataType = "Abc", fields = [] }
+                                        , { dataType = "Msg"
+                                          , fields =
+                                                [ ( "field1", NormalField 0 Optional (Embedded { dataType = "Msg_OtherMsg", moduleName = [ "Proto", "Test" ], typeKind = Alias }) )
+                                                , ( "field2", NormalField 0 Optional (Embedded { dataType = "Abc", moduleName = [ "Proto", "NoPackage" ], typeKind = Alias }) )
+                                                ]
+                                          }
+                                        ]
+                                    , enums = []
+                                    , services = []
                                 }
-                          )
-                        , ( "no_package.proto"
-                          , Ok <|
-                                { messages =
-                                    [ { dataType = "Abc", isTopLevel = True, fields = [] }
-                                    ]
-                                , enums = []
-                                , services = []
-                                }
-                          )
-                        , ( "importing.proto"
-                          , Ok <|
-                                { messages =
-                                    [ { dataType = "Msg"
-                                      , isTopLevel = True
-                                      , fields =
-                                            [ ( "field1", NormalField 0 Optional (Embedded { dataType = "Msg_OtherMsg", moduleName = [ "Proto", "Test" ], typeKind = Alias }) )
-                                            , ( "field2", NormalField 0 Optional (Embedded { dataType = "Abc", moduleName = [ "Proto", "NoPackage" ], typeKind = Alias }) )
-                                            ]
-                                      }
-                                    ]
-                                , enums = []
-                                , services = []
-                                }
-                          )
-                        ]
+                              )
+                            ]
+                        )
         ]
 
 

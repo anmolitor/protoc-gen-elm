@@ -40,7 +40,7 @@ requestToResponse :
     Versions
     -> Flags
     -> CodeGeneratorRequest
-    -> ( TypeRefs, CodeGeneratorResponse )
+    -> CodeGeneratorResponse
 requestToResponse versions flags req =
     let
         filesToResponse : Res (List CodeGeneratorResponse_File) -> CodeGeneratorResponse
@@ -52,10 +52,10 @@ requestToResponse versions flags req =
                 Ok file ->
                     { error = "", supportedFeatures = Protobuf.Types.Int64.fromInts 0 3, file = file }
 
-        ( typeRefs, files ) =
+        files =
             convert versions flags req.fileToGenerate req.protoFile
     in
-    files |> Result.map (List.map generate) |> filesToResponse |> Tuple.pair typeRefs
+    files |> Result.map (List.map generate) |> filesToResponse
 
 
 generate : C.File -> CodeGeneratorResponse_File
@@ -67,20 +67,14 @@ generate file =
     }
 
 
-convert : Versions -> Flags -> List String -> List FileDescriptorProto -> ( TypeRefs, Res (List C.File) )
+convert : Versions -> Flags -> List String -> List FileDescriptorProto -> Res (List C.File)
 convert versions flags fileNames descriptors =
     let
-        ( typeRefs, _ ) =
-            descriptors
-                |> List.filter (.name >> (\name -> List.member name fileNames))
-                |> Mapper.mapMain flags.grpcOn
-
         files : Res Packages
         files =
             descriptors
                 |> List.filter (.name >> (\name -> List.member name fileNames))
                 |> Mapper.mapMain flags.grpcOn
-                |> Tuple.second
                 -- TODO we do not need the first el of the tuple anymore
                 |> Errors.combineMap Tuple.second
                 |> Result.map Package.concat
@@ -126,7 +120,6 @@ convert versions flags fileNames descriptors =
     Result.map
         (\packages -> Dict.map packageToReexportFile packages |> Dict.values |> (::) (mkInternalsFile packages))
         files
-        |> Tuple.pair typeRefs
 
 
 fileComment : Versions -> String -> C.Comment C.FileComment -> C.Comment C.FileComment

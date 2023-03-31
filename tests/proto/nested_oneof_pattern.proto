@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package order;
+
+message OrderStatus {
+  message Processing {
+    string id = 1;
+  }
+
+  message Succeeded {
+    string id = 1;
+    string description = 2;
+  }
+
+  message Failed {
+    string error = 1;
+  }
+
+  oneof status {
+    Processing processing = 1;
+    Succeeded succeeded = 2;
+    Failed failed = 3;
+  } 
+}

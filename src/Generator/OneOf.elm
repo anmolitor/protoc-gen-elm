@@ -4,7 +4,6 @@ import Elm.CodeGen as C exposing (ModuleName)
 import Generator.Common as Common
 import Generator.Message exposing (fieldTypeToEncoder, fieldTypeToTypeAnnotation)
 import Mapper.Name
-import Meta.Basics
 import Meta.Decode
 import Meta.Encode
 import Meta.Type
@@ -18,7 +17,7 @@ reexportAST moduleName ( dataType, opts ) =
             C.customTypeDecl (Just <| oneofDocumentation dataType)
                 dataType
                 []
-                (List.map (\( _, optionName, optionType ) -> ( optionName, [ fieldTypeToTypeAnnotation optionType ] )) opts)
+                (List.map (\( _, optionName, optionType ) -> ( optionName, [ fieldTypeToTypeAnnotationReexport optionType ] )) opts)
 
         fromInternal =
             C.funDecl (Just <| C.emptyDocComment)
@@ -141,6 +140,25 @@ toAST ( dataType, opts ) =
                     ]
     in
     [ type_, encoder, decoder ]
+
+
+fieldTypeToTypeAnnotationReexport : FieldType -> C.TypeAnnotation
+fieldTypeToTypeAnnotationReexport fieldType =
+    case fieldType of
+        Primitive dataType _ ->
+            Meta.Type.forPrimitive dataType
+
+        Embedded e ->
+            C.fqTyped Common.internalsModule
+                (Mapper.Name.internalize
+                    ( e.moduleName
+                    , e.dataType
+                    )
+                )
+                []
+
+        Enumeration enum ->
+            C.fqTyped Common.internalsModule (Mapper.Name.internalize ( enum.moduleName, enum.dataType )) []
 
 
 oneofDocumentation : String -> C.Comment C.DocComment

@@ -1,4 +1,4 @@
-module Mapper exposing (TypeRefs, definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, splitNonEmpty)
+module Mapper exposing (TypeRefs, definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, message, splitNonEmpty)
 
 import Dict exposing (Dict)
 import Elm.CodeGen as C exposing (ModuleName)
@@ -47,7 +47,7 @@ definedTypesInFileDescriptor descriptor =
         |> List.foldl Dict.union Dict.empty
 
 
-mapMain : Bool -> List FileDescriptorProto -> ( TypeRefs, List ( String, Res Packages ) )
+mapMain : Bool -> List FileDescriptorProto -> List ( String, Res Packages )
 mapMain grpcOn descriptors =
     let
         typeRefs : TypeRefs
@@ -112,7 +112,6 @@ mapMain grpcOn descriptors =
                     )
                 )
             )
-        |> Tuple.pair typeRefs
 
 
 {-| Split a list at all possible points that result in two non-empty lists.
@@ -263,12 +262,24 @@ message packageName_ syntax typeRefs descriptor =
                           , fields = messageFields nestedPackageName oneOfFieldNames fieldsMeta
                           }
                         ]
-                    , enums = List.map (enum syntax) descriptor.enumType
+                    , enums = []
                     , services = []
                     , oneOfs = []
                     }
                 )
                 fieldsMetaResult
+
+        enumPackage =
+            if List.isEmpty descriptor.enumType then
+                identity
+
+            else
+                Package.addPackage nestedPackageName
+                    { enums = List.map (enum syntax) descriptor.enumType
+                    , messages = []
+                    , services = []
+                    , oneOfs = []
+                    }
 
         oneofPackage =
             Result.map
@@ -277,7 +288,7 @@ message packageName_ syntax typeRefs descriptor =
                         identity
 
                     else
-                        Package.addPackage nestedPackageName (oneofStruct oneOfFieldNames fieldsMeta)
+                        Package.append (oneofStruct nestedPackageName oneOfFieldNames fieldsMeta)
                 )
                 fieldsMetaResult
 
@@ -285,7 +296,12 @@ message packageName_ syntax typeRefs descriptor =
         oneOfFieldNames =
             List.map .name descriptor.oneofDecl
     in
-    Errors.map3 (\mainS addOneOfPackage nestedPackage -> Package.addPackage packageName_ mainS nestedPackage |> addOneOfPackage)
+    Errors.map3
+        (\mainS addOneOfPackage nestedPackage ->
+            Package.addPackage packageName_ mainS nestedPackage
+                |> addOneOfPackage
+                |> enumPackage
+        )
         mainStruct
         oneofPackage
         nested
@@ -295,8 +311,8 @@ message packageName_ syntax typeRefs descriptor =
 -- FIELD
 
 
-oneofStruct : List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> Struct
-oneofStruct oneOfFieldNames fieldsMeta =
+oneofStruct : C.ModuleName -> List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> Package.Packages
+oneofStruct basePackageName oneOfFieldNames fieldsMeta =
     let
         oneOfFields =
             List.indexedMap (oneOfFieldPackage fieldsMeta) oneOfFieldNames
@@ -304,7 +320,9 @@ oneofStruct oneOfFieldNames fieldsMeta =
         base =
             Struct.empty
     in
-    { base | oneOfs = oneOfFields }
+    List.foldl (\oneOf -> Package.addPackage (basePackageName ++ [ Tuple.first oneOf ]) { base | oneOfs = [ oneOf ] })
+        Package.empty
+        oneOfFields
 
 
 messageFields : ModuleName -> List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> List ( FieldName, Field )
@@ -327,7 +345,7 @@ messageFields nestedModuleName oneOfFieldNames fieldsMeta =
 
 oneOfField : ModuleName -> String -> ( FieldName, Field )
 oneOfField nestedModuleName name =
-    OneOfField (Name.type_ name) nestedModuleName
+    OneOfField (Name.type_ name) (nestedModuleName ++ [ Name.type_ name ])
         |> Tuple.pair (Name.field name)
 
 
