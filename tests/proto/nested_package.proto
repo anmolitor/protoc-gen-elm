@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package some.nested.stuff;
+
+enum Test {
+  A = 0;
+}

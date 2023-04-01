@@ -1,18 +1,18 @@
 module Generator.Service exposing (..)
 
-import Elm.CodeGen as C exposing (ModuleName)
+import Elm.CodeGen as C
 import Generator.Common as Common
-import Mapper.Name
+import Mapper.Name as Name
 import Model exposing (Method, Service)
 
 
-toAST : ModuleName -> Service -> List C.Declaration
-toAST currentModuleName service =
-    List.map (methodToAST currentModuleName { name = service.name, package = service.package }) service.methods
+toAST : Service -> List C.Declaration
+toAST service =
+    List.map (methodToAST { name = service.name, package = service.package }) service.methods
 
 
-methodToAST : ModuleName -> { name : String, package : String } -> Method -> C.Declaration
-methodToAST currentModuleName service method =
+methodToAST : { name : String, package : String } -> Method -> C.Declaration
+methodToAST service method =
     let
         ( reqModule, reqType ) =
             method.reqType
@@ -37,8 +37,8 @@ methodToAST currentModuleName service method =
         typeAnn =
             C.fqTyped [ "Grpc", "Internal" ]
                 "Rpc"
-                [ Common.mayFq currentModuleName C.fqTyped reqModule reqType []
-                , Common.mayFq currentModuleName C.fqTyped resModule resType []
+                [ C.fqTyped reqModule reqType []
+                , C.fqTyped resModule resType []
                 ]
 
         expr =
@@ -48,13 +48,12 @@ methodToAST currentModuleName service method =
                     [ ( "service", C.string service.name )
                     , ( "package", C.string service.package )
                     , ( "rpcName", C.string method.name )
-                    , ( "encoder", Common.mayFq currentModuleName C.fqVal reqModule <| Common.encoderName reqType )
-                    , ( "decoder", Common.mayFq currentModuleName C.fqVal resModule <| Common.decoderName resType )
+                    , ( "encoder", C.fqVal reqModule <| Common.encoderName reqType )
+                    , ( "decoder", C.fqVal resModule <| Common.decoderName resType )
                     ]
                 ]
     in
-    C.funDecl (Just comment)
+    C.valDecl (Just comment)
         (Just typeAnn)
-        (Mapper.Name.field method.name)
-        []
+        (Name.field method.name)
         expr

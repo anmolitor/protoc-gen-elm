@@ -8,7 +8,7 @@ export const generatedPath = path.join(__dirname, "..", "generated");
 
 const exec = (command: string): Promise<void> =>
   new Promise((resolve, reject) => {
-    cp.exec(command, (err) => {
+    cp.exec(command, { env: { EXPERIMENTAL_GRPC: "true" } }, (err) => {
       if (err) {
         reject(err);
       } else {
@@ -30,7 +30,7 @@ export const runPluginSelectively = async (files: string[]) => {
     file.replace(`${protoPath}${path.sep}`, "")
   );
   await runPlugin(withoutProtoPathPrefix);
-}
+};
 
 const getProtoFilesRecursive = async (dirs: string[]): Promise<string[]> => {
   const promises = dirs.map((dir) =>

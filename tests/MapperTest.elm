@@ -5,12 +5,12 @@ import Elm.CodeGen as C
 import Errors exposing (Res)
 import Expect
 import Mapper
+import Mapper.Package
 import Mapper.Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..))
 import Model exposing (Cardinality(..), Field(..), FieldType(..), Primitive(..), TypeKind(..))
 import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, EnumValueDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MessageOptions, MethodDescriptorProto)
 import Test exposing (Test, describe, test)
-import Mapper.Package
 
 
 suite : Test
@@ -91,7 +91,8 @@ suite =
                       }
                     ]
                     |> Expect.equal
-                        (Debug.todo "" expected)
+                        --expected
+                        (Debug.todo "")
         , test "converts dependant file descriptors correctly" <|
             \_ ->
                 let
@@ -151,8 +152,8 @@ suite =
                                         [ { dataType = "Abc", fields = [] }
                                         , { dataType = "Msg"
                                           , fields =
-                                                [ ( "field1", NormalField 0 Optional (Embedded { dataType = "Msg_OtherMsg", moduleName = [ "Proto", "Test" ], typeKind = Alias }) )
-                                                , ( "field2", NormalField 0 Optional (Embedded { dataType = "Abc", moduleName = [ "Proto", "NoPackage" ], typeKind = Alias }) )
+                                                [ ( "field1", NormalField 0 Optional (Embedded { dataType = "OtherMsg", moduleName = [ "Proto", "Some", "Pkg", "Name", "Msg" ], typeKind = Alias }) )
+                                                , ( "field2", NormalField 0 Optional (Embedded { dataType = "Abc", moduleName = [ "Proto" ], typeKind = Alias }) )
                                                 ]
                                           }
                                         ]

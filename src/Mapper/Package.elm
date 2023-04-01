@@ -25,7 +25,7 @@ unify packages =
                             }
                         )
                         struct.enums
-                , services = struct.services
+                , services = []
                 , oneOfs =
                     List.map
                         (\( name, oneOf ) ->

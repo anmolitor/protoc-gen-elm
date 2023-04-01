@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package some_grpc;
+
+service grpc_service {
+  rpc get_orders(OrderRequest) returns (OrderResponse);
+}
+
+message OrderRequest {}
+message OrderResponse {}
+
+service other_service {
+  rpc get_orders(OrderRequest) returns (OrderResponse);
+}
+

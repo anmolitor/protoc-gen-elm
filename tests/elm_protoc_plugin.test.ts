@@ -154,6 +154,22 @@ describe("protoc-gen-elm", () => {
     });
   });
 
+  describe("nested package", () => {
+    const expectedElmFileName = "Proto/Some/Nested/Stuff.elm";
+
+    it("generates a valid elm file for nested_package.proto", async () => {
+      await compileElm(expectedElmFileName);
+    });
+
+    it("generates working code for nested_package.proto", async () => {
+      await repl.importModules("Proto.Some.Nested.Stuff");
+      const output = await repl.write(
+        "(Proto.Some.Nested.Stuff.encodeTest Proto.Some.Nested.Stuff.A |> E.encode |> D.decode Proto.Some.Nested.Stuff.decodeTest) == Just Proto.Some.Nested.Stuff.A"
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+
   describe("import", () => {
     const expectedElmFileNames = ["Proto/Imported.elm", "Proto/Importing.elm"];
 
@@ -446,6 +462,22 @@ describe("protoc-gen-elm", () => {
           uint64: long.fromInt(2 ^ 33, true),
           fixed64: long.fromInt(2 ^ 33, true),
         }
+      );
+    });
+  });
+
+  describe("grpc", () => {
+    it("generates a valid elm file for grpc.proto", async () => {
+      await compileElm([
+        "Proto/SomeGrpc/OtherService.elm",
+        "Proto/SomeGrpc/GrpcService.elm",
+      ]);
+    });
+
+    it("integrates with elm-grpc", async () => {
+      await repl.importModules("Proto.SomeGrpc.GrpcService", "Grpc");
+      repl.write(
+        "Grpc.new Proto.SomeGrpc.GrpcService.getOrders {} |> Grpc.toCmd identity"
       );
     });
   });

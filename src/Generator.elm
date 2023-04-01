@@ -90,7 +90,6 @@ convert versions flags fileNames descriptors =
                 declarations =
                     List.concatMap Enum.toAST struct.enums
                         ++ List.concatMap Message.toAST struct.messages
-                        ++ List.concatMap (Service.toAST packageName) struct.services
                         ++ List.concatMap OneOf.toAST struct.oneOfs
             in
             C.file
@@ -107,8 +106,7 @@ convert versions flags fileNames descriptors =
                     List.concatMap (Enum.reexportAST packageName) struct.enums
                         ++ List.concatMap (Message.reexportAST packageName) struct.messages
                         ++ List.concatMap (OneOf.reexportAST packageName) struct.oneOfs
-
-                --++ List.concatMap (Service.toAST packageName) struct.services
+                        ++ List.concatMap Service.toAST struct.services
             in
             C.file
                 (C.normalModule packageName [])

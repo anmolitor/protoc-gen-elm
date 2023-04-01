@@ -1,22 +1,8 @@
-module Mapper.Name exposing (absoluteRef, field, internalize, module_, package, type_)
+module Mapper.Name exposing (absoluteRef, field, internalize, module_, type_)
 
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.Extra
 import String.Extra
-
-
-module_ : String -> ModuleName
-module_ descriptorName =
-    if descriptorName == "" then
-        [ "Proto" ]
-
-    else
-        String.split "/" descriptorName
-            |> List.Extra.unconsLast
-            |> Maybe.map (\( name, segments ) -> segments ++ [ removeExtension name ])
-            |> Maybe.withDefault []
-            |> List.map String.Extra.classify
-            |> (::) "Proto"
 
 
 internalize : ( ModuleName, String ) -> String
@@ -24,8 +10,8 @@ internalize ( moduleName, name ) =
     String.join "__" <| moduleName ++ [ name ]
 
 
-package : String -> ModuleName
-package =
+module_ : String -> ModuleName
+module_ =
     String.split "."
         >> packageFromSegments
 

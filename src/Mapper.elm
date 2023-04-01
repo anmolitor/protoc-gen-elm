@@ -6,7 +6,7 @@ import Errors exposing (Error(..), Res)
 import List.Extra
 import Mapper.Name as Name
 import Mapper.Package as Package exposing (Packages)
-import Mapper.Struct as Struct exposing (Struct)
+import Mapper.Struct as Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
 import Meta.Encode
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
@@ -41,7 +41,7 @@ definedTypesInFileDescriptor : FileDescriptorProto -> TypeRefs
 definedTypesInFileDescriptor descriptor =
     let
         moduleName =
-            Name.module_ descriptor.name
+            Name.module_ descriptor.package
     in
     List.map (definedTypesInMessageDescriptor moduleName) descriptor.messageType
         |> List.foldl Dict.union Dict.empty
@@ -85,6 +85,15 @@ mapMain grpcOn descriptors =
                                     }
                                 )
 
+                    servicePackages : List Service -> Packages
+                    servicePackages =
+                        List.foldl
+                            (\service ->
+                                Package.addPackage (packageName ++ [ Name.type_ service.name ])
+                                    { empty | services = [ service ] }
+                            )
+                            Package.empty
+
                     syntax =
                         parseSyntax descriptor.syntax
 
@@ -94,14 +103,14 @@ mapMain grpcOn descriptors =
                 ( descriptor.name
                 , Result.map2
                     (\messagePackages services ->
-                        Package.addPackage packageName
-                            { enums = List.map (enum syntax) descriptor.enumType
-                            , messages = []
-                            , services = services
-                            , oneOfs = []
-                            }
-                        <|
-                            Package.concat messagePackages
+                        Package.concat messagePackages
+                            |> Package.addPackage packageName
+                                { enums = List.map (enum syntax) descriptor.enumType
+                                , messages = []
+                                , services = []
+                                , oneOfs = []
+                                }
+                            |> Package.append (servicePackages services)
                     )
                     (Errors.combineMap (message packageName syntax typeRefs) descriptor.messageType)
                     (if grpcOn then
