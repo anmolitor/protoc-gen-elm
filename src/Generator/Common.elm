@@ -1,7 +1,6 @@
 module Generator.Common exposing (..)
 
 import Elm.CodeGen as C
-import Mapper.Name
 import Model exposing (FieldName)
 
 
@@ -22,12 +21,17 @@ defaultName typeName =
 
 decoderDocumentation : String -> C.Comment C.DocComment
 decoderDocumentation typeName =
-    C.emptyDocComment |> C.markdown ("Decode a `" ++ typeName ++ "` from Bytes")
+    C.emptyDocComment |> C.markdown ("Declares how to decode a `" ++ typeName ++ "` from Bytes. To actually perform the conversion from Bytes, you need to use Protobuf.Decode.decode from " ++ elmProtocolBuffersName ++ ".")
 
 
 encoderDocumentation : String -> C.Comment C.DocComment
 encoderDocumentation typeName =
-    C.emptyDocComment |> C.markdown ("Encode a `" ++ typeName ++ "` to Bytes")
+    C.emptyDocComment |> C.markdown ("Declares how to encode a `" ++ typeName ++ "` to Bytes. To actually perform the conversion to Bytes, you need to use Protobuf.Encode.encode from " ++ elmProtocolBuffersName ++ ".")
+
+
+elmProtocolBuffersName : String
+elmProtocolBuffersName =
+    "eriktim/elm-protocol-buffers"
 
 
 defaultDocumentation : String -> C.Comment C.DocComment
