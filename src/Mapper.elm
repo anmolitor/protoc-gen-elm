@@ -117,26 +117,35 @@ mapMain grpcOn descriptors =
 
                     moduleRef =
                         Name.moduleRef_ descriptor.package
-                in
-                ( moduleRef.rootPackage
-                , Result.map2
-                    (\messagePackages services ->
-                        Package.concat messagePackages
-                            |> Package.addPackage moduleRef.package
-                                { empty
-                                    | enums = List.map (enum syntax) descriptor.enumType
-                                    , originFiles = originFiles
-                                }
-                            |> Package.append (servicePackages services)
-                    )
-                    (Errors.combineMap (message moduleRef ctx) descriptor.messageType)
-                    (if grpcOn then
-                        Errors.combineMap mapService descriptor.service
 
-                     else
-                        Ok []
+                    packageIsLowerCase =
+                        String.uncons descriptor.package
+                            |> Maybe.map (\( char, _ ) -> Char.isLower char)
+                            |> Maybe.withDefault True
+                in
+                if packageIsLowerCase then
+                    ( moduleRef.rootPackage, Err <| AmbiguousPackageName descriptor.package )
+
+                else
+                    ( moduleRef.rootPackage
+                    , Result.map2
+                        (\messagePackages services ->
+                            Package.concat messagePackages
+                                |> Package.addPackage moduleRef.package
+                                    { empty
+                                        | enums = List.map (enum syntax) descriptor.enumType
+                                        , originFiles = originFiles
+                                    }
+                                |> Package.append (servicePackages services)
+                        )
+                        (Errors.combineMap (message moduleRef ctx) descriptor.messageType)
+                        (if grpcOn then
+                            Errors.combineMap mapService descriptor.service
+
+                         else
+                            Ok []
+                        )
                     )
-                )
             )
 
 
