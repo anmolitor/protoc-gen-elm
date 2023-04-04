@@ -6,6 +6,30 @@ import path from "path";
 const protoPath = path.join(__dirname, "proto");
 export const generatedPath = path.join(__dirname, "..", "generated");
 
+// const exec = (command: string): Promise<void> => {
+//   const [exe, ...args] = command.split(" ");
+
+//   return new Promise<void>((resolve, reject) => {
+//     const handleExitCode = (exitCode: number | null | undefined) => {
+//       if (exitCode) {
+//         reject(new Error(`Exit code: ${exitCode}`));
+//         return;
+//       }
+//       resolve();
+//     };
+//     console.log("Running cp with", exe, args, process.env.PATH);
+//     const spawnedProcess = cp.spawn(exe, args, {
+//       env: { EXPERIMENTAL_GRPC: "true" },
+//       stdio: "inherit",
+//     });
+//     spawnedProcess.on("close", handleExitCode);
+//     spawnedProcess.on("exit", handleExitCode);
+//     spawnedProcess.on("disconnect", handleExitCode);
+//     spawnedProcess.on("error", console.error);
+//     spawnedProcess.on("data", console.log);
+//   });
+// };
+
 const exec = (command: string): Promise<void> =>
   new Promise((resolve, reject) => {
     cp.exec(command, { env: { EXPERIMENTAL_GRPC: "true" } }, (err) => {
@@ -61,6 +85,9 @@ const runPlugin = async (protoFileOrFiles: string | string[]) => {
   const args = Array.isArray(protoFileOrFiles)
     ? protoFileOrFiles.join(" ")
     : protoFileOrFiles;
+  const protocPath = cp.execSync("which protoc").toString("utf-8");
+  console.log("Protoc Path:", protocPath);
+  console.log("Path", process.env.PATH);
   await exec(
     `protoc --plugin="protoc-gen-elm=${path.resolve(
       __dirname,

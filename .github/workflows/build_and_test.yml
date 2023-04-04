@@ -30,6 +30,7 @@ jobs:
         run: |
           which protoc
           protoc --version
+          
           mkdir generated
           npm ci
           npm run build
