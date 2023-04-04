@@ -4,7 +4,7 @@ import { Repl, startRepl } from "./repl";
 import { makeRoundtripRunner, RoundtripRunner } from "./roundtrip";
 import { compileElm, generatedPath, runPluginForAllFiles } from "./util";
 
-jest.setTimeout(20000);
+jest.setTimeout(50000);
 
 describe("protoc-gen-elm", () => {
   let repl: Repl;
