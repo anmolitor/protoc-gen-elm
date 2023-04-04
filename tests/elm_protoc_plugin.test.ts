@@ -415,6 +415,36 @@ describe("protoc-gen-elm", () => {
     });
   });
 
+  describe("proto3 optional", () => {
+    const expectedElmFileName = "Proto/Proto3Optional.elm";
+
+    it("generates a valid elm file for proto3 optional", async () => {
+      await compileElm(expectedElmFileName);
+    });
+
+    it("generates the expected api", async () => {
+      await repl.importModules("Proto.Proto3Optional");
+      const msg = repl.getFreshVariable();
+      await repl.write(`${msg} = { field = Just "", field2 = Nothing }`);
+
+      const output = await repl.write(
+        `(Proto.Proto3Optional.encodeWithOptional ${msg} |> E.encode |> D.decode Proto.Proto3Optional.decodeWithOptional) == Just ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("is compatible wih protobufjs", async () => {
+      await roundtripRunner(
+        {
+          protoFileName: "proto3_optional",
+          messageName: "WithOptional",
+          elmModuleName: "Proto.Proto3Optional",
+        },
+        { field: undefined, field2: 0 }
+      );
+    });
+  });
+
   describe("oneof with embedded types", () => {
     const expectedElmFileName = "Proto/OneofEmbedded.elm";
 

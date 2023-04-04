@@ -54,6 +54,23 @@ definedTypesInFileDescriptor descriptor =
         |> List.foldl Dict.union Dict.empty
 
 
+x =
+    { enumType = []
+    , extension = []
+    , extensionRange = []
+    , field =
+        [ { defaultValue = "", extendee = "", jsonName = "field", label = FieldDescriptorProto_Label_LABELOPTIONAL, name = "field", number = 1, oneofIndex = 0, options = Nothing, proto3Optional = True, typeName = "", type_ = FieldDescriptorProto_Type_TYPESTRING }
+        , { defaultValue = "", extendee = "", jsonName = "field2", label = FieldDescriptorProto_Label_LABELOPTIONAL, name = "field2", number = 2, oneofIndex = 1, options = Nothing, proto3Optional = True, typeName = "", type_ = FieldDescriptorProto_Type_TYPEINT32 }
+        ]
+    , name = "WithOptional"
+    , nestedType = []
+    , oneofDecl = [ { name = "_field", options = Nothing }, { name = "_field2", options = Nothing } ]
+    , options = Nothing
+    , reservedName = []
+    , reservedRange = []
+    }
+
+
 mapMain : Bool -> List FileDescriptorProto -> List ( String, Res Packages )
 mapMain grpcOn descriptors =
     let
@@ -211,12 +228,25 @@ message packageName_ ctx descriptor =
 
                 Nothing ->
                     fieldType ctx.typeRefs parentRef fieldDescriptor
-                        |> Result.map (NormalField fieldDescriptor.number (cardinality fieldDescriptor.label))
+                        |> Result.map
+                            (NormalField fieldDescriptor.number
+                                (if fieldDescriptor.proto3Optional then
+                                    Proto3Optional
+
+                                 else
+                                    cardinality fieldDescriptor.label
+                                )
+                            )
             )
                 |> Result.map
                     (\field ->
                         { field = ( Name.field fieldDescriptor.name, field )
-                        , oneOfIndex = fieldDescriptor.oneofIndex
+                        , oneOfIndex =
+                            if fieldDescriptor.proto3Optional then
+                                -1
+
+                            else
+                                fieldDescriptor.oneofIndex
                         }
                     )
 
@@ -285,6 +315,13 @@ message packageName_ ctx descriptor =
                         , originFiles = ctx.originFiles
                     }
 
+        -- Weird: protoc generates oneof fields for proto3 optionals and then refers to those. They are always the fieldname itself prefixed with "_"
+        proto3OptionalFields =
+            descriptor.field
+                |> List.filter (\field -> field.proto3Optional)
+                |> List.map (\field -> "_" ++ field.name)
+                |> Set.fromList
+
         oneofPackage =
             Result.map
                 (\fieldsMeta ->
@@ -299,6 +336,7 @@ message packageName_ ctx descriptor =
         oneOfFieldNames : List String
         oneOfFieldNames =
             List.map .name descriptor.oneofDecl
+                |> List.filter (\n -> not <| Set.member n proto3OptionalFields)
     in
     Errors.map3
         (\mainS addOneOfPackage nestedPackage ->

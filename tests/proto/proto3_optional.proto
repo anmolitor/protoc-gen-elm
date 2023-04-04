@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package proto3_optional;
+
+message WithOptional {
+  optional string field = 1;
+  optional int32 field2 = 2;
+}

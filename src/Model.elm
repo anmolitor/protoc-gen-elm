@@ -81,7 +81,7 @@ type TypeKind
 
 
 type FieldType
-    = -- Primitive Type, Method in protobuf/[en/de]code to use, default value
+    = -- Primitive Type, default value
       Primitive Primitive Default
     | Embedded { dataType : DataType, moduleName : ModuleName, typeKind : TypeKind }
     | Enumeration { dataType : DataType, moduleName : ModuleName }
@@ -113,5 +113,6 @@ type Field
 
 type Cardinality
     = Optional
+    | Proto3Optional
     | Required
     | Repeated

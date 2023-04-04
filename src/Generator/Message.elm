@@ -213,6 +213,9 @@ toDefaultValue field =
     case field of
         NormalField _ cardinality fieldType ->
             case ( cardinality, fieldType ) of
+                ( Proto3Optional, _ ) ->
+                    Meta.Basics.nothing
+
                 ( Optional, Primitive _ defaultValue ) ->
                     defaultValue
 
@@ -252,6 +255,14 @@ toDecoder ( fieldName, field ) =
         NormalField number cardinality fieldType ->
             case cardinality of
                 Optional ->
+                    C.apply
+                        [ Meta.Decode.optional
+                        , C.int number
+                        , fieldTypeToDecoder fieldType cardinality
+                        , Common.setter fieldName
+                        ]
+
+                Proto3Optional ->
                     C.apply
                         [ Meta.Decode.optional
                         , C.int number
@@ -312,10 +323,25 @@ embeddedDecoder e =
 fieldTypeToDecoder : FieldType -> Cardinality -> C.Expression
 fieldTypeToDecoder fieldType cardinality =
     case ( cardinality, fieldType ) of
+        ( Proto3Optional, Primitive dataType _ ) ->
+            C.parens
+                (C.apply
+                    [ Meta.Decode.map
+                    , Meta.Basics.just
+                    , Meta.Decode.forPrimitive dataType
+                    ]
+                )
+
         ( _, Primitive dataType _ ) ->
             Meta.Decode.forPrimitive dataType
 
-        ( Optional, Embedded e ) ->
+        ( Required, Embedded e ) ->
+            embeddedDecoder e
+
+        ( Repeated, Embedded e ) ->
+            embeddedDecoder e
+
+        ( _, Embedded e ) ->
             C.parens
                 (C.apply
                     [ Meta.Decode.map
@@ -323,12 +349,6 @@ fieldTypeToDecoder fieldType cardinality =
                     , embeddedDecoder e
                     ]
                 )
-
-        ( Required, Embedded e ) ->
-            embeddedDecoder e
-
-        ( Repeated, Embedded e ) ->
-            embeddedDecoder e
 
         ( _, Enumeration enum ) ->
             C.fun (Common.decoderName <| Mapper.Name.internalize ( enum.moduleName, enum.dataType ))
@@ -370,18 +390,15 @@ embeddedEncoder e =
 fieldTypeToEncoder : Cardinality -> FieldType -> C.Expression
 fieldTypeToEncoder cardinality fieldType =
     case ( cardinality, fieldType ) of
-        ( Optional, Primitive dataType _ ) ->
-            Meta.Encode.forPrimitive dataType
-
-        ( Optional, Embedded e ) ->
+        ( Proto3Optional, Primitive dataType _ ) ->
             C.parens <|
                 C.applyBinOp
-                    (C.apply [ Meta.Basics.mapMaybe, embeddedEncoder e ])
+                    (C.apply [ Meta.Basics.mapMaybe, Meta.Encode.forPrimitive dataType ])
                     C.composer
                     (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
 
-        ( Optional, Enumeration enum ) ->
-            C.fun (Common.encoderName <| Mapper.Name.internalize ( enum.moduleName, enum.dataType ))
+        ( Optional, Primitive dataType _ ) ->
+            Meta.Encode.forPrimitive dataType
 
         ( Required, Primitive dataType _ ) ->
             Meta.Encode.forPrimitive dataType
@@ -400,6 +417,16 @@ fieldTypeToEncoder cardinality fieldType =
 
         ( Repeated, Enumeration enum ) ->
             C.apply [ Meta.Encode.list, C.fun (Common.encoderName <| Mapper.Name.internalize ( enum.moduleName, enum.dataType )) ]
+
+        ( _, Embedded e ) ->
+            C.parens <|
+                C.applyBinOp
+                    (C.apply [ Meta.Basics.mapMaybe, embeddedEncoder e ])
+                    C.composer
+                    (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
+
+        ( _, Enumeration enum ) ->
+            C.fun (Common.encoderName <| Mapper.Name.internalize ( enum.moduleName, enum.dataType ))
 
 
 fieldTypeToTypeAnnotation : FieldType -> C.TypeAnnotation
@@ -445,6 +472,9 @@ fieldToTypeAnnotation field =
 
                 ( Repeated, _ ) ->
                     C.listAnn
+
+                ( Proto3Optional, _ ) ->
+                    C.maybeAnn
     in
     case field of
         NormalField _ cardinality fieldType ->
