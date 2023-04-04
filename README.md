@@ -233,7 +233,11 @@ You will need `protoc` installed and on your PATH.
 
 - The plugin logic is written in Elm itself. To be executable via node, there is a index.js wrapper. It converts the incoming bytes to base64, because there currently is no way to directly send the type `Bytes` through a port.
 - Main.elm essentially wires up the binding to JS: A request is received through a port, gets decoded, processed and then sent through another port.
-- For decoding the protoc request, it uses "itself", meaning that upgrading protoc versions should be done by running the plugin against the new `include` files from protoc to generate the new encoders/decoders.
+- For decoding the protoc request, it uses "itself", meaning that upgrading protoc versions should be done by running the plugin against the new `include` files from protoc to generate the new encoders/decoders (use the `upgrade.sh` script).
 - A `Mapper` converts the request into a convenient internal structure
 - A `Generator` then uses this internal structure to build an Elm AST
   which is then pretty-printed to a file.
+
+Run `build.sh` to build the elm code into `index.min.js` (which is imported by the entrypoint `index.js`).
+
+To analyse the protoc requests, there are `debug.js`, `DebugMain` and `build_debug.sh` files. Run `build_debug.sh`, then use `debug.js` in place of `index.js` when running `protoc`. This should dump the deserialized request into `debug.log`. You can then put this into the Elm repl for example or use it as input for tests.
