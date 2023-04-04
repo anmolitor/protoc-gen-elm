@@ -2,7 +2,7 @@
 
 This [`protoc`](https://developers.google.com/protocol-buffers/) plug-in generates [Elm](https://elm-lang.org/) modules from `.proto` specification files. The generated modules make use of the [elm-protocol-buffers](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest/) library to handle the (de)serialization. They can be used to transmit bytes over HTTP(S) or via web-sockets. 
 
-Remote Procedure Call (RPC) generation is currently experimental and locked behind setting the environment variable `EXPERIMENTAL_GRPC=true`. If used, you need to add a dependency on the [elm-grpc](https://package.elm-lang.org/packages/andreasewering/elm-grpc/latest/) library.
+Remote Procedure Call (RPC) generation is supported but experimental. If you encounter issues, please open a issue. In the meantime, you can disable gRPC generation with the environment variable `NO_GRPC=true`. If used, you need to add a dependency on the [elm-grpc](https://package.elm-lang.org/packages/andreasewering/elm-grpc/latest/) library.
 
 **Take a look [here](https://developers.google.com/protocol-buffers/) for a general introduction on Protocol Buffers.**
 
@@ -12,6 +12,12 @@ This package is a plug-in for `protoc`, make sure you have [installed](https://d
 
 ```
 npm install --global protoc-gen-elm
+```
+
+Alternatively, you can add protoc as a dev-dependency to your project. This should be the preferred way if you want to build your project in CI. If you wrap the call to `protoc` in some npm script, it should still work as expected.
+
+```
+npm install --save-dev protoc-gen-elm
 ```
 
 **You can now turn any `.proto` file into an Elm module**. A similar approach can be used to generate code for C++, Dart, Go, Java, Python, Ruby, C#, Objective C, JavaScript, PHP or [another language](https://github.com/protocolbuffers/protobuf/blob/master/docs/third_party.md) to build a compliant back-end server!
@@ -26,7 +32,7 @@ The following table gives an overview of how `.proto` types correspond to Elm ty
 
 | `.proto` type | Elm type                            | Default value\*\*                                                        |
 | ------------- | ----------------------------------- | ------------------------------------------------------------------------ |
-| `package`     | The name of the module              | The `.proto` filename, e.g. `proto/api.proto` becomes `module Proto.Api` |
+| `package`     | The name of the module              | `Proto` |
 | `double`      | `Float`                             | `0`                                                                      |
 | `float`       | `Float`                             | `0`                                                                      |
 | `int32`       | `Int`                               | `0`                                                                      |
@@ -48,13 +54,134 @@ The following table gives an overview of how `.proto` types correspond to Elm ty
 | `a`           | `Maybe` Record                      | `Nothing`                                                                |
 | `oneof`       | Custom type with an associated data | `Nothing`                                                                |
 | `map<k, v>`   | `Dict.Dict k v`                     | `Dict.empty`                                                             |
-| `service`     | N/A                                 |                                                                          |
+| `service`     | `Grpc.Rpc req res`***                              | No default                                                                         |
 | `reserved`    | N/A                                 |                                                                          |
 | `extensions`  | N/A                                 |                                                                          |
 
 \*) 64-bit integers are defined in [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers) in `Protobuf.Types.Int64`.
 
-\*\*) Some default values can be overridden in `proto2` specifications
+\*\*) Some default values can be overridden in `proto2` specifications. This is currently not supported.
+
+\*\*\*) Rpc is implemented via the [`elm-grpc`](https://package.elm-lang.org/packages/andreasewering/elm-grpc/latest/) library.
+
+## Explanations about the generated code
+
+In general, the generated code tries to be close to what the code looks like in other languages while still being ideomatic Elm code.
+Elm's concept of "Only one solution to solve" a problem has several consequences here.
+
+### General
+
+- Protobufs `message`s are product types, `enum`s and `oneof`s are union types. 
+- Each `message` and `enum` generates `encode[name]` and `decode[name]` functions, which integrate seamlessly with elm-protocol-buffers
+- Each `message` and `enum` generates a `default[name]` function, which sets the defaults as seen in the table above
+- `enum`s and `oneof`s generate `fromInternal[name]` and `toInternal[name]` functions. These are needed for use inside of other messages (you will see why in the section "Module Nesting")
+
+### Module Nesting
+
+Protobufs have their own module system, which is different from Elms. Here are some interesting points about it:
+
+- Modules are defined by packages and not by files
+- Protoc disallows circular imports of packages
+- Declarations can be nested inside of messages, which pretty much makes an inline module
+- There are no visibility modifiers. You can access all declarations inside of a message from outside and the other way around
+
+Elm disallows circular imports as well, luckily protoc helps us out here on the package front. However, Elm does not have supported for nested modules, which is a problem.
+
+For an illustration why, see the following example
+
+```
+// file: test.proto
+package test;
+
+enum Outer { A = 0 }
+
+message Scope {
+  enum Inner { B = 0 }
+  message InnerMsg {
+    Outer outer = 1;
+    Inner inner = 2;
+  }
+
+  InnerMsg msg = 1;
+}
+```
+
+Obviously there are two modules here: `test` and `test.Scope`.
+We generate two Elm files:
+
+```
+// file: Test.elm
+import Test.Scope
+
+type Outer = A
+
+type alias Scope = {
+  inner : Test.Scope.InnerMsg
+}
+```
+
+```
+// file: Test/Scope.elm
+import Test
+
+type Inner = B
+
+type alias InnerMsg = {
+  outer : Test.Outer,
+  inner : Inner
+}
+```
+
+This might look fine on first glance, but if we try to compile this we get a compile error. Why? Because the two modules are mutually recursive.
+
+The only solution to this problem is making a large module for each package, so this is exactly what we do. But if we want to keep the nice, short names, we will get name conflicts. Protoc has no problems with identical names as long as they are in different scopes.
+
+Therefore, we hide the large modules as `.Internals_.elm` modules, which you should not need to use and re-export from other modules with nicer names from there. The only downside: We lose the ability to pattern match on types, since we can not alias constructors.
+So that's the complete explanation why the `fromInternal` and `toInternal` functions exist.
+
+### Recursive Data Types
+
+For ease of construction, `protoc-gen-elm` prefers to generate type aliases instead of nominal types. Type aliases have one downside though: they cannot be recursive. Otherwise, the Elm compiler would have to do infinite work to expand the type.
+So if you have a recursive type like this:
+
+```
+message Rec {
+  repeated Rec rec = 1;
+}
+```
+
+we generate
+
+```
+type alias Rec = { rec : List Rec_ }
+
+type Rec_ = Rec_ Rec
+```
+
+and corresponding `wrapRec` and `unwrapRec` functions.
+
+### gRPC
+
+If your .proto file includes a `service` declaration, an Elm module will be generated based on `package` and the services name.
+
+This file:
+```
+package some_package
+
+service SomeService {}
+```
+will generate a `Proto/SomePackage/SomeService.elm` module.
+
+The code that needs to be generated inside is actually rather small.
+A gRPC call just needs
+- the package name
+- the method name
+- the service name
+- references to the en/decoder functions
+
+The rest of the work is done by the `elm-grpc` package.
+It provides functions to convert the generated `Grpc.Rpc` instances into `Cmd`s and `Task`s, as well as setting the usual Http Request fields (headers, timeout, tracker etc.)
+
 
 ## Live Example
 
