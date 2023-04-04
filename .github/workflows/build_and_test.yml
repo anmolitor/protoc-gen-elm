@@ -33,7 +33,7 @@ jobs:
           npm run build
       - name: test
         run: |
-          ./generate_test_protos
+          ./generate_test_protos.sh
           npm test
       - name: npm publish
         if: ${{ github.event_name == 'push' }}
