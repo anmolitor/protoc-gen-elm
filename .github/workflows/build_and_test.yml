@@ -28,14 +28,13 @@ jobs:
         run: npm ci
       - name: build
         run: |
-          which protoc
-          protoc --version
-          
           mkdir generated
           npm ci
           npm run build
       - name: test
-        run: npm test
+        run: |
+          ./generate_test_protos
+          npm test
       - name: npm publish
         if: ${{ github.event_name == 'push' }}
         run: |

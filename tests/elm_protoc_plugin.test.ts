@@ -1,8 +1,7 @@
-import fs from "fs";
 import long from "long";
 import { Repl, startRepl } from "./repl";
 import { makeRoundtripRunner, RoundtripRunner } from "./roundtrip";
-import { compileElm, generatedPath, runPluginForAllFiles } from "./util";
+import { compileElm } from "./util";
 
 jest.setTimeout(50000);
 
@@ -11,11 +10,6 @@ describe("protoc-gen-elm", () => {
   let roundtripRunner: RoundtripRunner;
 
   beforeAll(async () => {
-    console.log("Cleaning /generated folder");
-    fs.rmSync(generatedPath, { recursive: true, force: true });
-    fs.mkdirSync(generatedPath);
-    await runPluginForAllFiles();
-
     repl = await startRepl();
     await repl.importModules("Protobuf.Decode as D", "Protobuf.Encode as E");
     console.log("Started elm repl.");
