@@ -10,7 +10,8 @@ import Mapper.Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
 import Meta.Encode
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
-import Proto.Google.Protobuf.Descriptor exposing (DescriptorProto, DescriptorProto_(..), EnumDescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label(..), FieldDescriptorProto_Type(..), FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, unwrapDescriptorProto_)
+import Proto.Google.Protobuf exposing (DescriptorProto, DescriptorProto_, EnumDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, unwrapDescriptorProto)
+import Proto.Google.Protobuf.FieldDescriptorProto as FieldDescriptorProto
 import Set exposing (Set)
 
 
@@ -40,7 +41,7 @@ definedTypesInMessageDescriptor moduleNames descriptor =
                 |> Set.map (Name.absoluteRef >> refToKey)
 
         nestedTypeRefs =
-            List.map unwrapDescriptorProto_ descriptor.nestedType
+            List.map unwrapDescriptorProto descriptor.nestedType
                 |> List.map (definedTypesInMessageDescriptor moduleNames)
                 |> List.foldl Dict.union Dict.empty
     in
@@ -214,8 +215,8 @@ message moduleRef ctx descriptor =
                         |> List.reverse
                         |> String.join "."
             in
-            case fieldDescriptor.type_ of
-                FieldDescriptorProto_Type_TYPEMESSAGE ->
+            case FieldDescriptorProto.fromInternalType fieldDescriptor.type_ of
+                FieldDescriptorProto.TYPEMESSAGE ->
                     Dict.get typeNameWithoutPackage maps
 
                 _ ->
@@ -240,7 +241,7 @@ message moduleRef ctx descriptor =
                                     Proto3Optional
 
                                  else
-                                    cardinality fieldDescriptor.label
+                                    cardinality <| FieldDescriptorProto.fromInternalLabel fieldDescriptor.label
                                 )
                             )
             )
@@ -261,7 +262,7 @@ message moduleRef ctx descriptor =
             Errors.combineMap messageFieldMeta descriptor.field
 
         nestedTypes =
-            List.map unwrapDescriptorProto_ descriptor.nestedType
+            List.map unwrapDescriptorProto descriptor.nestedType
 
         parentRef =
             { rootPackage = moduleRef.rootPackage, package = moduleRef.package, name = name }
@@ -457,59 +458,59 @@ isRecursive typeRefs parentRef ref =
 
 fieldType : TypeRefs -> Name.Ref -> FieldDescriptorProto -> Res FieldType
 fieldType typeRefs parentRef descriptor =
-    case descriptor.type_ of
-        FieldDescriptorProto_Type_TYPEDOUBLE ->
+    case FieldDescriptorProto.fromInternalType descriptor.type_ of
+        FieldDescriptorProto.TYPEDOUBLE ->
             Ok <| Primitive Prim_Double <| defaultNumber descriptor
 
-        FieldDescriptorProto_Type_TYPEFLOAT ->
+        FieldDescriptorProto.TYPEFLOAT ->
             Ok <| Primitive Prim_Float <| defaultNumber descriptor
 
-        FieldDescriptorProto_Type_TYPEINT64 ->
+        FieldDescriptorProto.TYPEINT64 ->
             Ok <| Primitive (Prim_Int64 Int_) <| defaultInt64 descriptor
 
-        FieldDescriptorProto_Type_TYPEINT32 ->
+        FieldDescriptorProto.TYPEINT32 ->
             Ok <| Primitive (Prim_Int32 Int_) <| defaultNumber descriptor
 
-        FieldDescriptorProto_Type_TYPEUINT64 ->
+        FieldDescriptorProto.TYPEUINT64 ->
             Ok <| Primitive (Prim_Int64 UInt) <| defaultInt64 descriptor
 
-        FieldDescriptorProto_Type_TYPEUINT32 ->
+        FieldDescriptorProto.TYPEUINT32 ->
             Ok <| Primitive (Prim_Int32 UInt) <| defaultNumber descriptor
 
-        FieldDescriptorProto_Type_TYPEFIXED64 ->
+        FieldDescriptorProto.TYPEFIXED64 ->
             Ok <| Primitive (Prim_Int64 Fixed) <| defaultInt64 descriptor
 
-        FieldDescriptorProto_Type_TYPEFIXED32 ->
+        FieldDescriptorProto.TYPEFIXED32 ->
             Ok <| Primitive (Prim_Int32 Fixed) <| defaultNumber descriptor
 
-        FieldDescriptorProto_Type_TYPESFIXED64 ->
+        FieldDescriptorProto.TYPESFIXED64 ->
             Ok <| Primitive (Prim_Int64 SFixed) <| defaultInt64 descriptor
 
-        FieldDescriptorProto_Type_TYPESFIXED32 ->
+        FieldDescriptorProto.TYPESFIXED32 ->
             Ok <| Primitive (Prim_Int32 SFixed) <| defaultNumber descriptor
 
-        FieldDescriptorProto_Type_TYPESINT64 ->
+        FieldDescriptorProto.TYPESINT64 ->
             Ok <| Primitive (Prim_Int64 SInt) <| defaultInt64 descriptor
 
-        FieldDescriptorProto_Type_TYPESINT32 ->
+        FieldDescriptorProto.TYPESINT32 ->
             Ok <| Primitive (Prim_Int32 SInt) <| defaultNumber descriptor
 
-        FieldDescriptorProto_Type_TYPEBOOL ->
+        FieldDescriptorProto.TYPEBOOL ->
             Ok <| Primitive Prim_Bool <| defaultBool descriptor
 
-        FieldDescriptorProto_Type_TYPESTRING ->
+        FieldDescriptorProto.TYPESTRING ->
             Ok <| Primitive Prim_String <| defaultString descriptor
 
-        FieldDescriptorProto_Type_TYPEGROUP ->
+        FieldDescriptorProto.TYPEGROUP ->
             Ok <| handleMessage parentRef typeRefs descriptor.typeName
 
-        FieldDescriptorProto_Type_TYPEMESSAGE ->
+        FieldDescriptorProto.TYPEMESSAGE ->
             Ok <| handleMessage parentRef typeRefs descriptor.typeName
 
-        FieldDescriptorProto_Type_TYPEBYTES ->
+        FieldDescriptorProto.TYPEBYTES ->
             Ok <| Primitive Prim_Bytes <| defaultBytes descriptor
 
-        FieldDescriptorProto_Type_TYPEENUM ->
+        FieldDescriptorProto.TYPEENUM ->
             let
                 ref =
                     Name.absoluteRef descriptor.typeName
@@ -556,14 +557,14 @@ defaultString descriptor =
     C.string descriptor.defaultValue
 
 
-cardinality : FieldDescriptorProto_Label -> Cardinality
+cardinality : FieldDescriptorProto.Label -> Cardinality
 cardinality value =
     case value of
-        FieldDescriptorProto_Label_LABELOPTIONAL ->
+        FieldDescriptorProto.LABELOPTIONAL ->
             Optional
 
-        FieldDescriptorProto_Label_LABELREQUIRED ->
+        FieldDescriptorProto.LABELREQUIRED ->
             Required
 
-        FieldDescriptorProto_Label_LABELREPEATED ->
+        FieldDescriptorProto.LABELREPEATED ->
             Repeated

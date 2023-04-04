@@ -1,13 +1,11 @@
 module Main exposing (main)
 
 import Base64
-import Dict
 import Generator
-import Mapper exposing (TypeRefs)
 import Mapper.Package exposing (Packages)
 import Platform
 import Ports
-import Proto.Google.Protobuf.Compiler.Plugin exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
+import Proto.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
 import Protobuf.Decode as Decode
 import Protobuf.Encode as Encode
 import Protobuf.Types.Int64
@@ -100,4 +98,4 @@ version v =
 
 fail : String -> CodeGeneratorResponse
 fail err =
-    CodeGeneratorResponse err (Protobuf.Types.Int64.fromInts 0 3) []
+    { error = err, supportedFeatures = Protobuf.Types.Int64.fromInts 0 3, file = [] }

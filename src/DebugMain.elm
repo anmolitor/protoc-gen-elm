@@ -2,7 +2,7 @@ port module DebugMain exposing (..)
 
 import Base64
 import Ports
-import Proto.Google.Protobuf.Compiler.Plugin exposing (CodeGeneratorRequest, decodeCodeGeneratorRequest, defaultCodeGeneratorRequest, defaultCodeGeneratorResponse, encodeCodeGeneratorResponse)
+import Proto.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, decodeCodeGeneratorRequest, defaultCodeGeneratorRequest, defaultCodeGeneratorResponse, encodeCodeGeneratorResponse)
 import Protobuf.Decode as PD
 import Protobuf.Encode as PE
 
