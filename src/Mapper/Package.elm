@@ -1,21 +1,25 @@
 module Mapper.Package exposing (Packages, addPackage, append, concat, empty, unify)
 
 import Dict exposing (Dict)
+import Elm.CodeGen exposing (ModuleName)
 import List.NonEmpty as NonEmpty
 import Mapper.Name as Name
 import Mapper.Struct as Struct exposing (Struct)
+import Model exposing (unqualifySelectedMessage)
 
 
 type alias Packages =
     Dict (List String) Struct
 
 
-unify : Packages -> Struct
-unify packages =
+unify : ModuleName -> Packages -> Struct
+unify rootModName packages =
     Dict.toList packages
         |> Struct.concatMap
             (\( moduleName, struct ) ->
-                { messages = List.map (\message -> { message | dataType = Name.internalize ( moduleName, message.dataType ) }) struct.messages
+                { messages =
+                    List.map (\message -> { message | dataType = Name.internalize ( moduleName, message.dataType ) }) struct.messages
+                        |> List.map (unqualifySelectedMessage rootModName)
                 , enums =
                     List.map
                         (\enum ->
@@ -31,7 +35,14 @@ unify packages =
                     List.map
                         (\( name, oneOf ) ->
                             ( Name.internalize ( moduleName, name )
-                            , List.map (\( index, optName, optType ) -> ( index, Name.internalize ( moduleName, optName ), optType )) oneOf
+                            , List.map
+                                (\( index, optName, optType ) ->
+                                    ( index
+                                    , Name.internalize ( moduleName, optName )
+                                    , Model.unqualifySelectedFieldType rootModName optType
+                                    )
+                                )
+                                oneOf
                             )
                         )
                         struct.oneOfs

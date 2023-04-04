@@ -1,7 +1,7 @@
 module Generator exposing (requestToResponse)
 
-import Dict
-import Elm.CodeGen as C
+import Dict exposing (Dict)
+import Elm.CodeGen as C exposing (ModuleName)
 import Elm.Pretty
 import Elm.Syntax.Module as Module
 import Elm.Syntax.Node as Node
@@ -70,18 +70,27 @@ generate file =
 convert : Versions -> Flags -> List String -> List FileDescriptorProto -> Res (List C.File)
 convert versions flags fileNames descriptors =
     let
-        files : Res Packages
+        files : Res (Dict ModuleName Packages)
         files =
             descriptors
                 |> List.filter (.name >> (\name -> List.member name fileNames))
                 |> Mapper.mapMain flags.grpcOn
-                -- TODO we do not need the first el of the tuple anymore
-                |> Errors.combineMap Tuple.second
-                |> Result.map Package.concat
+                |> Errors.combineMap (\( mod, res ) -> Result.map (Tuple.pair mod) res)
+                |> Result.map
+                    (List.foldl
+                        (\( mod, pkg ) ->
+                            Dict.update mod
+                                (Maybe.map (Package.append pkg)
+                                    >> Maybe.withDefault pkg
+                                    >> Just
+                                )
+                        )
+                        Dict.empty
+                    )
 
-        mkInternalsFile : Packages -> C.File
-        mkInternalsFile =
-            packageToFile [ "Proto", "Internals_" ] << Package.unify
+        mkInternalsFile : ModuleName -> Packages -> C.File
+        mkInternalsFile moduleName =
+            packageToFile (moduleName ++ [ "Internals_" ]) << Package.unify moduleName
 
         packageToFile : List String -> Struct -> C.File
         packageToFile packageName struct =
@@ -97,13 +106,16 @@ convert versions flags fileNames descriptors =
                 (removeDuplicateDeclarations declarations)
                 (C.emptyFileComment |> fileComment versions struct.originFiles |> Just)
 
-        packageToReexportFile : List String -> Struct -> C.File
-        packageToReexportFile packageName struct =
+        packageToReexportFile : ModuleName -> ModuleName -> Struct -> C.File
+        packageToReexportFile rootModName packageName struct =
             let
+                internalsModule =
+                    rootModName ++ [ "Internals_" ]
+
                 declarations =
-                    List.concatMap (Enum.reexportAST packageName) struct.enums
-                        ++ List.concatMap (Message.reexportAST packageName) struct.messages
-                        ++ List.concatMap (OneOf.reexportAST packageName) struct.oneOfs
+                    List.concatMap (Enum.reexportAST internalsModule packageName) struct.enums
+                        ++ List.concatMap (Message.reexportAST internalsModule packageName) struct.messages
+                        ++ List.concatMap (OneOf.reexportAST internalsModule packageName) struct.oneOfs
                         ++ List.concatMap Service.toAST struct.services
             in
             C.file
@@ -113,7 +125,7 @@ convert versions flags fileNames descriptors =
                 (C.emptyFileComment |> fileComment versions struct.originFiles |> Just)
     in
     Result.map
-        (\packages -> Dict.map packageToReexportFile packages |> Dict.values |> (::) (mkInternalsFile packages))
+        (Dict.toList >> List.concatMap (\( mod, package ) -> Dict.map (packageToReexportFile mod) package |> Dict.values |> (::) (mkInternalsFile mod package)))
         files
 
 

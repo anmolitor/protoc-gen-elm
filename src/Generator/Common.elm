@@ -1,6 +1,7 @@
 module Generator.Common exposing (..)
 
 import Elm.CodeGen as C
+import Mapper.Name exposing (Ref)
 import Model exposing (FieldName)
 
 
@@ -61,6 +62,10 @@ setter fieldName =
             (C.update "r" [ ( fieldName, C.val "a" ) ])
 
 
-internalsModule : C.ModuleName
-internalsModule =
-    [ "Proto", "Internals_" ]
+internalsModule : C.ModuleName -> C.ModuleName
+internalsModule mod =
+    if List.isEmpty mod then
+        []
+
+    else
+        mod ++ [ "Internals_" ]

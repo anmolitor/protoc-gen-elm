@@ -11,8 +11,8 @@ import Meta.Encode
 import Model exposing (Enum)
 
 
-reexportAST : ModuleName -> Enum -> List C.Declaration
-reexportAST moduleName enum =
+reexportAST : ModuleName -> ModuleName -> Enum -> List C.Declaration
+reexportAST internalsModule moduleName enum =
     let
         fields =
             NonEmpty.toList enum.fields
@@ -40,7 +40,7 @@ reexportAST moduleName enum =
             C.funDecl (Just <| Common.fromInternalDocumentation enum.dataType internalName)
                 (Just <|
                     C.funAnn
-                        (C.fqTyped Common.internalsModule
+                        (C.fqTyped internalsModule
                             internalName
                             []
                         )
@@ -51,7 +51,7 @@ reexportAST moduleName enum =
                 (C.caseExpr (C.val "data_")
                     (List.map
                         (\optionName ->
-                            ( C.fqNamedPattern Common.internalsModule
+                            ( C.fqNamedPattern internalsModule
                                 (Mapper.Name.internalize ( moduleName, optionName ))
                                 []
                             , C.val optionName
@@ -61,7 +61,7 @@ reexportAST moduleName enum =
                         |> withUnrecognized
                             (\unrecognized cases ->
                                 cases
-                                    ++ [ ( C.fqNamedPattern Common.internalsModule
+                                    ++ [ ( C.fqNamedPattern internalsModule
                                             (Mapper.Name.internalize ( moduleName, unrecognized ))
                                             [ C.varPattern "n_" ]
                                          , C.apply [ C.val unrecognized, C.val "n_" ]
@@ -76,7 +76,7 @@ reexportAST moduleName enum =
                 (Just <|
                     C.funAnn
                         (C.typed enum.dataType [])
-                        (C.fqTyped Common.internalsModule
+                        (C.fqTyped internalsModule
                             internalName
                             []
                         )
@@ -87,7 +87,7 @@ reexportAST moduleName enum =
                     (List.map
                         (\optionName ->
                             ( C.namedPattern optionName []
-                            , C.fqVal Common.internalsModule
+                            , C.fqVal internalsModule
                                 (Mapper.Name.internalize ( moduleName, optionName ))
                             )
                         )
@@ -97,7 +97,7 @@ reexportAST moduleName enum =
                                 cases
                                     ++ [ ( C.namedPattern unrecognized [ C.varPattern "n_" ]
                                          , C.apply
-                                            [ C.fqVal Common.internalsModule
+                                            [ C.fqVal internalsModule
                                                 (Mapper.Name.internalize ( moduleName, unrecognized ))
                                             , C.val "n_"
                                             ]
@@ -113,7 +113,7 @@ reexportAST moduleName enum =
                 (Common.encoderName enum.dataType)
                 (C.applyBinOp (C.val <| "toInternal" ++ enum.dataType)
                     C.composer
-                    (C.fqVal Common.internalsModule <| Common.encoderName <| Mapper.Name.internalize ( moduleName, enum.dataType ))
+                    (C.fqVal internalsModule <| Common.encoderName <| Mapper.Name.internalize ( moduleName, enum.dataType ))
                 )
 
         decoder =
@@ -123,7 +123,7 @@ reexportAST moduleName enum =
                 (C.apply
                     [ Meta.Decode.map
                     , C.val <| "fromInternal" ++ enum.dataType
-                    , C.fqVal Common.internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, enum.dataType )
+                    , C.fqVal internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, enum.dataType )
                     ]
                 )
 

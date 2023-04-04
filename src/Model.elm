@@ -14,11 +14,14 @@ module Model exposing
     , Primitive(..)
     , Service
     , TypeKind(..)
+    , unqualifySelectedFieldType
+    , unqualifySelectedMessage
     )
 
 import Elm.CodeGen as C exposing (ModuleName)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.NonEmpty exposing (NonEmpty)
+import Mapper.Name exposing (Ref)
 
 
 type alias Service =
@@ -30,8 +33,8 @@ type alias Service =
 
 type alias Method =
     { name : String
-    , reqType : ( C.ModuleName, String )
-    , resType : ( C.ModuleName, String )
+    , reqType : Ref
+    , resType : Ref
     }
 
 
@@ -39,6 +42,49 @@ type alias Message =
     { dataType : DataType
     , fields : List ( FieldName, Field )
     }
+
+
+unqualifySelectedMessage : ModuleName -> Message -> Message
+unqualifySelectedMessage modName message =
+    { message | fields = List.map (Tuple.mapSecond <| unqualifySelectedField modName) message.fields }
+
+
+unqualifySelectedField : ModuleName -> Field -> Field
+unqualifySelectedField modName field =
+    case field of
+        NormalField n c t ->
+            NormalField n c <| unqualifySelectedFieldType modName t
+
+        MapField n k v ->
+            MapField n (unqualifySelectedFieldType modName k) (unqualifySelectedFieldType modName v)
+
+        OneOfField ref ->
+            if ref.rootPackage == modName then
+                OneOfField { ref | rootPackage = [] }
+
+            else
+                field
+
+
+unqualifySelectedFieldType : ModuleName -> FieldType -> FieldType
+unqualifySelectedFieldType modName fieldType =
+    case fieldType of
+        Primitive _ _ ->
+            fieldType
+
+        Enumeration ref ->
+            if ref.rootPackage == modName then
+                Enumeration { ref | rootPackage = [] }
+
+            else
+                fieldType
+
+        Embedded ref ->
+            if ref.rootModuleName == modName then
+                Embedded { ref | rootModuleName = [] }
+
+            else
+                fieldType
 
 
 type alias Enum =
@@ -83,8 +129,8 @@ type TypeKind
 type FieldType
     = -- Primitive Type, default value
       Primitive Primitive Default
-    | Embedded { dataType : DataType, moduleName : ModuleName, typeKind : TypeKind }
-    | Enumeration { dataType : DataType, moduleName : ModuleName }
+    | Embedded { dataType : DataType, moduleName : ModuleName, rootModuleName : ModuleName, typeKind : TypeKind }
+    | Enumeration Ref
 
 
 type Primitive
@@ -108,7 +154,7 @@ type IntFlavor
 type Field
     = NormalField FieldNumber Cardinality FieldType
     | MapField FieldNumber FieldType FieldType
-    | OneOfField DataType ModuleName
+    | OneOfField Ref
 
 
 type Cardinality

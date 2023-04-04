@@ -14,11 +14,17 @@ toAST service =
 methodToAST : { name : String, package : String } -> Method -> C.Declaration
 methodToAST service method =
     let
-        ( reqModule, reqType ) =
-            method.reqType
+        reqModule =
+            method.reqType.package
 
-        ( resModule, resType ) =
-            method.resType
+        reqType =
+            method.reqType.name
+
+        resModule =
+            method.resType.package
+
+        resType =
+            method.resType.name
 
         comment =
             C.emptyDocComment

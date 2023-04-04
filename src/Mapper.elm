@@ -6,7 +6,7 @@ import Errors exposing (Error(..), Res)
 import List.Extra
 import Mapper.Name as Name
 import Mapper.Package as Package exposing (Packages)
-import Mapper.Struct as Struct exposing (Struct, empty)
+import Mapper.Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
 import Meta.Encode
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
@@ -15,7 +15,12 @@ import Set exposing (Set)
 
 
 type alias TypeRefs =
-    Dict ( ModuleName, String ) (Set ( ModuleName, String ))
+    Dict ( ModuleName, ModuleName, String ) (Set ( ModuleName, ModuleName, String ))
+
+
+refToKey : Name.Ref -> ( ModuleName, ModuleName, String )
+refToKey ref =
+    ( ref.rootPackage, ref.package, ref.name )
 
 
 type alias Ctx =
@@ -25,21 +30,21 @@ type alias Ctx =
     }
 
 
-definedTypesInMessageDescriptor : ModuleName -> DescriptorProto -> TypeRefs
-definedTypesInMessageDescriptor ownModuleName descriptor =
+definedTypesInMessageDescriptor : Name.ModuleRef -> DescriptorProto -> TypeRefs
+definedTypesInMessageDescriptor moduleNames descriptor =
     let
         types =
             List.map .typeName descriptor.field
                 |> List.filter (not << String.isEmpty)
                 |> Set.fromList
-                |> Set.map Name.absoluteRef
+                |> Set.map (Name.absoluteRef >> refToKey)
 
         nestedTypeRefs =
             List.map unwrapDescriptorProto_ descriptor.nestedType
-                |> List.map (definedTypesInMessageDescriptor ownModuleName)
+                |> List.map (definedTypesInMessageDescriptor moduleNames)
                 |> List.foldl Dict.union Dict.empty
     in
-    Dict.insert ( ownModuleName, Name.type_ descriptor.name )
+    Dict.insert ( moduleNames.rootPackage, moduleNames.package, Name.type_ descriptor.name )
         types
         nestedTypeRefs
 
@@ -47,31 +52,14 @@ definedTypesInMessageDescriptor ownModuleName descriptor =
 definedTypesInFileDescriptor : FileDescriptorProto -> TypeRefs
 definedTypesInFileDescriptor descriptor =
     let
-        moduleName =
-            Name.module_ descriptor.package
+        moduleNames =
+            Name.moduleRef_ descriptor.package
     in
-    List.map (definedTypesInMessageDescriptor moduleName) descriptor.messageType
+    List.map (definedTypesInMessageDescriptor moduleNames) descriptor.messageType
         |> List.foldl Dict.union Dict.empty
 
 
-x =
-    { enumType = []
-    , extension = []
-    , extensionRange = []
-    , field =
-        [ { defaultValue = "", extendee = "", jsonName = "field", label = FieldDescriptorProto_Label_LABELOPTIONAL, name = "field", number = 1, oneofIndex = 0, options = Nothing, proto3Optional = True, typeName = "", type_ = FieldDescriptorProto_Type_TYPESTRING }
-        , { defaultValue = "", extendee = "", jsonName = "field2", label = FieldDescriptorProto_Label_LABELOPTIONAL, name = "field2", number = 2, oneofIndex = 1, options = Nothing, proto3Optional = True, typeName = "", type_ = FieldDescriptorProto_Type_TYPEINT32 }
-        ]
-    , name = "WithOptional"
-    , nestedType = []
-    , oneofDecl = [ { name = "_field", options = Nothing }, { name = "_field2", options = Nothing } ]
-    , options = Nothing
-    , reservedName = []
-    , reservedRange = []
-    }
-
-
-mapMain : Bool -> List FileDescriptorProto -> List ( String, Res Packages )
+mapMain : Bool -> List FileDescriptorProto -> List ( ModuleName, Res Packages )
 mapMain grpcOn descriptors =
     let
         typeRefs : TypeRefs
@@ -113,7 +101,7 @@ mapMain grpcOn descriptors =
                     servicePackages =
                         List.foldl
                             (\service ->
-                                Package.addPackage (packageName ++ [ Name.type_ service.name ])
+                                Package.addPackage (moduleRef.package ++ [ Name.type_ service.name ])
                                     { empty | services = [ service ], originFiles = originFiles }
                             )
                             Package.empty
@@ -127,21 +115,21 @@ mapMain grpcOn descriptors =
                     syntax =
                         parseSyntax descriptor.syntax
 
-                    packageName =
-                        Name.module_ descriptor.package
+                    moduleRef =
+                        Name.moduleRef_ descriptor.package
                 in
-                ( descriptor.name
+                ( moduleRef.rootPackage
                 , Result.map2
                     (\messagePackages services ->
                         Package.concat messagePackages
-                            |> Package.addPackage packageName
+                            |> Package.addPackage moduleRef.package
                                 { empty
                                     | enums = List.map (enum syntax) descriptor.enumType
                                     , originFiles = originFiles
                                 }
                             |> Package.append (servicePackages services)
                     )
-                    (Errors.combineMap (message packageName ctx) descriptor.messageType)
+                    (Errors.combineMap (message moduleRef ctx) descriptor.messageType)
                     (if grpcOn then
                         Errors.combineMap mapService descriptor.service
 
@@ -191,8 +179,8 @@ isAMap =
     since they could potentially overlap otherwise.
 
 -}
-message : ModuleName -> Ctx -> DescriptorProto -> Res Packages
-message packageName_ ctx descriptor =
+message : Name.ModuleRef -> Ctx -> DescriptorProto -> Res Packages
+message moduleRef ctx descriptor =
     let
         name =
             Name.type_ descriptor.name
@@ -258,7 +246,7 @@ message packageName_ ctx descriptor =
             List.map unwrapDescriptorProto_ descriptor.nestedType
 
         parentRef =
-            ( packageName_, name )
+            { rootPackage = moduleRef.rootPackage, package = moduleRef.package, name = name }
 
         maps : Dict String { key : FieldType, value : FieldType }
         maps =
@@ -281,12 +269,12 @@ message packageName_ ctx descriptor =
                 |> Dict.fromList
 
         nestedPackageName =
-            packageName_ ++ [ Name.type_ descriptor.name ]
+            moduleRef.package ++ [ Name.type_ descriptor.name ]
 
         nested : Res Packages
         nested =
             List.filter (not << isAMap) nestedTypes
-                |> Errors.combineMap (message nestedPackageName ctx)
+                |> Errors.combineMap (message { moduleRef | package = nestedPackageName } ctx)
                 |> Result.map Package.concat
 
         mainStruct : Res Struct
@@ -296,7 +284,7 @@ message packageName_ ctx descriptor =
                     { empty
                         | messages =
                             [ { dataType = name
-                              , fields = messageFields nestedPackageName oneOfFieldNames fieldsMeta
+                              , fields = messageFields { moduleRef | package = nestedPackageName } oneOfFieldNames fieldsMeta
                               }
                             ]
                         , originFiles = ctx.originFiles
@@ -340,7 +328,7 @@ message packageName_ ctx descriptor =
     in
     Errors.map3
         (\mainS addOneOfPackage nestedPackage ->
-            Package.addPackage packageName_ mainS nestedPackage
+            Package.addPackage moduleRef.package mainS nestedPackage
                 |> addOneOfPackage
                 |> enumPackage
         )
@@ -364,11 +352,11 @@ oneofStruct originFiles basePackageName oneOfFieldNames fieldsMeta =
         oneOfFields
 
 
-messageFields : ModuleName -> List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> List ( FieldName, Field )
-messageFields nestedModuleName oneOfFieldNames fieldsMeta =
+messageFields : Name.ModuleRef -> List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> List ( FieldName, Field )
+messageFields nestedModuleRef oneOfFieldNames fieldsMeta =
     let
         oneOfFields =
-            List.map (oneOfField nestedModuleName) oneOfFieldNames
+            List.map (oneOfField nestedModuleRef) oneOfFieldNames
     in
     fieldsMeta
         |> List.filterMap
@@ -382,9 +370,9 @@ messageFields nestedModuleName oneOfFieldNames fieldsMeta =
         |> List.Extra.uniqueBy Tuple.first
 
 
-oneOfField : ModuleName -> String -> ( FieldName, Field )
-oneOfField nestedModuleName name =
-    OneOfField (Name.type_ name) (nestedModuleName ++ [ Name.type_ name ])
+oneOfField : Name.ModuleRef -> String -> ( FieldName, Field )
+oneOfField moduleRef name =
+    OneOfField { name = Name.type_ name, package = moduleRef.package ++ [ Name.type_ name ], rootPackage = moduleRef.rootPackage }
         |> Tuple.pair (Name.field name)
 
 
@@ -404,15 +392,16 @@ oneOfFieldPackage fields index name =
         |> Tuple.pair (Name.type_ name)
 
 
-handleMessage : ( ModuleName, String ) -> TypeRefs -> String -> FieldType
+handleMessage : Name.Ref -> TypeRefs -> String -> FieldType
 handleMessage parentRef typeRefs messageName =
     let
-        ( moduleName, dataType ) =
+        ref =
             Name.absoluteRef messageName
     in
     Embedded
-        { dataType = dataType
-        , moduleName = moduleName
+        { dataType = ref.name
+        , moduleName = ref.package
+        , rootModuleName = ref.rootPackage
         , typeKind =
             if isRecursive typeRefs parentRef (Name.absoluteRef messageName) then
                 Model.Type
@@ -422,7 +411,7 @@ handleMessage parentRef typeRefs messageName =
         }
 
 
-isRecursive : TypeRefs -> ( ModuleName, String ) -> ( ModuleName, String ) -> Bool
+isRecursive : TypeRefs -> Name.Ref -> Name.Ref -> Bool
 isRecursive typeRefs parentRef ref =
     let
         isRecursiveHelper encounteredTypes currRef =
@@ -435,16 +424,16 @@ isRecursive typeRefs parentRef ref =
                         |> List.any
                             (\nextRef ->
                                 if Set.member nextRef encounteredTypes then
-                                    nextRef == parentRef
+                                    nextRef == refToKey parentRef
 
                                 else
                                     isRecursiveHelper (Set.insert currRef encounteredTypes) nextRef
                             )
     in
-    isRecursiveHelper Set.empty ref
+    isRecursiveHelper Set.empty (refToKey ref)
 
 
-fieldType : TypeRefs -> ( ModuleName, String ) -> FieldDescriptorProto -> Res FieldType
+fieldType : TypeRefs -> Name.Ref -> FieldDescriptorProto -> Res FieldType
 fieldType typeRefs parentRef descriptor =
     case descriptor.type_ of
         FieldDescriptorProto_Type_TYPEDOUBLE ->
@@ -500,14 +489,10 @@ fieldType typeRefs parentRef descriptor =
 
         FieldDescriptorProto_Type_TYPEENUM ->
             let
-                ( moduleName, dataType ) =
+                ref =
                     Name.absoluteRef descriptor.typeName
             in
-            Ok <|
-                Enumeration
-                    { dataType = dataType
-                    , moduleName = moduleName
-                    }
+            Ok <| Enumeration ref
 
 
 

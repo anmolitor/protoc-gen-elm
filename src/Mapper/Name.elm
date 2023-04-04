@@ -1,4 +1,4 @@
-module Mapper.Name exposing (absoluteRef, field, internalize, module_, type_)
+module Mapper.Name exposing (ModuleRef, Ref, absoluteRef, field, internalize, moduleRef_, module_, type_)
 
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.Extra
@@ -16,6 +16,12 @@ module_ =
         >> packageFromSegments
 
 
+moduleRef_ : String -> ModuleRef
+moduleRef_ =
+    String.split "."
+        >> (\segments -> { rootPackage = determineRootPackage segments, package = packageFromSegments segments })
+
+
 packageFromSegments : List String -> ModuleName
 packageFromSegments =
     List.map String.Extra.classify
@@ -23,28 +29,44 @@ packageFromSegments =
         >> (::) "Proto"
 
 
-absoluteRef : String -> ( ModuleName, String )
+type alias Ref =
+    { rootPackage : ModuleName, package : ModuleName, name : String }
+
+
+type alias ModuleRef =
+    { rootPackage : ModuleName, package : ModuleName }
+
+
+absoluteRef : String -> Ref
 absoluteRef =
     String.split "."
         >> List.Extra.unconsLast
         -- never happens since split returns a non-empty list
         >> Maybe.withDefault ( "", [] )
-        >> (\( name, segments ) -> ( packageFromSegments segments, type_ name ))
+        >> (\( name, segments ) -> { rootPackage = determineRootPackage segments, package = packageFromSegments segments, name = type_ name })
 
 
-removeExtension : String -> String
-removeExtension str =
-    case String.split "." str of
-        [] ->
-            ""
+determineRootPackage : List String -> ModuleName
+determineRootPackage =
+    let
+        helper segments =
+            case segments of
+                [] ->
+                    []
 
-        [ single ] ->
-            single
+                segment :: rest ->
+                    case String.uncons segment of
+                        Just ( char, _ ) ->
+                            if Char.isLower char then
+                                segment :: helper rest
 
-        other ->
-            List.Extra.init other
-                |> Maybe.withDefault []
-                |> String.join "."
+                            else
+                                []
+
+                        Nothing ->
+                            helper rest
+    in
+    helper >> packageFromSegments
 
 
 type_ : String -> String

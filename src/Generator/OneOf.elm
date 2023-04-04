@@ -10,8 +10,8 @@ import Meta.Type
 import Model exposing (Cardinality(..), FieldType(..), OneOf)
 
 
-reexportAST : ModuleName -> ( String, OneOf ) -> List C.Declaration
-reexportAST moduleName ( dataType, opts ) =
+reexportAST : ModuleName -> ModuleName -> ( String, OneOf ) -> List C.Declaration
+reexportAST internalsModule moduleName ( dataType, opts ) =
     let
         type_ =
             C.customTypeDecl (Just <| oneofDocumentation dataType)
@@ -26,7 +26,7 @@ reexportAST moduleName ( dataType, opts ) =
             C.funDecl (Just <| Common.fromInternalDocumentation dataType internalName)
                 (Just <|
                     C.funAnn
-                        (C.fqTyped Common.internalsModule
+                        (C.fqTyped internalsModule
                             internalName
                             []
                         )
@@ -37,7 +37,7 @@ reexportAST moduleName ( dataType, opts ) =
                 (C.caseExpr (C.val "data_")
                     (List.map
                         (\( _, optionName, _ ) ->
-                            ( C.fqNamedPattern Common.internalsModule
+                            ( C.fqNamedPattern internalsModule
                                 (Mapper.Name.internalize ( moduleName, optionName ))
                                 [ C.varPattern "n_" ]
                             , C.apply [ C.val optionName, C.val "n_" ]
@@ -52,7 +52,7 @@ reexportAST moduleName ( dataType, opts ) =
                 (Just <|
                     C.funAnn
                         (C.typed dataType [])
-                        (C.fqTyped Common.internalsModule
+                        (C.fqTyped internalsModule
                             internalName
                             []
                         )
@@ -64,7 +64,7 @@ reexportAST moduleName ( dataType, opts ) =
                         (\( _, optionName, _ ) ->
                             ( C.namedPattern optionName [ C.varPattern "n_" ]
                             , C.apply
-                                [ C.fqVal Common.internalsModule
+                                [ C.fqVal internalsModule
                                     (Mapper.Name.internalize ( moduleName, optionName ))
                                 , C.val "n_"
                                 ]
@@ -73,6 +73,24 @@ reexportAST moduleName ( dataType, opts ) =
                         opts
                     )
                 )
+
+        fieldTypeToTypeAnnotationReexport : FieldType -> C.TypeAnnotation
+        fieldTypeToTypeAnnotationReexport fieldType =
+            case fieldType of
+                Primitive dType _ ->
+                    Meta.Type.forPrimitive dType
+
+                Embedded e ->
+                    C.fqTyped (Common.internalsModule e.rootModuleName)
+                        (Mapper.Name.internalize
+                            ( e.moduleName
+                            , e.dataType
+                            )
+                        )
+                        []
+
+                Enumeration enum ->
+                    C.fqTyped (Common.internalsModule enum.rootPackage) (Mapper.Name.internalize ( enum.package, enum.name )) []
     in
     [ type_, fromInternal, toInternal ]
 
@@ -131,10 +149,14 @@ toAST ( dataType, opts ) =
                                                 Meta.Decode.forPrimitive p
 
                                             Embedded e ->
-                                                C.fun <| Common.decoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )
+                                                C.fqFun (Common.internalsModule e.rootModuleName) <|
+                                                    Common.decoderName <|
+                                                        Mapper.Name.internalize ( e.moduleName, e.dataType )
 
                                             Enumeration e ->
-                                                C.fun <| Common.decoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )
+                                                C.fqFun (Common.internalsModule e.rootPackage) <|
+                                                    Common.decoderName <|
+                                                        Mapper.Name.internalize ( e.package, e.name )
                                         ]
                                     ]
                             )
@@ -143,25 +165,6 @@ toAST ( dataType, opts ) =
                     ]
     in
     [ type_, encoder, decoder ]
-
-
-fieldTypeToTypeAnnotationReexport : FieldType -> C.TypeAnnotation
-fieldTypeToTypeAnnotationReexport fieldType =
-    case fieldType of
-        Primitive dataType _ ->
-            Meta.Type.forPrimitive dataType
-
-        Embedded e ->
-            C.fqTyped Common.internalsModule
-                (Mapper.Name.internalize
-                    ( e.moduleName
-                    , e.dataType
-                    )
-                )
-                []
-
-        Enumeration enum ->
-            C.fqTyped Common.internalsModule (Mapper.Name.internalize ( enum.moduleName, enum.dataType )) []
 
 
 oneofDocumentation : String -> C.Comment C.DocComment
