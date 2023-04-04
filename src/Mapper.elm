@@ -118,12 +118,16 @@ mapMain grpcOn descriptors =
                     moduleRef =
                         Name.moduleRef_ descriptor.package
 
+                    isLowerCase =
+                        String.uncons
+                            >> Maybe.map (\( char, _ ) -> Char.isLower char)
+                            >> Maybe.withDefault True
+
                     packageIsLowerCase =
-                        String.uncons descriptor.package
-                            |> Maybe.map (\( char, _ ) -> Char.isLower char)
-                            |> Maybe.withDefault True
+                        String.split "." descriptor.package
+                            |> List.all isLowerCase
                 in
-                if packageIsLowerCase then
+                if not packageIsLowerCase then
                     ( moduleRef.rootPackage, Err <| AmbiguousPackageName descriptor.package )
 
                 else
@@ -193,6 +197,11 @@ message moduleRef ctx descriptor =
     let
         name =
             Name.type_ descriptor.name
+
+        messageIsLowerCase =
+            String.uncons descriptor.name
+                |> Maybe.map (\( char, _ ) -> Char.isLower char)
+                |> Maybe.withDefault True
 
         getFromMaps : FieldDescriptorProto -> Maybe { key : FieldType, value : FieldType }
         getFromMaps fieldDescriptor =
@@ -335,15 +344,19 @@ message moduleRef ctx descriptor =
             List.map .name descriptor.oneofDecl
                 |> List.filter (\n -> not <| Set.member n proto3OptionalFields)
     in
-    Errors.map3
-        (\mainS addOneOfPackage nestedPackage ->
-            Package.addPackage moduleRef.package mainS nestedPackage
-                |> addOneOfPackage
-                |> enumPackage
-        )
-        mainStruct
-        oneofPackage
-        nested
+    if messageIsLowerCase then
+        Err <| Errors.AmbiguousMessageName descriptor.name
+
+    else
+        Errors.map3
+            (\mainS addOneOfPackage nestedPackage ->
+                Package.addPackage moduleRef.package mainS nestedPackage
+                    |> addOneOfPackage
+                    |> enumPackage
+            )
+            mainStruct
+            oneofPackage
+            nested
 
 
 

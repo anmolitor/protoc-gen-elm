@@ -2,7 +2,7 @@ syntax="proto3";
 
 package weird_names;
 
-message msg {
+message Msg {
   double Capital = 1;
   int32 ALL_CAPS = 2;
 }

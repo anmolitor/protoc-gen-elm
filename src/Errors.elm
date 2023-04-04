@@ -3,6 +3,7 @@ module Errors exposing (..)
 
 type Error
     = AmbiguousPackageName String
+    | AmbiguousMessageName String
     | UnsupportedFeature String
     | NonPrimitiveMapKey String
     | NoEnumValues String
@@ -20,7 +21,10 @@ format =
         formatInternal depth err =
             case err of
                 AmbiguousPackageName packageName ->
-                    String.repeat depth " " ++ "Package Name '" ++ packageName ++ "' is not in lower case. This is problematic since we need to differentiate between packages and inner modules (definitions inside of messages)."
+                    String.repeat depth " " ++ "Package name '" ++ packageName ++ "' is not in lower case. This is problematic since we need to differentiate between packages and inner modules (definitions inside of messages)."
+
+                AmbiguousMessageName messageName ->
+                    String.repeat depth " " ++ "Message name '" ++ messageName ++ "' is in lower case. This is problematic since we need to differentiate between packages and inner modules (definitions inside of messages)."
 
                 UnsupportedFeature feature ->
                     String.repeat depth " " ++ "This plugin does not support the feature: '" ++ feature ++ "' yet."

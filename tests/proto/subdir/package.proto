@@ -5,6 +5,6 @@ package pkg;
 import "package.proto";
 
 message Something {
-  Any.Test sub = 1;
+  any.Test sub = 1;
   bool other = 2;
 }
