@@ -23,7 +23,7 @@ jobs:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       - uses: arduino/setup-protoc@v1.1.2
         with:
-          version: 3.14.0
+          version: 3.19.0
       - name: install
         run: npm ci
       - name: build
