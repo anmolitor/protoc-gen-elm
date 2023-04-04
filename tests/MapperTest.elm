@@ -23,28 +23,28 @@ suite =
                     expected =
                         [ ( "test.proto"
                           , Ok
-                                { messages =
-                                    [ { dataType = "OtherMsg", fields = [] }
-                                    , { dataType = "Msg"
-                                      , fields =
-                                            [ ( "test"
-                                              , NormalField 0 Optional (Primitive Prim_Bool <| C.val "False")
-                                              )
-                                            , ( "test2"
-                                              , NormalField 0 Optional (Embedded { dataType = "OtherMsg", moduleName = [], typeKind = Alias })
-                                              )
-                                            , ( "test3"
-                                              , NormalField 0 Optional (Enumeration { dataType = "OtherMsg_AnEnum", moduleName = [] })
-                                              )
-                                            , ( "test4"
-                                              , NormalField 0 Optional (Embedded { dataType = "Msg", moduleName = [], typeKind = Type })
-                                              )
-                                            ]
-                                      }
-                                    ]
-                                , oneOfs = []
-                                , enums = [ { dataType = "OtherMsg_AnEnum", fields = ( ( 0, "OtherMsg_AnEnum_Bla" ), [ ( 2, "OtherMsg_AnEnum_Blub" ) ] ), withUnrecognized = True } ]
-                                , services = [ { name = "SomeService", package = "testpackage", methods = [ { name = "SomeMethod", reqType = ( [], "OtherMsg" ), resType = ( [], "OtherMsg_AnEnum" ) } ] } ]
+                                { empty
+                                    | messages =
+                                        [ { dataType = "OtherMsg", fields = [] }
+                                        , { dataType = "Msg"
+                                          , fields =
+                                                [ ( "test"
+                                                  , NormalField 0 Optional (Primitive Prim_Bool <| C.val "False")
+                                                  )
+                                                , ( "test2"
+                                                  , NormalField 0 Optional (Embedded { dataType = "OtherMsg", moduleName = [], typeKind = Alias })
+                                                  )
+                                                , ( "test3"
+                                                  , NormalField 0 Optional (Enumeration { dataType = "OtherMsg_AnEnum", moduleName = [] })
+                                                  )
+                                                , ( "test4"
+                                                  , NormalField 0 Optional (Embedded { dataType = "Msg", moduleName = [], typeKind = Type })
+                                                  )
+                                                ]
+                                          }
+                                        ]
+                                    , enums = [ { dataType = "OtherMsg_AnEnum", fields = ( ( 0, "OtherMsg_AnEnum_Bla" ), [ ( 2, "OtherMsg_AnEnum_Blub" ) ] ), withUnrecognized = True } ]
+                                    , services = [ { name = "SomeService", package = "testpackage", methods = [ { name = "SomeMethod", reqType = ( [], "OtherMsg" ), resType = ( [], "OtherMsg_AnEnum" ) } ] } ]
                                 }
                           )
                         ]

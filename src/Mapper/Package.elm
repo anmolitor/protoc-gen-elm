@@ -26,6 +26,7 @@ unify packages =
                         )
                         struct.enums
                 , services = []
+                , originFiles = struct.originFiles
                 , oneOfs =
                     List.map
                         (\( name, oneOf ) ->

@@ -4,3 +4,7 @@ google/**/*.proto
 node_modules/
 /example/src/Proto
 /elm.min.js
+
+# Debugging
+/elm.debug.js
+/debug.log

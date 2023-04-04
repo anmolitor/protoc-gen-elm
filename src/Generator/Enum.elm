@@ -123,8 +123,20 @@ reexportAST moduleName enum =
                     , C.fqVal Common.internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, enum.dataType )
                     ]
                 )
+
+        defaultEnum =
+            NonEmpty.find (\( index, _ ) -> index == 0) enum.fields
+                |> Maybe.withDefault (NonEmpty.head enum.fields)
+                |> Tuple.second
+
+        default : C.Declaration
+        default =
+            C.valDecl (Just <| Common.defaultDocumentation enum.dataType)
+                (Just <| C.typed enum.dataType [])
+                (Common.defaultName enum.dataType)
+                (C.val defaultEnum)
     in
-    [ type_, decoder, encoder, fromInternal, toInternal ]
+    [ type_, decoder, encoder, fromInternal, toInternal, default ]
 
 
 toAST : Enum -> List C.Declaration

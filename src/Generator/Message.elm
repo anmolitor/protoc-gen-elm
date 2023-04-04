@@ -28,8 +28,14 @@ reexportAST moduleName msg =
                 (Just <| Meta.Decode.decoder (C.typed msg.dataType []))
                 (Common.decoderName msg.dataType)
                 (C.fqVal Common.internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
+
+        default =
+            C.valDecl (Just <| Common.defaultDocumentation msg.dataType)
+                (Just <| C.typed msg.dataType [])
+                (Common.defaultName msg.dataType)
+                (C.fqVal Common.internalsModule <| Common.defaultName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
     in
-    [ type_, encoder, decoder ] ++ List.concatMap fieldDeclarationsReexport msg.fields
+    [ type_, encoder, decoder, default ] ++ List.concatMap fieldDeclarationsReexport msg.fields
 
 
 toAST : Message -> List C.Declaration

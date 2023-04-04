@@ -1,4 +1,4 @@
-module Mapper exposing (TypeRefs, definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, message, splitNonEmpty)
+module Mapper exposing (TypeRefs, definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, message)
 
 import Dict exposing (Dict)
 import Elm.CodeGen as C exposing (ModuleName)
@@ -16,6 +16,13 @@ import Set exposing (Set)
 
 type alias TypeRefs =
     Dict ( ModuleName, String ) (Set ( ModuleName, String ))
+
+
+type alias Ctx =
+    { typeRefs : TypeRefs
+    , originFiles : Set String
+    , syntax : Syntax
+    }
 
 
 definedTypesInMessageDescriptor : ModuleName -> DescriptorProto -> TypeRefs
@@ -90,9 +97,15 @@ mapMain grpcOn descriptors =
                         List.foldl
                             (\service ->
                                 Package.addPackage (packageName ++ [ Name.type_ service.name ])
-                                    { empty | services = [ service ] }
+                                    { empty | services = [ service ], originFiles = originFiles }
                             )
                             Package.empty
+
+                    originFiles =
+                        Set.singleton descriptor.name
+
+                    ctx =
+                        { typeRefs = typeRefs, originFiles = originFiles, syntax = syntax }
 
                     syntax =
                         parseSyntax descriptor.syntax
@@ -105,14 +118,13 @@ mapMain grpcOn descriptors =
                     (\messagePackages services ->
                         Package.concat messagePackages
                             |> Package.addPackage packageName
-                                { enums = List.map (enum syntax) descriptor.enumType
-                                , messages = []
-                                , services = []
-                                , oneOfs = []
+                                { empty
+                                    | enums = List.map (enum syntax) descriptor.enumType
+                                    , originFiles = originFiles
                                 }
                             |> Package.append (servicePackages services)
                     )
-                    (Errors.combineMap (message packageName syntax typeRefs) descriptor.messageType)
+                    (Errors.combineMap (message packageName ctx) descriptor.messageType)
                     (if grpcOn then
                         Errors.combineMap mapService descriptor.service
 
@@ -121,21 +133,6 @@ mapMain grpcOn descriptors =
                     )
                 )
             )
-
-
-{-| Split a list at all possible points that result in two non-empty lists.
-
-    splitNonEmpty [ 1, 2, 3, 4 ] == [ ( [ 1 ], [ 2, 3, 4 ] ), ( [ 1, 2 ], [ 3, 4 ] ), ( [ 1, 2, 3 ], [ 4 ] ) ]
-
--}
-splitNonEmpty : List a -> List ( List a, List a )
-splitNonEmpty l =
-    case l of
-        head :: ((_ :: _) as rest) ->
-            ( [ head ], rest ) :: (List.map << Tuple.mapFirst) ((::) head) (splitNonEmpty rest)
-
-        _ ->
-            []
 
 
 
@@ -177,8 +174,8 @@ isAMap =
     since they could potentially overlap otherwise.
 
 -}
-message : ModuleName -> Syntax -> TypeRefs -> DescriptorProto -> Res Packages
-message packageName_ syntax typeRefs descriptor =
+message : ModuleName -> Ctx -> DescriptorProto -> Res Packages
+message packageName_ ctx descriptor =
     let
         name =
             Name.type_ descriptor.name
@@ -213,7 +210,7 @@ message packageName_ syntax typeRefs descriptor =
                             Err <| NonPrimitiveMapKey fieldDescriptor.typeName
 
                 Nothing ->
-                    fieldType typeRefs parentRef fieldDescriptor
+                    fieldType ctx.typeRefs parentRef fieldDescriptor
                         |> Result.map (NormalField fieldDescriptor.number (cardinality fieldDescriptor.label))
             )
                 |> Result.map
@@ -241,7 +238,7 @@ message packageName_ syntax typeRefs descriptor =
                     (\d ->
                         case ( List.filter (.number >> (==) 1) d.field, List.filter (.number >> (==) 2) d.field ) of
                             ( [ field1 ], [ field2 ] ) ->
-                                case ( fieldType typeRefs parentRef field1, fieldType typeRefs parentRef field2 ) of
+                                case ( fieldType ctx.typeRefs parentRef field1, fieldType ctx.typeRefs parentRef field2 ) of
                                     ( Ok t1, Ok t2 ) ->
                                         Just ( descriptor.name ++ "." ++ d.name, { key = t1, value = t2 } )
 
@@ -259,21 +256,20 @@ message packageName_ syntax typeRefs descriptor =
         nested : Res Packages
         nested =
             List.filter (not << isAMap) nestedTypes
-                |> Errors.combineMap (message nestedPackageName syntax typeRefs)
+                |> Errors.combineMap (message nestedPackageName ctx)
                 |> Result.map Package.concat
 
         mainStruct : Res Struct
         mainStruct =
             Result.map
                 (\fieldsMeta ->
-                    { messages =
-                        [ { dataType = name
-                          , fields = messageFields nestedPackageName oneOfFieldNames fieldsMeta
-                          }
-                        ]
-                    , enums = []
-                    , services = []
-                    , oneOfs = []
+                    { empty
+                        | messages =
+                            [ { dataType = name
+                              , fields = messageFields nestedPackageName oneOfFieldNames fieldsMeta
+                              }
+                            ]
+                        , originFiles = ctx.originFiles
                     }
                 )
                 fieldsMetaResult
@@ -284,10 +280,9 @@ message packageName_ syntax typeRefs descriptor =
 
             else
                 Package.addPackage nestedPackageName
-                    { enums = List.map (enum syntax) descriptor.enumType
-                    , messages = []
-                    , services = []
-                    , oneOfs = []
+                    { empty
+                        | enums = List.map (enum ctx.syntax) descriptor.enumType
+                        , originFiles = ctx.originFiles
                     }
 
         oneofPackage =
@@ -297,7 +292,7 @@ message packageName_ syntax typeRefs descriptor =
                         identity
 
                     else
-                        Package.append (oneofStruct nestedPackageName oneOfFieldNames fieldsMeta)
+                        Package.append (oneofStruct ctx.originFiles nestedPackageName oneOfFieldNames fieldsMeta)
                 )
                 fieldsMetaResult
 
@@ -320,16 +315,13 @@ message packageName_ syntax typeRefs descriptor =
 -- FIELD
 
 
-oneofStruct : C.ModuleName -> List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> Package.Packages
-oneofStruct basePackageName oneOfFieldNames fieldsMeta =
+oneofStruct : Set String -> C.ModuleName -> List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> Package.Packages
+oneofStruct originFiles basePackageName oneOfFieldNames fieldsMeta =
     let
         oneOfFields =
             List.indexedMap (oneOfFieldPackage fieldsMeta) oneOfFieldNames
-
-        base =
-            Struct.empty
     in
-    List.foldl (\oneOf -> Package.addPackage (basePackageName ++ [ Tuple.first oneOf ]) { base | oneOfs = [ oneOf ] })
+    List.foldl (\oneOf -> Package.addPackage (basePackageName ++ [ Tuple.first oneOf ]) { empty | oneOfs = [ oneOf ], originFiles = originFiles })
         Package.empty
         oneOfFields
 
