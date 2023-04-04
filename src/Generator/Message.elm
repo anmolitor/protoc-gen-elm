@@ -515,14 +515,21 @@ oneofDocumentation msgName =
     C.emptyDocComment |> C.markdown ("`" ++ msgName ++ "` options")
 
 
-setterDocumentation : String -> C.Comment C.DocComment
-setterDocumentation fieldName =
-    C.emptyDocComment |> C.markdown ("Updates a field of key `" ++ fieldName ++ "` in any record containing that key")
-
-
 recursiveDataTypeDocumentation : String -> C.Comment C.DocComment
 recursiveDataTypeDocumentation wrappedDataType =
-    C.emptyDocComment |> C.markdown ("Type wrapper for alias type `" ++ wrappedDataType ++ "` to avoid unlimited recursion.")
+    C.emptyDocComment
+        |> C.markdown
+            ("Type wrapper for alias type `"
+                ++ wrappedDataType
+                ++ "` to avoid unlimited recursion."
+            )
+        |> C.markdown
+            ("For a more in-depth explanation why we need this, read this: " ++ recursiveExplanationLink ++ ".")
+
+
+recursiveExplanationLink : String
+recursiveExplanationLink =
+    "https://github.com/elm/compiler/blob/master/hints/recursive-alias.md"
 
 
 recursiveUnwrapDocumentation : String -> C.Comment C.DocComment

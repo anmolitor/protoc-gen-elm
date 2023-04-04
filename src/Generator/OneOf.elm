@@ -19,12 +19,15 @@ reexportAST moduleName ( dataType, opts ) =
                 []
                 (List.map (\( _, optionName, optionType ) -> ( optionName, [ fieldTypeToTypeAnnotationReexport optionType ] )) opts)
 
+        internalName =
+            Mapper.Name.internalize ( moduleName, dataType )
+
         fromInternal =
-            C.funDecl (Just <| C.emptyDocComment)
+            C.funDecl (Just <| Common.fromInternalDocumentation dataType internalName)
                 (Just <|
                     C.funAnn
                         (C.fqTyped Common.internalsModule
-                            (Mapper.Name.internalize ( moduleName, dataType ))
+                            internalName
                             []
                         )
                         (C.typed dataType [])
@@ -45,12 +48,12 @@ reexportAST moduleName ( dataType, opts ) =
                 )
 
         toInternal =
-            C.funDecl (Just <| C.emptyDocComment)
+            C.funDecl (Just <| Common.toInternalDocumentation dataType internalName)
                 (Just <|
                     C.funAnn
                         (C.typed dataType [])
                         (C.fqTyped Common.internalsModule
-                            (Mapper.Name.internalize ( moduleName, dataType ))
+                            internalName
                             []
                         )
                 )

@@ -33,12 +33,15 @@ reexportAST moduleName enum =
                     |> withUnrecognized (\unrecognized constructors -> constructors ++ [ ( unrecognized, [ C.intAnn ] ) ])
                 )
 
+        internalName =
+            Mapper.Name.internalize ( moduleName, enum.dataType )
+
         fromInternal =
-            C.funDecl (Just <| C.emptyDocComment)
+            C.funDecl (Just <| Common.fromInternalDocumentation enum.dataType internalName)
                 (Just <|
                     C.funAnn
                         (C.fqTyped Common.internalsModule
-                            (Mapper.Name.internalize ( moduleName, enum.dataType ))
+                            internalName
                             []
                         )
                         (C.typed enum.dataType [])
@@ -69,12 +72,12 @@ reexportAST moduleName enum =
                 )
 
         toInternal =
-            C.funDecl (Just <| C.emptyDocComment)
+            C.funDecl (Just <| Common.toInternalDocumentation enum.dataType internalName)
                 (Just <|
                     C.funAnn
                         (C.typed enum.dataType [])
                         (C.fqTyped Common.internalsModule
-                            (Mapper.Name.internalize ( moduleName, enum.dataType ))
+                            internalName
                             []
                         )
                 )
