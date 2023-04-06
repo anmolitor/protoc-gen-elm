@@ -1,0 +1,15 @@
+{
+  "name": "grpc-example",
+  "version": "1.0.0",
+  "description": "example for grpc web with protoc-gen-elm",
+  "main": "server.js",
+  "scripts": {
+    "build:frontend": "protoc --plugin=\"protoc-gen-elm=../../index.js\" --elm_out=src greeter.proto"
+  },
+  "author": "Andreas Molitor",
+  "license": "ISC",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.8.13",
+    "@grpc/proto-loader": "^0.7.6"
+  }
+}

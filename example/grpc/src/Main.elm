@@ -1,11 +1,13 @@
 module Main exposing (main)
 
 import Browser
-import Proto.Greeter as Greeter
+import Grpc
 import Html
 import Html.Attributes as Attr
 import Html.Events as Events
 import Http
+import Proto.Hello
+import Proto.Hello.Greeter as Greeter
 import Protobuf.Decode as Decode
 import Protobuf.Encode as Encode
 
@@ -22,7 +24,7 @@ main =
 type Response
     = NotAsked
     | Loading
-    | Success Greeter.HelloResponse
+    | Success Proto.Hello.HelloResponse
     | Failure
 
 
@@ -40,7 +42,7 @@ init _ =
 type Msg
     = SetName String
     | Submit
-    | SendRequest (Result Http.Error Greeter.HelloResponse)
+    | SendRequest (Result Grpc.Error Proto.Hello.HelloResponse)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -50,24 +52,18 @@ update msg model =
             ( { model | name = name, response = NotAsked }, Cmd.none )
 
         Submit ->
-            ( { model | name = "", response = Loading }, sayHello SendRequest model )
+            ( { model | name = "", response = Loading }
+            , { name = model.name }
+                |> Grpc.new Greeter.sayHello
+                |> Grpc.setHost "http://localhost:8080"
+                |> Grpc.toCmd SendRequest
+            )
 
         SendRequest (Ok response) ->
             ( { model | response = Success response }, Cmd.none )
 
         SendRequest (Err _) ->
             ( { model | response = Failure }, Cmd.none )
-
-
-sayHello : (Result Http.Error Greeter.HelloResponse -> msg) -> Model -> Cmd msg
-sayHello toMsg model =
-    Http.post
-        { url = "http://localhost:8001"
-        , body =
-            Http.bytesBody "application/octet-stream" <|
-                Encode.encode (Greeter.encodeHelloRequest (Greeter.HelloRequest model.name))
-        , expect = Decode.expectBytes toMsg Greeter.decodeHelloResponse
-        }
 
 
 view : Model -> Html.Html Msg
