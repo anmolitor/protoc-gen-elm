@@ -185,20 +185,8 @@ It provides functions to convert the generated `Grpc.Rpc` instances into `Cmd`s 
 
 ## Live Example
 
-To run a live example in your browser, first start the example back-end server:
-
-```bash
-npm install
-node example/server.js
-```
-
-The server implements a (basic) back-end for `example/greeter.proto`. You can now generate an Elm module from the same specification. The example code will use the generated `example/src/Proto.Greeter.elm` to communicate with the server. Start the reactor and give it a try on http://localhost:8000/src/Main.elm:
-
-```bash
-cd example
-protoc --elm_out=src greeter.proto
-elm reactor
-```
+To run a minimal live example in your browser, follow the instructions in `/example/grpc/README.md`.
+For a more advanced/realistic example, look at `/example/tonic_vite/README.md`.
 
 ## Well-known types
 

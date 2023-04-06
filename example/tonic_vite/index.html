@@ -1,0 +1,27 @@
+<html>
+
+<head></head>
+
+<body>
+  <script type="module">
+    import { Elm } from './src/Main.elm'
+
+    const USER_ID_KEY = "current_user_id";
+
+    const userId = window.sessionStorage.getItem(USER_ID_KEY);
+
+    const app = Elm.Main.init({
+      flags: { userId },
+    });
+
+    app.ports.setOrDeleteUserId.subscribe(newUserId => {
+      if (newUserId) {
+        window.sessionStorage.setItem(USER_ID_KEY, newUserId);
+      } else {
+        window.sessionStorage.removeItem(USER_ID_KEY);
+      }
+    });
+  </script>
+</body>
+
+</html>

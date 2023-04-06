@@ -1,0 +1,17 @@
+{
+  "name": "tonic_vite",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite"
+  },
+  "author": "Andreas Molitor",
+  "license": "ISC",
+  "devDependencies": {
+    "node-which": "^1.0.0",
+    "protoc-gen-elm": "^3.0.0-beta.1",
+    "vite": "^3.2.5",
+    "vite-plugin-elm": "^2.7.2"
+  }
+}
