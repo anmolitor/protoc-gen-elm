@@ -913,6 +913,8 @@ dependencies = [
 name = "tonic_vite"
 version = "0.1.0"
 dependencies = [
+ "prost",
+ "prost-types",
  "tokio",
  "tonic",
  "tonic-build",

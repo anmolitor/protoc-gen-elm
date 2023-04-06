@@ -9,6 +9,8 @@ edition = "2021"
 tokio = { version = "1.25.0", features = ["full"] }
 tonic = "0.9.1"
 tonic-web = "0.9.1"
+prost = "0.11"
+prost-types = "0.11.8"
 
 [build-dependencies]
 tonic-build = "0.9.1"

@@ -34,11 +34,11 @@ impl TodoService for TodoServiceImpl {
             .todos
             .read()
             .map_err(into_status)?
-            .into_iter()
-            .filter(|(_, (_, todo_user_id))| user_id == todo_user_id)
+            .iter()
+            .filter(|(_, (_, todo_user_id))| &user_id == todo_user_id)
             .map(|(id, (todo, _))| TodoWithId {
-                todo: Some(todo),
-                id,
+                todo: Some(todo.clone()),
+                id: *id,
             })
             .collect();
 
@@ -80,24 +80,24 @@ impl TodoService for TodoServiceImpl {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "127.0.0.1:3000".parse().unwrap();
 
-    let todoService = TodoServiceImpl {
+    let todo_service = TodoServiceImpl {
         next_id: Arc::new(Mutex::new(0)),
         todos: Arc::new(RwLock::new(HashMap::new())),
     };
-    let todoServiceServer = TodoServiceServer::new(todoService);
+    let todo_service_server = TodoServiceServer::new(todo_service);
 
     println!("GreeterServer listening on {}", addr);
 
     Server::builder()
         // GrpcWeb is over http1 so we must enable it.
         .accept_http1(true)
-        .add_service(tonic_web::enable(todoServiceServer))
+        .add_service(tonic_web::enable(todo_service_server))
         .serve(addr)
         .await?;
 
     Ok(())
 }
 
-fn into_status<T>(err: PoisonError<T>) -> Status {
+fn into_status<T>(_err: PoisonError<T>) -> Status {
     Status::internal("Read/Write Lock Error")
 }
