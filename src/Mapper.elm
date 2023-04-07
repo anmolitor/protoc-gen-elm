@@ -333,6 +333,22 @@ message moduleRef ctx sourceCodePath descriptor =
                     )
                 |> Result.map Package.concat
 
+        docs =
+            sourceDocumentation ctx sourceCodePath ++ fieldDocs
+
+        fieldDocs =
+            List.indexedMap
+                (\index field ->
+                    case sourceDocumentation ctx (sourceCodePath ++ [ fieldNumbersDescriptorProto.field, index ]) of
+                        [] ->
+                            []
+
+                        firstLine :: otherLines ->
+                            (field.name ++ ": " ++ firstLine) :: List.map ((++) " ") otherLines
+                )
+                descriptor.field
+                |> List.concatMap identity
+
         mainStruct : Res Struct
         mainStruct =
             Result.map
@@ -341,7 +357,7 @@ message moduleRef ctx sourceCodePath descriptor =
                         | messages =
                             [ { dataType = name
                               , fields = messageFields { moduleRef | package = nestedPackageName } oneOfFieldNames fieldsMeta
-                              , docs = sourceDocumentation ctx sourceCodePath
+                              , docs = docs
                               }
                             ]
                         , originFiles = ctx.originFiles

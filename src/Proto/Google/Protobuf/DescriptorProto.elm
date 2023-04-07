@@ -60,6 +60,14 @@ encodeReservedRange =
 
 
 
+start:  Inclusive.
+
+
+
+end:  Exclusive.
+
+
+
 -}
 type alias ReservedRange =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__DescriptorProto__ReservedRange
@@ -101,7 +109,12 @@ encodeExtensionRange =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__DescriptorProto__ExtensionRange
 
 
-{-| `ExtensionRange` message
+{-| start:  Inclusive.
+
+
+
+end:  Exclusive.
+
 
 
 -}

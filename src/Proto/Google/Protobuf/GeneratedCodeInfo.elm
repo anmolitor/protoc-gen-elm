@@ -54,7 +54,24 @@ encodeAnnotation =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__GeneratedCodeInfo__Annotation
 
 
-{-| `Annotation` message
+{-| path:  Identifies the element in the original source .proto file. This field
+ is formatted the same as SourceCodeInfo.Location.path.
+
+
+
+source_file:  Identifies the filesystem path to the original source .proto.
+
+
+
+begin:  Identifies the starting offset in bytes in the generated code
+ that relates to the identified object.
+
+
+
+end:  Identifies the ending offset in bytes in the generated code that
+ relates to the identified offset. The end offset should be one past
+ the last relevant byte (so the length of the text = end - begin).
+
 
 
 -}

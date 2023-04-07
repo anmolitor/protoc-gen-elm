@@ -58,6 +58,22 @@ encodeCodeGeneratorResponse =
 
 
 
+error:  Error message.  If non-empty, code generation failed.  The plugin process
+ should exit with status code zero even if it reports an error in this way.
+
+ This should be used to indicate errors in .proto files which prevent the
+ code generator from generating correct code.  Errors which indicate a
+ problem in protoc itself -- such as the input CodeGeneratorRequest being
+ unparseable -- should be reported by writing a message to stderr and
+ exiting with a non-zero status code.
+
+
+
+supported_features:  A bitmask of supported features that the code generator supports.
+ This is a bitwise "or" of values from the Feature enum.
+
+
+
 -}
 type alias CodeGeneratorResponse =
     Proto.Google.Protobuf.Compiler.Internals_.Proto__Google__Protobuf__Compiler__CodeGeneratorResponse
@@ -103,6 +119,37 @@ encodeCodeGeneratorRequest =
 
 
 
+file_to_generate:  The .proto files that were explicitly listed on the command-line.  The
+ code generator should generate code only for these files.  Each file's
+ descriptor will be included in proto_file, below.
+
+
+
+parameter:  The generator parameter passed on the command-line.
+
+
+
+proto_file:  FileDescriptorProtos for all files in files_to_generate and everything
+ they import.  The files will appear in topological order, so each file
+ appears before any file that imports it.
+
+ protoc guarantees that all proto_files will be written after
+ the fields above, even though this is not technically guaranteed by the
+ protobuf wire format.  This theoretically could allow a plugin to stream
+ in the FileDescriptorProtos and handle them one by one rather than read
+ the entire set into memory at once.  However, as of this writing, this
+ is not similarly optimized on protoc's end -- it will store all fields in
+ memory at once before sending them to the plugin.
+
+ Type names of fields and extensions in the FileDescriptorProto are always
+ fully qualified.
+
+
+
+compiler_version:  The version number of protocol compiler.
+
+
+
 -}
 type alias CodeGeneratorRequest =
     Proto.Google.Protobuf.Compiler.Internals_.Proto__Google__Protobuf__Compiler__CodeGeneratorRequest
@@ -145,6 +192,11 @@ encodeVersion =
 
 
 {-|  The version number of protocol compiler.
+
+
+
+suffix:  A suffix for alpha, beta or rc release, e.g., "alpha-1", "rc2". It should
+ be empty for mainline stable releases.
 
 
 

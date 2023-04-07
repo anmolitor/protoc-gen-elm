@@ -63,6 +63,14 @@ encodeEnumReservedRange =
 
 
 
+start:  Inclusive.
+
+
+
+end:  Inclusive.
+
+
+
 -}
 type alias EnumReservedRange =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange
