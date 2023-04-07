@@ -138,8 +138,22 @@ reexportAST internalsModule moduleName enum =
                 (Just <| C.typed enum.dataType [])
                 (Common.defaultName enum.dataType)
                 (C.val defaultEnum)
+
+        fieldNumbersDecl : C.Declaration
+        fieldNumbersDecl =
+            C.funDecl (Just <| Common.fieldNumbersDocumentation enum.dataType)
+                (Just <| C.funAnn (C.typed enum.dataType []) C.intAnn)
+                (Common.fieldNumbersName enum.dataType)
+                [ C.varPattern "n_" ]
+                (C.caseExpr (C.val "n_") <|
+                    withUnrecognized (\unrecognized cases -> cases ++ [ ( C.namedPattern unrecognized [ C.varPattern "m_" ], C.val "m_" ) ]) <|
+                        List.map
+                            (\( n, optName ) -> ( C.namedPattern optName [], C.int n ))
+                        <|
+                            NonEmpty.toList enum.fields
+                )
     in
-    [ type_, decoder, encoder, fromInternal, toInternal, default ]
+    [ type_, decoder, encoder, fromInternal, toInternal, default, fieldNumbersDecl ]
 
 
 toAST : Enum -> List C.Declaration

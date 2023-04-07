@@ -138,8 +138,15 @@ toAST msg =
                 (Just <| C.typed msg.dataType [])
                 (Common.defaultName msg.dataType)
                 (C.record <| List.map (Tuple.mapSecond toDefaultValue) msg.fields)
+
+        fieldNumbersDecl : C.Declaration
+        fieldNumbersDecl =
+            C.valDecl (Just <| Common.fieldNumbersDocumentation msg.dataType)
+                (Just <| C.recordAnn <| List.map (Tuple.mapSecond fieldNumberTypeForField) msg.fields)
+                (Common.fieldNumbersName msg.dataType)
+                (C.record <| List.map (Tuple.mapSecond fieldNumberForField) msg.fields)
     in
-    [ type_, encoder, decoder, default ]
+    [ type_, encoder, decoder, default, fieldNumbersDecl ]
         ++ List.concatMap fieldDeclarations msg.fields
 
 
@@ -539,6 +546,35 @@ fieldToTypeAnnotation field =
 
         OneOfField ref ->
             C.maybeAnn <| C.fqTyped (Common.internalsModule ref.rootPackage) (Mapper.Name.internalize ( ref.package, ref.name )) []
+
+
+fieldNumberTypeForField : Field -> C.TypeAnnotation
+fieldNumberTypeForField field =
+    case field of
+        NormalField _ _ _ ->
+            C.intAnn
+
+        MapField _ _ _ ->
+            C.intAnn
+
+        OneOfField ref ->
+            C.fqTyped
+                (Common.internalsModule ref.rootPackage)
+                (Common.fieldNumbersTypeName <| Mapper.Name.internalize ( ref.package, ref.name ))
+                []
+
+
+fieldNumberForField : Field -> C.Expression
+fieldNumberForField field =
+    case field of
+        NormalField n _ _ ->
+            C.int n
+
+        MapField n _ _ ->
+            C.int n
+
+        OneOfField ref ->
+            C.fqVal (Common.internalsModule ref.rootPackage) (Common.fieldNumbersName <| Mapper.Name.internalize ( ref.package, ref.name ))
 
 
 recursiveDataTypeName : String -> String

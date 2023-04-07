@@ -54,6 +54,22 @@ toInternalDocumentation typeName internalName =
         |> C.markdown "Using two different types is necessary to avoid recursive module references while having readable constructor names."
 
 
+fieldNumbersName : String -> String
+fieldNumbersName typeName =
+    "fieldNumbers" ++ typeName
+
+
+fieldNumbersTypeName : String -> String
+fieldNumbersTypeName typeName =
+    "FieldNumbers" ++ typeName
+
+
+fieldNumbersDocumentation : String -> C.Comment C.DocComment
+fieldNumbersDocumentation typeName =
+    C.emptyDocComment
+        |> C.markdown ("The field numbers for the fields of `" ++ typeName ++ "`. This is mostly useful for internals, like documentation generation.")
+
+
 setter : FieldName -> C.Expression
 setter fieldName =
     C.parens <|

@@ -102,7 +102,7 @@ type alias Map =
 
 
 type alias OneOf =
-    List ( FieldNumber, DataType, FieldType )
+    List { fieldNumber : Int, dataType : String, fieldName : String, fieldType : FieldType }
 
 
 type alias FieldName =

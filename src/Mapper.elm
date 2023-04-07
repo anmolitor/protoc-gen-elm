@@ -407,7 +407,12 @@ oneOfFieldPackage fields index name =
             (\( fieldName, field ) ->
                 case field of
                     NormalField fieldNumber _ type_ ->
-                        Just ( fieldNumber, Name.type_ fieldName, type_ )
+                        Just
+                            { fieldNumber = fieldNumber
+                            , fieldType = type_
+                            , fieldName = fieldName
+                            , dataType = Name.type_ fieldName
+                            }
 
                     _ ->
                         Nothing

@@ -17,7 +17,7 @@ reexportAST internalsModule moduleName ( dataType, opts ) =
             C.customTypeDecl (Just <| oneofDocumentation dataType)
                 dataType
                 []
-                (List.map (\( _, optionName, optionType ) -> ( optionName, [ fieldTypeToTypeAnnotationReexport optionType ] )) opts)
+                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotationReexport o.fieldType ] )) opts)
 
         internalName =
             Mapper.Name.internalize ( moduleName, dataType )
@@ -36,11 +36,11 @@ reexportAST internalsModule moduleName ( dataType, opts ) =
                 [ C.varPattern "data_" ]
                 (C.caseExpr (C.val "data_")
                     (List.map
-                        (\( _, optionName, _ ) ->
+                        (\o ->
                             ( C.fqNamedPattern internalsModule
-                                (Mapper.Name.internalize ( moduleName, optionName ))
+                                (Mapper.Name.internalize ( moduleName, o.dataType ))
                                 [ C.varPattern "n_" ]
-                            , C.apply [ C.val optionName, C.val "n_" ]
+                            , C.apply [ C.val o.dataType, C.val "n_" ]
                             )
                         )
                         opts
@@ -61,11 +61,11 @@ reexportAST internalsModule moduleName ( dataType, opts ) =
                 [ C.varPattern "data_" ]
                 (C.caseExpr (C.val "data_")
                     (List.map
-                        (\( _, optionName, _ ) ->
-                            ( C.namedPattern optionName [ C.varPattern "n_" ]
+                        (\o ->
+                            ( C.namedPattern o.dataType [ C.varPattern "n_" ]
                             , C.apply
                                 [ C.fqVal internalsModule
-                                    (Mapper.Name.internalize ( moduleName, optionName ))
+                                    (Mapper.Name.internalize ( moduleName, o.dataType ))
                                 , C.val "n_"
                                 ]
                             )
@@ -103,7 +103,7 @@ toAST ( dataType, opts ) =
                 (Just <| oneofDocumentation dataType)
                 dataType
                 []
-                (List.map (\( _, optionName, innerFieldType ) -> ( optionName, [ fieldTypeToTypeAnnotation innerFieldType ] )) opts)
+                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotation o.fieldType ] )) opts)
 
         encoder =
             C.funDecl Nothing
@@ -115,9 +115,9 @@ toAST ( dataType, opts ) =
                     (C.val "value")
                     (( C.namedPattern "Nothing" [], C.tuple [ C.int 0, Meta.Encode.none ] )
                         :: List.map
-                            (\( fieldNumber, optionName, fieldType ) ->
-                                ( C.namedPattern "Just" [ C.parensPattern (C.namedPattern optionName [ C.varPattern "innerValue" ]) ]
-                                , C.tuple [ C.int fieldNumber, C.apply [ fieldTypeToEncoder Required fieldType, C.val "innerValue" ] ]
+                            (\o ->
+                                ( C.namedPattern "Just" [ C.parensPattern (C.namedPattern o.dataType [ C.varPattern "innerValue" ]) ]
+                                , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required o.fieldType, C.val "innerValue" ] ]
                                 )
                             )
                             opts
@@ -138,13 +138,13 @@ toAST ( dataType, opts ) =
                     [ Meta.Decode.oneOf
                     , C.list
                         (List.map
-                            (\( fieldNumber, optionName, fieldType ) ->
+                            (\o ->
                                 C.tuple
-                                    [ C.int fieldNumber
+                                    [ C.int o.fieldNumber
                                     , C.apply
                                         [ Meta.Decode.map
-                                        , C.val optionName
-                                        , case fieldType of
+                                        , C.val o.dataType
+                                        , case o.fieldType of
                                             Primitive p _ ->
                                                 Meta.Decode.forPrimitive p
 
@@ -163,8 +163,21 @@ toAST ( dataType, opts ) =
                             opts
                         )
                     ]
+
+        fieldNumbersTypeDecl : C.Declaration
+        fieldNumbersTypeDecl =
+            C.aliasDecl Nothing (Common.fieldNumbersTypeName dataType) [] <|
+                C.recordAnn <|
+                    List.map (\o -> ( o.fieldName, C.intAnn )) opts
+
+        fieldNumbersDecl : C.Declaration
+        fieldNumbersDecl =
+            C.valDecl (Just <| Common.fieldNumbersDocumentation dataType)
+                (Just <| C.typed (Common.fieldNumbersTypeName dataType) [])
+                (Common.fieldNumbersName dataType)
+                (C.record <| List.map (\o -> ( o.fieldName, C.int o.fieldNumber )) opts)
     in
-    [ type_, encoder, decoder ]
+    [ type_, encoder, decoder, fieldNumbersTypeDecl, fieldNumbersDecl ]
 
 
 oneofDocumentation : String -> C.Comment C.DocComment

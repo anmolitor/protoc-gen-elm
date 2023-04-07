@@ -36,11 +36,11 @@ unify rootModName packages =
                         (\( name, oneOf ) ->
                             ( Name.internalize ( moduleName, name )
                             , List.map
-                                (\( index, optName, optType ) ->
-                                    ( index
-                                    , Name.internalize ( moduleName, optName )
-                                    , Model.unqualifySelectedFieldType rootModName optType
-                                    )
+                                (\o ->
+                                    { o
+                                        | dataType = Name.internalize ( moduleName, o.dataType )
+                                        , fieldType = Model.unqualifySelectedFieldType rootModName o.fieldType
+                                    }
                                 )
                                 oneOf
                             )
