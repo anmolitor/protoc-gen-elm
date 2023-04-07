@@ -18,6 +18,15 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `CodeGeneratorResponse`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersCodeGeneratorResponse : { error : Int, supportedFeatures : Int, file : Int }
+fieldNumbersCodeGeneratorResponse =
+    Proto.Google.Protobuf.Compiler.Internals_.fieldNumbersProto__Google__Protobuf__Compiler__CodeGeneratorResponse
+
+
 {-| Default for CodeGeneratorResponse. Should only be used for 'required' decoders as an initial value.
 
 
@@ -53,6 +62,15 @@ type alias CodeGeneratorResponse =
     Proto.Google.Protobuf.Compiler.Internals_.Proto__Google__Protobuf__Compiler__CodeGeneratorResponse
 
 
+{-| The field numbers for the fields of `CodeGeneratorRequest`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersCodeGeneratorRequest : { fileToGenerate : Int, parameter : Int, protoFile : Int, compilerVersion : Int }
+fieldNumbersCodeGeneratorRequest =
+    Proto.Google.Protobuf.Compiler.Internals_.fieldNumbersProto__Google__Protobuf__Compiler__CodeGeneratorRequest
+
+
 {-| Default for CodeGeneratorRequest. Should only be used for 'required' decoders as an initial value.
 
 
@@ -86,6 +104,15 @@ encodeCodeGeneratorRequest =
 -}
 type alias CodeGeneratorRequest =
     Proto.Google.Protobuf.Compiler.Internals_.Proto__Google__Protobuf__Compiler__CodeGeneratorRequest
+
+
+{-| The field numbers for the fields of `Version`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersVersion : { major : Int, minor : Int, patch : Int, suffix : Int }
+fieldNumbersVersion =
+    Proto.Google.Protobuf.Compiler.Internals_.fieldNumbersProto__Google__Protobuf__Compiler__Version
 
 
 {-| Default for Version. Should only be used for 'required' decoders as an initial value.

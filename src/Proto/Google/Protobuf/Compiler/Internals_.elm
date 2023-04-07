@@ -20,6 +20,16 @@ import Protobuf.Encode
 import Protobuf.Types.Int64
 
 
+{-| The field numbers for the fields of `Proto__Google__Protobuf__Compiler__CodeGeneratorResponse__File`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File :
+    { name : Int, insertionPoint : Int, content : Int, generatedCodeInfo : Int }
+fieldNumbersProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File =
+    { name = 1, insertionPoint = 2, content = 15, generatedCodeInfo = 16 }
+
+
 {-| Default for Proto__Google__Protobuf__Compiler__CodeGeneratorResponse__File. Should only be used for 'required' decoders as an initial value.
 
 
@@ -81,6 +91,16 @@ type alias Proto__Google__Protobuf__Compiler__CodeGeneratorResponse__File =
     }
 
 
+{-| The field numbers for the fields of `Proto__Google__Protobuf__Compiler__CodeGeneratorResponse`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersProto__Google__Protobuf__Compiler__CodeGeneratorResponse :
+    { error : Int, supportedFeatures : Int, file : Int }
+fieldNumbersProto__Google__Protobuf__Compiler__CodeGeneratorResponse =
+    { error = 1, supportedFeatures = 2, file = 15 }
+
+
 {-| Default for Proto__Google__Protobuf__Compiler__CodeGeneratorResponse. Should only be used for 'required' decoders as an initial value.
 
 
@@ -133,6 +153,16 @@ type alias Proto__Google__Protobuf__Compiler__CodeGeneratorResponse =
     , supportedFeatures : Protobuf.Types.Int64.Int64
     , file : List Proto__Google__Protobuf__Compiler__CodeGeneratorResponse__File
     }
+
+
+{-| The field numbers for the fields of `Proto__Google__Protobuf__Compiler__CodeGeneratorRequest`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersProto__Google__Protobuf__Compiler__CodeGeneratorRequest :
+    { fileToGenerate : Int, parameter : Int, protoFile : Int, compilerVersion : Int }
+fieldNumbersProto__Google__Protobuf__Compiler__CodeGeneratorRequest =
+    { fileToGenerate = 1, parameter = 2, protoFile = 15, compilerVersion = 3 }
 
 
 {-| Default for Proto__Google__Protobuf__Compiler__CodeGeneratorRequest. Should only be used for 'required' decoders as an initial value.
@@ -198,6 +228,15 @@ type alias Proto__Google__Protobuf__Compiler__CodeGeneratorRequest =
     , protoFile : List Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__FileDescriptorProto
     , compilerVersion : Maybe Proto__Google__Protobuf__Compiler__Version
     }
+
+
+{-| The field numbers for the fields of `Proto__Google__Protobuf__Compiler__Version`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersProto__Google__Protobuf__Compiler__Version : { major : Int, minor : Int, patch : Int, suffix : Int }
+fieldNumbersProto__Google__Protobuf__Compiler__Version =
+    { major = 1, minor = 2, patch = 3, suffix = 4 }
 
 
 {-| Default for Proto__Google__Protobuf__Compiler__Version. Should only be used for 'required' decoders as an initial value.

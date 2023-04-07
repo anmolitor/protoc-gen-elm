@@ -18,6 +18,23 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `Label`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersLabel : Label -> Int
+fieldNumbersLabel n_ =
+    case n_ of
+        LABELOPTIONAL ->
+            1
+
+        LABELREQUIRED ->
+            2
+
+        LABELREPEATED ->
+            3
+
+
 {-| Default for Label. Should only be used for 'required' decoders as an initial value.
 
 
@@ -95,6 +112,68 @@ type Label
     = LABELOPTIONAL
     | LABELREQUIRED
     | LABELREPEATED
+
+
+{-| The field numbers for the fields of `Type`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersType : Type -> Int
+fieldNumbersType n_ =
+    case n_ of
+        TYPEDOUBLE ->
+            1
+
+        TYPEFLOAT ->
+            2
+
+        TYPEINT64 ->
+            3
+
+        TYPEUINT64 ->
+            4
+
+        TYPEINT32 ->
+            5
+
+        TYPEFIXED64 ->
+            6
+
+        TYPEFIXED32 ->
+            7
+
+        TYPEBOOL ->
+            8
+
+        TYPESTRING ->
+            9
+
+        TYPEGROUP ->
+            10
+
+        TYPEMESSAGE ->
+            11
+
+        TYPEBYTES ->
+            12
+
+        TYPEUINT32 ->
+            13
+
+        TYPEENUM ->
+            14
+
+        TYPESFIXED32 ->
+            15
+
+        TYPESFIXED64 ->
+            16
+
+        TYPESINT32 ->
+            17
+
+        TYPESINT64 ->
+            18
 
 
 {-| Default for Type. Should only be used for 'required' decoders as an initial value.

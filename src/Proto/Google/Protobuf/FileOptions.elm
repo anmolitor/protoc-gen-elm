@@ -18,6 +18,23 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `OptimizeMode`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersOptimizeMode : OptimizeMode -> Int
+fieldNumbersOptimizeMode n_ =
+    case n_ of
+        SPEED ->
+            1
+
+        CODESIZE ->
+            2
+
+        LITERUNTIME ->
+            3
+
+
 {-| Default for OptimizeMode. Should only be used for 'required' decoders as an initial value.
 
 

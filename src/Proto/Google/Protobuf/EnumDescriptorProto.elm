@@ -18,6 +18,15 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `EnumReservedRange`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersEnumReservedRange : { start : Int, end : Int }
+fieldNumbersEnumReservedRange =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange
+
+
 {-| Default for EnumReservedRange. Should only be used for 'required' decoders as an initial value.
 
 

@@ -18,6 +18,15 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `ReservedRange`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersReservedRange : { start : Int, end : Int }
+fieldNumbersReservedRange =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__DescriptorProto__ReservedRange
+
+
 {-| Default for ReservedRange. Should only be used for 'required' decoders as an initial value.
 
 
@@ -51,6 +60,15 @@ encodeReservedRange =
 -}
 type alias ReservedRange =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__DescriptorProto__ReservedRange
+
+
+{-| The field numbers for the fields of `ExtensionRange`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersExtensionRange : { start : Int, end : Int, options : Int }
+fieldNumbersExtensionRange =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__DescriptorProto__ExtensionRange
 
 
 {-| Default for ExtensionRange. Should only be used for 'required' decoders as an initial value.

@@ -18,6 +18,23 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `JSType`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersJSType : JSType -> Int
+fieldNumbersJSType n_ =
+    case n_ of
+        JSNORMAL ->
+            0
+
+        JSSTRING ->
+            1
+
+        JSNUMBER ->
+            2
+
+
 {-| Default for JSType. Should only be used for 'required' decoders as an initial value.
 
 
@@ -95,6 +112,23 @@ type JSType
     = JSNORMAL
     | JSSTRING
     | JSNUMBER
+
+
+{-| The field numbers for the fields of `CType`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersCType : CType -> Int
+fieldNumbersCType n_ =
+    case n_ of
+        STRING ->
+            0
+
+        CORD ->
+            1
+
+        STRINGPIECE ->
+            2
 
 
 {-| Default for CType. Should only be used for 'required' decoders as an initial value.

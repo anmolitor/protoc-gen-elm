@@ -18,6 +18,16 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `Location`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersLocation :
+    { path : Int, span : Int, leadingComments : Int, trailingComments : Int, leadingDetachedComments : Int }
+fieldNumbersLocation =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__SourceCodeInfo__Location
+
+
 {-| Default for Location. Should only be used for 'required' decoders as an initial value.
 
 

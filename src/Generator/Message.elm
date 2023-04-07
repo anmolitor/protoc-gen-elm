@@ -91,8 +91,15 @@ reexportAST internalsModule moduleName msg =
 
                 OneOfField _ ->
                     []
+
+        fieldNumbersDecl : C.Declaration
+        fieldNumbersDecl =
+            C.valDecl (Just <| Common.fieldNumbersDocumentation msg.dataType)
+                (Just <| C.recordAnn <| List.map (Tuple.mapSecond fieldNumberTypeForField) msg.fields)
+                (Common.fieldNumbersName msg.dataType)
+                (C.fqVal internalsModule <| Common.fieldNumbersName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
     in
-    [ type_, encoder, decoder, default ] ++ List.concatMap fieldDeclarationsReexport msg.fields
+    [ type_, encoder, decoder, default, fieldNumbersDecl ] ++ List.concatMap fieldDeclarationsReexport msg.fields
 
 
 toAST : Message -> List C.Declaration

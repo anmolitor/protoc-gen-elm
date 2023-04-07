@@ -18,6 +18,15 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `NamePart`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersNamePart : { namePart : Int, isExtension : Int }
+fieldNumbersNamePart =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__UninterpretedOption__NamePart
+
+
 {-| Default for NamePart. Should only be used for 'required' decoders as an initial value.
 
 

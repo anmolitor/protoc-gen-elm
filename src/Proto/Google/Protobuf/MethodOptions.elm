@@ -18,6 +18,23 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `IdempotencyLevel`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersIdempotencyLevel : IdempotencyLevel -> Int
+fieldNumbersIdempotencyLevel n_ =
+    case n_ of
+        IDEMPOTENCYUNKNOWN ->
+            0
+
+        NOSIDEEFFECTS ->
+            1
+
+        IDEMPOTENT ->
+            2
+
+
 {-| Default for IdempotencyLevel. Should only be used for 'required' decoders as an initial value.
 
 

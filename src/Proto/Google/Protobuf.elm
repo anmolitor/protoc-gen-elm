@@ -18,6 +18,15 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `GeneratedCodeInfo`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersGeneratedCodeInfo : { annotation : Int }
+fieldNumbersGeneratedCodeInfo =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__GeneratedCodeInfo
+
+
 {-| Default for GeneratedCodeInfo. Should only be used for 'required' decoders as an initial value.
 
 
@@ -51,6 +60,15 @@ encodeGeneratedCodeInfo =
 -}
 type alias GeneratedCodeInfo =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__GeneratedCodeInfo
+
+
+{-| The field numbers for the fields of `SourceCodeInfo`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersSourceCodeInfo : { location : Int }
+fieldNumbersSourceCodeInfo =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__SourceCodeInfo
 
 
 {-| Default for SourceCodeInfo. Should only be used for 'required' decoders as an initial value.
@@ -88,6 +106,23 @@ type alias SourceCodeInfo =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__SourceCodeInfo
 
 
+{-| The field numbers for the fields of `UninterpretedOption`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersUninterpretedOption :
+    { name : Int
+    , identifierValue : Int
+    , positiveIntValue : Int
+    , negativeIntValue : Int
+    , doubleValue : Int
+    , stringValue : Int
+    , aggregateValue : Int
+    }
+fieldNumbersUninterpretedOption =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__UninterpretedOption
+
+
 {-| Default for UninterpretedOption. Should only be used for 'required' decoders as an initial value.
 
 
@@ -121,6 +156,15 @@ encodeUninterpretedOption =
 -}
 type alias UninterpretedOption =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__UninterpretedOption
+
+
+{-| The field numbers for the fields of `MethodOptions`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersMethodOptions : { deprecated : Int, idempotencyLevel : Int, uninterpretedOption : Int }
+fieldNumbersMethodOptions =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__MethodOptions
 
 
 {-| Default for MethodOptions. Should only be used for 'required' decoders as an initial value.
@@ -158,6 +202,15 @@ type alias MethodOptions =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__MethodOptions
 
 
+{-| The field numbers for the fields of `ServiceOptions`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersServiceOptions : { deprecated : Int, uninterpretedOption : Int }
+fieldNumbersServiceOptions =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__ServiceOptions
+
+
 {-| Default for ServiceOptions. Should only be used for 'required' decoders as an initial value.
 
 
@@ -191,6 +244,15 @@ encodeServiceOptions =
 -}
 type alias ServiceOptions =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__ServiceOptions
+
+
+{-| The field numbers for the fields of `EnumValueOptions`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersEnumValueOptions : { deprecated : Int, uninterpretedOption : Int }
+fieldNumbersEnumValueOptions =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__EnumValueOptions
 
 
 {-| Default for EnumValueOptions. Should only be used for 'required' decoders as an initial value.
@@ -228,6 +290,15 @@ type alias EnumValueOptions =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__EnumValueOptions
 
 
+{-| The field numbers for the fields of `EnumOptions`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersEnumOptions : { allowAlias : Int, deprecated : Int, uninterpretedOption : Int }
+fieldNumbersEnumOptions =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__EnumOptions
+
+
 {-| Default for EnumOptions. Should only be used for 'required' decoders as an initial value.
 
 
@@ -261,6 +332,15 @@ encodeEnumOptions =
 -}
 type alias EnumOptions =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__EnumOptions
+
+
+{-| The field numbers for the fields of `OneofOptions`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersOneofOptions : { uninterpretedOption : Int }
+fieldNumbersOneofOptions =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__OneofOptions
 
 
 {-| Default for OneofOptions. Should only be used for 'required' decoders as an initial value.
@@ -298,6 +378,16 @@ type alias OneofOptions =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__OneofOptions
 
 
+{-| The field numbers for the fields of `FieldOptions`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersFieldOptions :
+    { ctype : Int, packed : Int, jstype : Int, lazy : Int, deprecated : Int, weak : Int, uninterpretedOption : Int }
+fieldNumbersFieldOptions =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__FieldOptions
+
+
 {-| Default for FieldOptions. Should only be used for 'required' decoders as an initial value.
 
 
@@ -331,6 +421,21 @@ encodeFieldOptions =
 -}
 type alias FieldOptions =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__FieldOptions
+
+
+{-| The field numbers for the fields of `MessageOptions`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersMessageOptions :
+    { messageSetWireFormat : Int
+    , noStandardDescriptorAccessor : Int
+    , deprecated : Int
+    , mapEntry : Int
+    , uninterpretedOption : Int
+    }
+fieldNumbersMessageOptions =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__MessageOptions
 
 
 {-| Default for MessageOptions. Should only be used for 'required' decoders as an initial value.
@@ -368,6 +473,37 @@ type alias MessageOptions =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__MessageOptions
 
 
+{-| The field numbers for the fields of `FileOptions`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersFileOptions :
+    { javaPackage : Int
+    , javaOuterClassname : Int
+    , javaMultipleFiles : Int
+    , javaGenerateEqualsAndHash : Int
+    , javaStringCheckUtf8 : Int
+    , optimizeFor : Int
+    , goPackage : Int
+    , ccGenericServices : Int
+    , javaGenericServices : Int
+    , pyGenericServices : Int
+    , phpGenericServices : Int
+    , deprecated : Int
+    , ccEnableArenas : Int
+    , objcClassPrefix : Int
+    , csharpNamespace : Int
+    , swiftPrefix : Int
+    , phpClassPrefix : Int
+    , phpNamespace : Int
+    , phpMetadataNamespace : Int
+    , rubyPackage : Int
+    , uninterpretedOption : Int
+    }
+fieldNumbersFileOptions =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__FileOptions
+
+
 {-| Default for FileOptions. Should only be used for 'required' decoders as an initial value.
 
 
@@ -401,6 +537,16 @@ encodeFileOptions =
 -}
 type alias FileOptions =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__FileOptions
+
+
+{-| The field numbers for the fields of `MethodDescriptorProto`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersMethodDescriptorProto :
+    { name : Int, inputType : Int, outputType : Int, options : Int, clientStreaming : Int, serverStreaming : Int }
+fieldNumbersMethodDescriptorProto =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__MethodDescriptorProto
 
 
 {-| Default for MethodDescriptorProto. Should only be used for 'required' decoders as an initial value.
@@ -438,6 +584,15 @@ type alias MethodDescriptorProto =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__MethodDescriptorProto
 
 
+{-| The field numbers for the fields of `ServiceDescriptorProto`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersServiceDescriptorProto : { name : Int, method : Int, options : Int }
+fieldNumbersServiceDescriptorProto =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__ServiceDescriptorProto
+
+
 {-| Default for ServiceDescriptorProto. Should only be used for 'required' decoders as an initial value.
 
 
@@ -471,6 +626,15 @@ encodeServiceDescriptorProto =
 -}
 type alias ServiceDescriptorProto =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__ServiceDescriptorProto
+
+
+{-| The field numbers for the fields of `EnumValueDescriptorProto`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersEnumValueDescriptorProto : { name : Int, number : Int, options : Int }
+fieldNumbersEnumValueDescriptorProto =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__EnumValueDescriptorProto
 
 
 {-| Default for EnumValueDescriptorProto. Should only be used for 'required' decoders as an initial value.
@@ -508,6 +672,15 @@ type alias EnumValueDescriptorProto =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__EnumValueDescriptorProto
 
 
+{-| The field numbers for the fields of `EnumDescriptorProto`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersEnumDescriptorProto : { name : Int, value : Int, options : Int, reservedRange : Int, reservedName : Int }
+fieldNumbersEnumDescriptorProto =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__EnumDescriptorProto
+
+
 {-| Default for EnumDescriptorProto. Should only be used for 'required' decoders as an initial value.
 
 
@@ -541,6 +714,15 @@ encodeEnumDescriptorProto =
 -}
 type alias EnumDescriptorProto =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__EnumDescriptorProto
+
+
+{-| The field numbers for the fields of `OneofDescriptorProto`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersOneofDescriptorProto : { name : Int, options : Int }
+fieldNumbersOneofDescriptorProto =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__OneofDescriptorProto
 
 
 {-| Default for OneofDescriptorProto. Should only be used for 'required' decoders as an initial value.
@@ -578,6 +760,27 @@ type alias OneofDescriptorProto =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__OneofDescriptorProto
 
 
+{-| The field numbers for the fields of `FieldDescriptorProto`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersFieldDescriptorProto :
+    { name : Int
+    , number : Int
+    , label : Int
+    , type_ : Int
+    , typeName : Int
+    , extendee : Int
+    , defaultValue : Int
+    , oneofIndex : Int
+    , jsonName : Int
+    , options : Int
+    , proto3Optional : Int
+    }
+fieldNumbersFieldDescriptorProto =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__FieldDescriptorProto
+
+
 {-| Default for FieldDescriptorProto. Should only be used for 'required' decoders as an initial value.
 
 
@@ -611,6 +814,15 @@ encodeFieldDescriptorProto =
 -}
 type alias FieldDescriptorProto =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__FieldDescriptorProto
+
+
+{-| The field numbers for the fields of `ExtensionRangeOptions`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersExtensionRangeOptions : { uninterpretedOption : Int }
+fieldNumbersExtensionRangeOptions =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__ExtensionRangeOptions
 
 
 {-| Default for ExtensionRangeOptions. Should only be used for 'required' decoders as an initial value.
@@ -677,6 +889,26 @@ type alias DescriptorProto_ =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__DescriptorProto_
 
 
+{-| The field numbers for the fields of `DescriptorProto`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersDescriptorProto :
+    { name : Int
+    , field : Int
+    , extension : Int
+    , nestedType : Int
+    , enumType : Int
+    , extensionRange : Int
+    , oneofDecl : Int
+    , options : Int
+    , reservedRange : Int
+    , reservedName : Int
+    }
+fieldNumbersDescriptorProto =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__DescriptorProto
+
+
 {-| Default for DescriptorProto. Should only be used for 'required' decoders as an initial value.
 
 
@@ -712,6 +944,28 @@ type alias DescriptorProto =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__DescriptorProto
 
 
+{-| The field numbers for the fields of `FileDescriptorProto`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersFileDescriptorProto :
+    { name : Int
+    , package : Int
+    , dependency : Int
+    , publicDependency : Int
+    , weakDependency : Int
+    , messageType : Int
+    , enumType : Int
+    , service : Int
+    , extension : Int
+    , options : Int
+    , sourceCodeInfo : Int
+    , syntax : Int
+    }
+fieldNumbersFileDescriptorProto =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__FileDescriptorProto
+
+
 {-| Default for FileDescriptorProto. Should only be used for 'required' decoders as an initial value.
 
 
@@ -745,6 +999,15 @@ encodeFileDescriptorProto =
 -}
 type alias FileDescriptorProto =
     Proto.Google.Protobuf.Internals_.Proto__Google__Protobuf__FileDescriptorProto
+
+
+{-| The field numbers for the fields of `FileDescriptorSet`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersFileDescriptorSet : { file : Int }
+fieldNumbersFileDescriptorSet =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__FileDescriptorSet
 
 
 {-| Default for FileDescriptorSet. Should only be used for 'required' decoders as an initial value.

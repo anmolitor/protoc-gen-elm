@@ -18,6 +18,15 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `Annotation`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersAnnotation : { path : Int, sourceFile : Int, begin : Int, end : Int }
+fieldNumbersAnnotation =
+    Proto.Google.Protobuf.Internals_.fieldNumbersProto__Google__Protobuf__GeneratedCodeInfo__Annotation
+
+
 {-| Default for Annotation. Should only be used for 'required' decoders as an initial value.
 
 

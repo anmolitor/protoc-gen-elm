@@ -18,6 +18,15 @@ import Protobuf.Decode
 import Protobuf.Encode
 
 
+{-| The field numbers for the fields of `File`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersFile : { name : Int, insertionPoint : Int, content : Int, generatedCodeInfo : Int }
+fieldNumbersFile =
+    Proto.Google.Protobuf.Compiler.Internals_.fieldNumbersProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File
+
+
 {-| Default for File. Should only be used for 'required' decoders as an initial value.
 
 
@@ -51,6 +60,20 @@ encodeFile =
 -}
 type alias File =
     Proto.Google.Protobuf.Compiler.Internals_.Proto__Google__Protobuf__Compiler__CodeGeneratorResponse__File
+
+
+{-| The field numbers for the fields of `Feature`. This is mostly useful for internals, like documentation generation.
+
+
+-}
+fieldNumbersFeature : Feature -> Int
+fieldNumbersFeature n_ =
+    case n_ of
+        FEATURENONE ->
+            0
+
+        FEATUREPROTO3OPTIONAL ->
+            1
 
 
 {-| Default for Feature. Should only be used for 'required' decoders as an initial value.
