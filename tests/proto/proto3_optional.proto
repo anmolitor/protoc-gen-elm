@@ -2,7 +2,12 @@ syntax = "proto3";
 
 package proto3_optional;
 
+enum AnEnum {
+  A = 0;
+}
+
 message WithOptional {
   optional string field = 1;
   optional int32 field2 = 2;
+  optional AnEnum field3 = 3;
 }

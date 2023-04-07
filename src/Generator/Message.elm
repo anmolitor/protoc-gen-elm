@@ -362,6 +362,17 @@ fieldTypeToDecoder fieldType cardinality =
                     ]
                 )
 
+        ( Proto3Optional, Enumeration enum ) ->
+            C.parens
+                (C.apply
+                    [ Meta.Decode.map
+                    , Meta.Basics.just
+                    , C.fqFun
+                        (Common.internalsModule enum.rootPackage)
+                        (Common.decoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+                    ]
+                )
+
         ( _, Enumeration enum ) ->
             C.fqFun (Common.internalsModule enum.rootPackage)
                 (Common.decoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
@@ -454,7 +465,18 @@ fieldTypeToEncoder cardinality fieldType =
                     C.composer
                     (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
 
-        ( _, Enumeration enum ) ->
+        ( Proto3Optional, Enumeration enum ) ->
+            C.parens <|
+                C.applyBinOp
+                    (C.apply
+                        [ Meta.Basics.mapMaybe
+                        , C.fqFun (Common.internalsModule enum.rootPackage) (Common.encoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+                        ]
+                    )
+                    C.composer
+                    (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
+
+        ( Optional, Enumeration enum ) ->
             C.fqFun (Common.internalsModule enum.rootPackage) (Common.encoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
 
 
