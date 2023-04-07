@@ -54,7 +54,8 @@ encodeFile =
     Proto.Google.Protobuf.Compiler.Internals_.encodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File
 
 
-{-| `File` message
+{-|  Represents a single generated file.
+
 
 
 -}
@@ -144,7 +145,8 @@ decodeFeature =
         Proto.Google.Protobuf.Compiler.Internals_.decodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse__Feature
 
 
-{-| `Feature` enumeration
+{-|  Sync with code_generator.h.
+
 
 
 -}

@@ -54,7 +54,10 @@ encodeGeneratedCodeInfo =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__GeneratedCodeInfo
 
 
-{-| `GeneratedCodeInfo` message
+{-|  Describes the relationship between generated code and its original source
+ file. A GeneratedCodeInfo message is associated with only one generated
+ source file, but may contain references to different source .proto files.
+
 
 
 -}
@@ -98,7 +101,14 @@ encodeSourceCodeInfo =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__SourceCodeInfo
 
 
-{-| `SourceCodeInfo` message
+{-|  ===================================================================
+ Optional source code info
+
+
+
+ Encapsulates information about the original source file from which a
+ FileDescriptorProto was generated.
+
 
 
 -}
@@ -150,7 +160,13 @@ encodeUninterpretedOption =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__UninterpretedOption
 
 
-{-| `UninterpretedOption` message
+{-|  A message representing a option the parser does not recognize. This only
+ appears in options protos created by the compiler::Parser class.
+ DescriptorPool resolves these when building Descriptor objects. Therefore,
+ options protos in descriptor objects (e.g. returned by Descriptor::options(),
+ or produced by Descriptor::CopyTo()) will never have UninterpretedOptions
+ in them.
+
 
 
 -}
@@ -531,7 +547,40 @@ encodeFileOptions =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__FileOptions
 
 
-{-| `FileOptions` message
+{-|  ===================================================================
+ Options
+
+
+
+ Each of the definitions above may have "options" attached.  These are
+ just annotations which may cause code to be generated slightly differently
+ or may contain hints for code that manipulates protocol messages.
+
+ Clients may define custom options as extensions of the *Options messages.
+ These extensions may not yet be known at parsing time, so the parser cannot
+ store the values in them.  Instead it stores them in a field in the *Options
+ message called uninterpreted_option. This field must have the same name
+ across all *Options messages. We then use this field to populate the
+ extensions when we build a descriptor, at which point all protos have been
+ parsed and so all extensions are known.
+
+ Extension numbers for custom options may be chosen as follows:
+ * For options which will only be used within a single application or
+   organization, or for experimental options, use field numbers 50000
+   through 99999.  It is up to you to ensure that you do not use the
+   same number for multiple options.
+ * For options which will be published and used publicly by multiple
+   independent entities, e-mail protobuf-global-extension-registry@google.com
+   to reserve extension numbers. Simply provide your project name (e.g.
+   Objective-C plugin) and your project website (if available) -- there's no
+   need to explain how you intend to use them. Usually you only need one
+   extension number. You can declare multiple options with only one extension
+   number by putting them in a sub-message. See the Custom Options section of
+   the docs for examples:
+   https://developers.google.com/protocol-buffers/docs/proto#options
+   If this turns out to be popular, a web service will be set up
+   to automatically assign option numbers.
+
 
 
 -}
@@ -576,7 +625,8 @@ encodeMethodDescriptorProto =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__MethodDescriptorProto
 
 
-{-| `MethodDescriptorProto` message
+{-|  Describes a method of a service.
+
 
 
 -}
@@ -620,7 +670,8 @@ encodeServiceDescriptorProto =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__ServiceDescriptorProto
 
 
-{-| `ServiceDescriptorProto` message
+{-|  Describes a service.
+
 
 
 -}
@@ -664,7 +715,8 @@ encodeEnumValueDescriptorProto =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__EnumValueDescriptorProto
 
 
-{-| `EnumValueDescriptorProto` message
+{-|  Describes a value within an enum.
+
 
 
 -}
@@ -708,7 +760,8 @@ encodeEnumDescriptorProto =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__EnumDescriptorProto
 
 
-{-| `EnumDescriptorProto` message
+{-|  Describes an enum type.
+
 
 
 -}
@@ -752,7 +805,8 @@ encodeOneofDescriptorProto =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__OneofDescriptorProto
 
 
-{-| `OneofDescriptorProto` message
+{-|  Describes a oneof.
+
 
 
 -}
@@ -808,7 +862,8 @@ encodeFieldDescriptorProto =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__FieldDescriptorProto
 
 
-{-| `FieldDescriptorProto` message
+{-|  Describes a field within a message.
+
 
 
 -}
@@ -936,7 +991,8 @@ encodeDescriptorProto =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__DescriptorProto
 
 
-{-| `DescriptorProto` message
+{-|  Describes a message type.
+
 
 
 -}
@@ -993,7 +1049,8 @@ encodeFileDescriptorProto =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__FileDescriptorProto
 
 
-{-| `FileDescriptorProto` message
+{-|  Describes a complete .proto file.
+
 
 
 -}
@@ -1037,7 +1094,9 @@ encodeFileDescriptorSet =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__FileDescriptorSet
 
 
-{-| `FileDescriptorSet` message
+{-|  The protocol compiler can output a FileDescriptorSet containing the .proto
+ files it parses.
+
 
 
 -}

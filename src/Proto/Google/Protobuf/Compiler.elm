@@ -54,7 +54,8 @@ encodeCodeGeneratorResponse =
     Proto.Google.Protobuf.Compiler.Internals_.encodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse
 
 
-{-| `CodeGeneratorResponse` message
+{-|  The plugin writes an encoded CodeGeneratorResponse to stdout.
+
 
 
 -}
@@ -98,7 +99,8 @@ encodeCodeGeneratorRequest =
     Proto.Google.Protobuf.Compiler.Internals_.encodeProto__Google__Protobuf__Compiler__CodeGeneratorRequest
 
 
-{-| `CodeGeneratorRequest` message
+{-|  An encoded CodeGeneratorRequest is written to the plugin's stdin.
+
 
 
 -}
@@ -142,7 +144,8 @@ encodeVersion =
     Proto.Google.Protobuf.Compiler.Internals_.encodeProto__Google__Protobuf__Compiler__Version
 
 
-{-| `Version` message
+{-|  The version number of protocol compiler.
+
 
 
 -}

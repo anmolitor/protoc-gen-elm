@@ -25,8 +25,15 @@ reexportAST internalsModule moduleName enum =
             else
                 identity
 
+        documentation =
+            if List.isEmpty enum.docs then
+                enumDocumentation enum.dataType
+
+            else
+                Common.renderDocs enum.docs
+
         type_ =
-            C.customTypeDecl (Just <| enumDocumentation enum.dataType)
+            C.customTypeDecl (Just documentation)
                 enum.dataType
                 []
                 (List.map (\optionName -> ( optionName, [] )) fields

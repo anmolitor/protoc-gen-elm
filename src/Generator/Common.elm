@@ -54,6 +54,11 @@ toInternalDocumentation typeName internalName =
         |> C.markdown "Using two different types is necessary to avoid recursive module references while having readable constructor names."
 
 
+renderDocs : List String -> C.Comment C.DocComment
+renderDocs =
+    List.foldl C.markdown C.emptyDocComment
+
+
 fieldNumbersName : String -> String
 fieldNumbersName typeName =
     "fieldNumbers" ++ typeName

@@ -107,7 +107,10 @@ decodeIdempotencyLevel =
         Proto.Google.Protobuf.Internals_.decodeProto__Google__Protobuf__MethodOptions__IdempotencyLevel
 
 
-{-| `IdempotencyLevel` enumeration
+{-|  Is this method side-effect-free (or safe in HTTP parlance), or idempotent,
+ or neither? HTTP based RPC implementation may choose GET verb for safe
+ methods, and PUT verb for idempotent methods instead of the default POST.
+
 
 
 -}

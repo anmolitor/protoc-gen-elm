@@ -41,6 +41,7 @@ type alias Method =
 type alias Message =
     { dataType : DataType
     , fields : List ( FieldName, Field )
+    , docs : List String
     }
 
 
@@ -91,6 +92,7 @@ type alias Enum =
     { dataType : DataType
     , withUnrecognized : Bool
     , fields : NonEmpty ( Int, String )
+    , docs : List String
     }
 
 

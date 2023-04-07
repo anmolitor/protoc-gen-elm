@@ -8,10 +8,12 @@ import Mapper.Name as Name
 import Mapper.Package as Package exposing (Packages)
 import Mapper.Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
+import Maybe.Extra
 import Meta.Encode
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
-import Proto.Google.Protobuf exposing (DescriptorProto, DescriptorProto_, EnumDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, unwrapDescriptorProto)
+import Proto.Google.Protobuf exposing (DescriptorProto, DescriptorProto_, EnumDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, fieldNumbersDescriptorProto, fieldNumbersFileDescriptorProto, unwrapDescriptorProto)
 import Proto.Google.Protobuf.FieldDescriptorProto as FieldDescriptorProto
+import Proto.Google.Protobuf.SourceCodeInfo as SourceCodeInfo
 import Set exposing (Set)
 
 
@@ -28,7 +30,16 @@ type alias Ctx =
     { typeRefs : TypeRefs
     , originFiles : Set String
     , syntax : Syntax
+    , sourceCodeInfo : List SourceCodeInfo.Location
     }
+
+
+sourceDocumentation : Ctx -> List Int -> List String
+sourceDocumentation { sourceCodeInfo } sourceCodePath =
+    List.Extra.find (\info -> info.path == sourceCodePath) sourceCodeInfo
+        |> Maybe.map (\info -> info.leadingDetachedComments ++ [ info.leadingComments, info.trailingComments ])
+        |> Maybe.withDefault []
+        |> List.filter (not << String.isEmpty)
 
 
 definedTypesInMessageDescriptor : Name.ModuleRef -> DescriptorProto -> TypeRefs
@@ -73,6 +84,10 @@ mapMain grpcOn descriptors =
         |> List.map
             (\descriptor ->
                 let
+                    sourceCodeInfo : List SourceCodeInfo.Location
+                    sourceCodeInfo =
+                        descriptor.sourceCodeInfo |> Maybe.map .location |> Maybe.withDefault []
+
                     mapMethod : MethodDescriptorProto -> Maybe (Res Method)
                     mapMethod { name, inputType, outputType, serverStreaming, clientStreaming } =
                         if serverStreaming || clientStreaming then
@@ -111,7 +126,7 @@ mapMain grpcOn descriptors =
                         Set.singleton descriptor.name
 
                     ctx =
-                        { typeRefs = typeRefs, originFiles = originFiles, syntax = syntax }
+                        { typeRefs = typeRefs, originFiles = originFiles, syntax = syntax, sourceCodeInfo = sourceCodeInfo }
 
                     syntax =
                         parseSyntax descriptor.syntax
@@ -138,12 +153,26 @@ mapMain grpcOn descriptors =
                             Package.concat messagePackages
                                 |> Package.addPackage moduleRef.package
                                     { empty
-                                        | enums = List.map (enum syntax) descriptor.enumType
+                                        | enums =
+                                            List.indexedMap
+                                                (\index ->
+                                                    enum ctx
+                                                        [ fieldNumbersFileDescriptorProto.enumType, index ]
+                                                )
+                                                descriptor.enumType
                                         , originFiles = originFiles
                                     }
                                 |> Package.append (servicePackages services)
                         )
-                        (Errors.combineMap (message moduleRef ctx) descriptor.messageType)
+                        (Errors.combine <|
+                            List.indexedMap
+                                (\index ->
+                                    message moduleRef
+                                        ctx
+                                        [ fieldNumbersFileDescriptorProto.messageType, index ]
+                                )
+                                descriptor.messageType
+                        )
                         (if grpcOn then
                             Errors.combineMap mapService descriptor.service
 
@@ -163,8 +192,8 @@ mapMain grpcOn descriptors =
 -}
 
 
-enum : Syntax -> EnumDescriptorProto -> Enum
-enum syntax descriptor =
+enum : Ctx -> List Int -> EnumDescriptorProto -> Enum
+enum ctx sourceCodePath descriptor =
     let
         name =
             Name.type_ descriptor.name
@@ -176,8 +205,9 @@ enum syntax descriptor =
                 |> Maybe.withDefault ( ( 0, name ), [] )
     in
     { dataType = name
-    , withUnrecognized = syntax == Proto3
+    , withUnrecognized = ctx.syntax == Proto3
     , fields = fields
+    , docs = sourceDocumentation ctx sourceCodePath
     }
 
 
@@ -193,8 +223,8 @@ isAMap =
     since they could potentially overlap otherwise.
 
 -}
-message : Name.ModuleRef -> Ctx -> DescriptorProto -> Res Packages
-message moduleRef ctx descriptor =
+message : Name.ModuleRef -> Ctx -> List Int -> DescriptorProto -> Res Packages
+message moduleRef ctx sourceCodePath descriptor =
     let
         name =
             Name.type_ descriptor.name
@@ -292,8 +322,15 @@ message moduleRef ctx descriptor =
 
         nested : Res Packages
         nested =
-            List.filter (not << isAMap) nestedTypes
-                |> Errors.combineMap (message { moduleRef | package = nestedPackageName } ctx)
+            List.indexedMap Tuple.pair nestedTypes
+                |> List.filter (\( _, x ) -> not <| isAMap x)
+                |> Errors.combineMap
+                    (\( index, x ) ->
+                        message { moduleRef | package = nestedPackageName }
+                            ctx
+                            (sourceCodePath ++ [ fieldNumbersDescriptorProto.nestedType, index ])
+                            x
+                    )
                 |> Result.map Package.concat
 
         mainStruct : Res Struct
@@ -304,6 +341,7 @@ message moduleRef ctx descriptor =
                         | messages =
                             [ { dataType = name
                               , fields = messageFields { moduleRef | package = nestedPackageName } oneOfFieldNames fieldsMeta
+                              , docs = sourceDocumentation ctx sourceCodePath
                               }
                             ]
                         , originFiles = ctx.originFiles
@@ -318,7 +356,13 @@ message moduleRef ctx descriptor =
             else
                 Package.addPackage nestedPackageName
                     { empty
-                        | enums = List.map (enum ctx.syntax) descriptor.enumType
+                        | enums =
+                            List.indexedMap
+                                (\index ->
+                                    enum ctx
+                                        (sourceCodePath ++ [ fieldNumbersDescriptorProto.enumType, index ])
+                                )
+                                descriptor.enumType
                         , originFiles = ctx.originFiles
                     }
 

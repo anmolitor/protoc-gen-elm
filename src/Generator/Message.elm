@@ -13,8 +13,15 @@ import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldTyp
 reexportAST : ModuleName -> ModuleName -> Message -> List C.Declaration
 reexportAST internalsModule moduleName msg =
     let
+        documentation =
+            if List.isEmpty msg.docs then
+                messageDocumentation msg.dataType
+
+            else
+                Common.renderDocs msg.docs
+
         type_ =
-            C.aliasDecl (Just <| messageDocumentation msg.dataType) msg.dataType [] <|
+            C.aliasDecl (Just documentation) msg.dataType [] <|
                 C.fqTyped internalsModule (Mapper.Name.internalize ( moduleName, msg.dataType )) []
 
         encoder =

@@ -106,7 +106,8 @@ decodeOptimizeMode =
         Proto.Google.Protobuf.Internals_.decodeProto__Google__Protobuf__FileOptions__OptimizeMode
 
 
-{-| `OptimizeMode` enumeration
+{-|  Generated classes can be optimized for speed or code size.
+
 
 
 -}
