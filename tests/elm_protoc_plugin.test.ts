@@ -419,7 +419,9 @@ describe("protoc-gen-elm", () => {
     it("generates the expected api", async () => {
       await repl.importModules("Proto.Proto3Optional");
       const msg = repl.getFreshVariable();
-      await repl.write(`${msg} = { field = Just "", field2 = Nothing }`);
+      await repl.write(
+        `${msg} = { field = Just "", field2 = Nothing, field3 = Just <| Proto.Proto3Optional.toInternalAnEnum Proto.Proto3Optional.A }`
+      );
 
       const output = await repl.write(
         `(Proto.Proto3Optional.encodeWithOptional ${msg} |> E.encode |> D.decode Proto.Proto3Optional.decodeWithOptional) == Just ${msg}`
