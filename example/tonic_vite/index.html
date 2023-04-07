@@ -1,17 +1,20 @@
 <html>
 
-<head></head>
+<head>
+</head>
 
 <body>
   <script type="module">
-    import { Elm } from './src/Main.elm'
+    import { Elm } from './src/Main.elm';
+    import './src/main.css';
 
     const USER_ID_KEY = "current_user_id";
 
     const userId = window.sessionStorage.getItem(USER_ID_KEY);
+    const now = new Date().getTime();
 
     const app = Elm.Main.init({
-      flags: { userId },
+      flags: { userId, now },
     });
 
     app.ports.setOrDeleteUserId.subscribe(newUserId => {
