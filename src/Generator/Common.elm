@@ -55,8 +55,13 @@ toInternalDocumentation typeName internalName =
 
 
 renderDocs : List String -> C.Comment C.DocComment
-renderDocs =
-    List.foldl C.markdown C.emptyDocComment
+renderDocs docs =
+    addDocs docs C.emptyDocComment
+
+
+addDocs : List String -> C.Comment c -> C.Comment c
+addDocs docs comment =
+    List.foldl C.markdown comment docs
 
 
 fieldNumbersName : String -> String

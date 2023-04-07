@@ -39,6 +39,7 @@ methodToAST service method =
                         , "`."
                         ]
                     )
+                |> Common.addDocs method.docs
 
         typeAnn =
             C.fqTyped [ "Grpc", "Internal" ]

@@ -9,6 +9,7 @@ type alias Struct =
     , enums : List Enum
     , services : List Service
     , oneOfs : List ( String, OneOf )
+    , docs : List String
     , originFiles : Set String
     }
 
@@ -19,16 +20,18 @@ empty =
     , enums = []
     , services = []
     , oneOfs = []
+    , docs = []
     , originFiles = Set.empty
     }
 
 
 append : Struct -> Struct -> Struct
-append { messages, enums, services, oneOfs, originFiles } struct =
+append { messages, enums, services, oneOfs, originFiles, docs } struct =
     { messages = struct.messages ++ messages
     , enums = struct.enums ++ enums
     , services = struct.services ++ services
     , oneOfs = struct.oneOfs ++ oneOfs
+    , docs = struct.docs ++ docs
     , originFiles = Set.union struct.originFiles originFiles
     }
 

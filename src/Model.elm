@@ -28,6 +28,7 @@ type alias Service =
     { name : String
     , methods : List Method
     , package : String
+    , docs : List String
     }
 
 
@@ -35,6 +36,7 @@ type alias Method =
     { name : String
     , reqType : Ref
     , resType : Ref
+    , docs : List String
     }
 
 

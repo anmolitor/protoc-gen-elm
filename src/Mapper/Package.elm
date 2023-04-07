@@ -30,6 +30,7 @@ unify rootModName packages =
                         )
                         struct.enums
                 , services = []
+                , docs = []
                 , originFiles = struct.originFiles
                 , oneOfs =
                     List.map

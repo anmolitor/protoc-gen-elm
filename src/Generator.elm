@@ -6,6 +6,7 @@ import Elm.Pretty
 import Elm.Syntax.Module as Module
 import Elm.Syntax.Node as Node
 import Errors exposing (Res)
+import Generator.Common as Common
 import Generator.Declarations exposing (removeDuplicateDeclarations)
 import Generator.Enum as Enum
 import Generator.Import as Import
@@ -118,12 +119,20 @@ convert versions flags fileNames descriptors =
                         ++ List.concatMap (Message.reexportAST internalsModule packageName) struct.messages
                         ++ List.concatMap (OneOf.reexportAST internalsModule packageName) struct.oneOfs
                         ++ List.concatMap Service.toAST struct.services
+
+                fileDocs =
+                    struct.docs
+                        ++ (struct.services |> List.concatMap .docs)
             in
             C.file
                 (C.normalModule packageName [])
                 (List.map (\importedModule -> C.importStmt importedModule Nothing Nothing) (Set.toList <| Import.extractImports declarations))
                 (removeDuplicateDeclarations declarations)
-                (C.emptyFileComment |> fileComment versions struct.originFiles |> Just)
+                (C.emptyFileComment
+                    |> fileComment versions struct.originFiles
+                    |> Common.addDocs fileDocs
+                    |> Just
+                )
     in
     Result.map
         (Dict.toList >> List.concatMap (\( mod, package ) -> Dict.map (packageToReexportFile mod) package |> Dict.values |> (::) (mkInternalsFile mod package)))

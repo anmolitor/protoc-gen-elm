@@ -11,7 +11,7 @@ import Mapper.Syntax exposing (Syntax(..), parseSyntax)
 import Maybe.Extra
 import Meta.Encode
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
-import Proto.Google.Protobuf exposing (DescriptorProto, DescriptorProto_, EnumDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, fieldNumbersDescriptorProto, fieldNumbersFileDescriptorProto, unwrapDescriptorProto)
+import Proto.Google.Protobuf exposing (DescriptorProto, DescriptorProto_, EnumDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, fieldNumbersDescriptorProto, fieldNumbersFileDescriptorProto, fieldNumbersServiceDescriptorProto, unwrapDescriptorProto)
 import Proto.Google.Protobuf.FieldDescriptorProto as FieldDescriptorProto
 import Proto.Google.Protobuf.SourceCodeInfo as SourceCodeInfo
 import Set exposing (Set)
@@ -30,13 +30,13 @@ type alias Ctx =
     { typeRefs : TypeRefs
     , originFiles : Set String
     , syntax : Syntax
-    , sourceCodeInfo : List SourceCodeInfo.Location
+    , sourceCodeInfo : Dict (List Int) SourceCodeInfo.Location
     }
 
 
 sourceDocumentation : Ctx -> List Int -> List String
 sourceDocumentation { sourceCodeInfo } sourceCodePath =
-    List.Extra.find (\info -> info.path == sourceCodePath) sourceCodeInfo
+    Dict.get sourceCodePath sourceCodeInfo
         |> Maybe.map (\info -> info.leadingDetachedComments ++ [ info.leadingComments, info.trailingComments ])
         |> Maybe.withDefault []
         |> List.filter (not << String.isEmpty)
@@ -84,12 +84,20 @@ mapMain grpcOn descriptors =
         |> List.map
             (\descriptor ->
                 let
-                    sourceCodeInfo : List SourceCodeInfo.Location
+                    sourceCodeInfo : Dict (List Int) SourceCodeInfo.Location
                     sourceCodeInfo =
-                        descriptor.sourceCodeInfo |> Maybe.map .location |> Maybe.withDefault []
+                        descriptor.sourceCodeInfo
+                            |> Maybe.map .location
+                            |> Maybe.withDefault []
+                            |> List.map (\info -> ( info.path, info ))
+                            |> Dict.fromList
 
-                    mapMethod : MethodDescriptorProto -> Maybe (Res Method)
-                    mapMethod { name, inputType, outputType, serverStreaming, clientStreaming } =
+                    fileDocs =
+                        sourceDocumentation ctx [ fieldNumbersFileDescriptorProto.syntax ]
+                            ++ sourceDocumentation ctx [ fieldNumbersFileDescriptorProto.package ]
+
+                    mapMethod : List Int -> MethodDescriptorProto -> Maybe (Res Method)
+                    mapMethod sourceCodePath { name, inputType, outputType, serverStreaming, clientStreaming } =
                         if serverStreaming || clientStreaming then
                             Nothing
 
@@ -99,17 +107,20 @@ mapMain grpcOn descriptors =
                                     { name = name
                                     , reqType = Name.absoluteRef inputType
                                     , resType = Name.absoluteRef outputType
+                                    , docs = sourceDocumentation ctx sourceCodePath
                                     }
 
-                    mapService : ServiceDescriptorProto -> Res Service
-                    mapService service =
-                        List.filterMap mapMethod service.method
+                    mapService : List Int -> ServiceDescriptorProto -> Res Service
+                    mapService sourceCodePath service =
+                        List.indexedMap (\index -> mapMethod <| sourceCodePath ++ [ fieldNumbersServiceDescriptorProto.method, index ]) service.method
+                            |> List.filterMap identity
                             |> Errors.combineMap identity
                             |> Result.map
                                 (\methods ->
                                     { name = service.name
                                     , package = descriptor.package
                                     , methods = methods
+                                    , docs = sourceDocumentation ctx sourceCodePath
                                     }
                                 )
 
@@ -160,6 +171,7 @@ mapMain grpcOn descriptors =
                                                         [ fieldNumbersFileDescriptorProto.enumType, index ]
                                                 )
                                                 descriptor.enumType
+                                        , docs = fileDocs
                                         , originFiles = originFiles
                                     }
                                 |> Package.append (servicePackages services)
@@ -174,7 +186,8 @@ mapMain grpcOn descriptors =
                                 descriptor.messageType
                         )
                         (if grpcOn then
-                            Errors.combineMap mapService descriptor.service
+                            List.indexedMap (\index -> mapService [ fieldNumbersFileDescriptorProto.service, index ]) descriptor.service
+                                |> Errors.combine
 
                          else
                             Ok []
