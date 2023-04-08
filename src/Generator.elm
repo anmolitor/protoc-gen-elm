@@ -9,6 +9,7 @@ import Errors exposing (Res)
 import Generator.Common as Common
 import Generator.Declarations exposing (removeDuplicateDeclarations)
 import Generator.Enum as Enum
+import Generator.Export as Export
 import Generator.Import as Import
 import Generator.Message as Message
 import Generator.OneOf as OneOf
@@ -120,17 +121,21 @@ convert versions flags fileNames descriptors =
                         ++ List.concatMap (OneOf.reexportAST internalsModule packageName) struct.oneOfs
                         ++ List.concatMap Service.toAST struct.services
 
+                exports =
+                    Export.fromDeclarations declarations
+
                 fileDocs =
                     struct.docs
                         ++ (struct.services |> List.concatMap .docs)
             in
             C.file
-                (C.normalModule packageName [])
+                (C.normalModule packageName exports)
                 (List.map (\importedModule -> C.importStmt importedModule Nothing Nothing) (Set.toList <| Import.extractImports declarations))
                 (removeDuplicateDeclarations declarations)
                 (C.emptyFileComment
                     |> fileComment versions struct.originFiles
                     |> Common.addDocs fileDocs
+                    |> C.docTagsFromExposings exports
                     |> Just
                 )
     in
