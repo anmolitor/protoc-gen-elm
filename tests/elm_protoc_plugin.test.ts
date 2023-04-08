@@ -464,6 +464,26 @@ describe("protoc-gen-elm", () => {
     });
   });
 
+  describe("recursive oneofs", () => {
+    it("generates a valid elm file for recursive oneofs", async () => {
+      await compileElm(["Proto/RecursiveOneOf.elm"]);
+    });
+
+    it("does not need to generate wrapper types", async () => {
+      await repl.importModules(
+        "Proto.RecursiveOneof",
+        "Proto.RecursiveOneof.Rec.Msg"
+      );
+      const msg = repl.getFreshVariable();
+      await repl.write(`${msg} = { msg = Just <| Proto.RecursiveOneof.Rec.Msg.toInternalMsg <| Proto.RecursiveOneof.Rec.Msg.Rec { msg = Nothing } }`);
+
+      const output = await repl.write(
+        `(Proto.RecursiveOneof.encodeRec ${msg} |> E.encode |> D.decode Proto.RecursiveOneof.decodeRec) == Just ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+
   describe("int types", () => {
     it("generates a valid elm file for ints", async () => {
       await compileElm(["Proto/Ints.elm"]);

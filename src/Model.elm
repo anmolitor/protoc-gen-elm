@@ -15,7 +15,7 @@ module Model exposing
     , Service
     , TypeKind(..)
     , unqualifySelectedFieldType
-    , unqualifySelectedMessage
+    , unqualifySelectedMessage, setTypeKind
     )
 
 import Elm.CodeGen as C exposing (ModuleName)
@@ -123,6 +123,16 @@ type alias DataType =
 
 type alias Default =
     C.Expression
+
+
+setTypeKind : TypeKind -> FieldType -> FieldType
+setTypeKind kind fieldType =
+    case fieldType of
+        Embedded e ->
+            Embedded { e | typeKind = kind }
+
+        _ ->
+            fieldType
 
 
 type TypeKind

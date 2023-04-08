@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package recursive_oneof;
+
+message Rec {
+  oneof msg {
+    Rec rec = 1;
+    string other = 2;
+  }
+}

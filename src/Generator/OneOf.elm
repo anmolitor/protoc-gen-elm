@@ -116,7 +116,7 @@ toAST { oneOfName, options } =
                 (Just <| oneofDocumentation dataType)
                 dataType
                 []
-                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotation o.fieldType ] )) options)
+                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotation <| Model.setTypeKind Model.Alias o.fieldType ] )) options)
 
         encoder =
             C.funDecl Nothing
@@ -130,7 +130,7 @@ toAST { oneOfName, options } =
                         :: List.map
                             (\o ->
                                 ( C.namedPattern "Just" [ C.parensPattern (C.namedPattern o.dataType [ C.varPattern "innerValue" ]) ]
-                                , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required o.fieldType, C.val "innerValue" ] ]
+                                , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required <| Model.setTypeKind Model.Alias o.fieldType, C.val "innerValue" ] ]
                                 )
                             )
                             options
@@ -152,25 +152,40 @@ toAST { oneOfName, options } =
                     , C.list
                         (List.map
                             (\o ->
+                                let
+                                    handleTypeKind =
+                                        case o.fieldType of
+                                            Embedded e ->
+                                                case e.typeKind of
+                                                    Model.Alias ->
+                                                        identity
+
+                                                    Model.Type ->
+                                                        C.applyBinOp Meta.Decode.lazy C.pipel << C.lambda [ C.allPattern ]
+
+                                            _ ->
+                                                identity
+                                in
                                 C.tuple
                                     [ C.int o.fieldNumber
-                                    , C.apply
-                                        [ Meta.Decode.map
-                                        , C.val o.dataType
-                                        , case o.fieldType of
-                                            Primitive p _ ->
-                                                Meta.Decode.forPrimitive p
+                                    , handleTypeKind <|
+                                        C.apply
+                                            [ Meta.Decode.map
+                                            , C.val o.dataType
+                                            , case o.fieldType of
+                                                Primitive p _ ->
+                                                    Meta.Decode.forPrimitive p
 
-                                            Embedded e ->
-                                                C.fqFun (Common.internalsModule e.rootModuleName) <|
-                                                    Common.decoderName <|
-                                                        Mapper.Name.internalize ( e.moduleName, e.dataType )
+                                                Embedded e ->
+                                                    C.fqFun (Common.internalsModule e.rootModuleName) <|
+                                                        Common.decoderName <|
+                                                            Mapper.Name.internalize ( e.moduleName, e.dataType )
 
-                                            Enumeration e ->
-                                                C.fqFun (Common.internalsModule e.rootPackage) <|
-                                                    Common.decoderName <|
-                                                        Mapper.Name.internalize ( e.package, e.name )
-                                        ]
+                                                Enumeration e ->
+                                                    C.fqFun (Common.internalsModule e.rootPackage) <|
+                                                        Common.decoderName <|
+                                                            Mapper.Name.internalize ( e.package, e.name )
+                                            ]
                                     ]
                             )
                             options
