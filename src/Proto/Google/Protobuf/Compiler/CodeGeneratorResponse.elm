@@ -58,7 +58,13 @@ encodeFile =
 
 
 
-name:  The file name, relative to the output directory.  The name must not
+## Fields
+
+
+### name
+
+
+ The file name, relative to the output directory.  The name must not
  contain "." or ".." components and must be relative, not be absolute (so,
  the file cannot lie outside the output directory).  "/" must be used as
  the path separator, not "\".
@@ -72,7 +78,10 @@ name:  The file name, relative to the output directory.  The name must not
 
 
 
-insertion_point:  If non-empty, indicates that the named file should already exist, and the
+### insertion_point
+
+
+ If non-empty, indicates that the named file should already exist, and the
  content here is to be inserted into that file at a defined insertion
  point.  This feature allows a code generator to extend the output
  produced by another code generator.  The original generator may provide
@@ -112,11 +121,17 @@ insertion_point:  If non-empty, indicates that the named file should already exi
 
 
 
-content:  The file contents.
+### content
+
+
+ The file contents.
 
 
 
-generated_code_info:  Information describing the file content being inserted. If an insertion
+### generated_code_info
+
+
+ Information describing the file content being inserted. If an insertion
  point is used, this information will be appropriately offset and inserted
  into the code generation metadata for the generated files.
 

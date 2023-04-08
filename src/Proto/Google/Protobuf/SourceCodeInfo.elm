@@ -55,7 +55,13 @@ encodeLocation =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__SourceCodeInfo__Location
 
 
-{-| path:  Identifies which part of the FileDescriptorProto was defined at this
+{-| ## Fields
+
+
+### path
+
+
+ Identifies which part of the FileDescriptorProto was defined at this
  location.
 
  Each element is a field number or an index.  They form a path from
@@ -81,7 +87,10 @@ encodeLocation =
 
 
 
-span:  Always has exactly three or four elements: start line, start column,
+### span
+
+
+ Always has exactly three or four elements: start line, start column,
  end line (optional, otherwise assumed same as start line), end column.
  These are packed into a single field for efficiency.  Note that line
  and column numbers are zero-based -- typically you will want to add
@@ -89,7 +98,10 @@ span:  Always has exactly three or four elements: start line, start column,
 
 
 
-leading_comments:  If this SourceCodeInfo represents a complete declaration, these are any
+### leading_comments
+
+
+ If this SourceCodeInfo represents a complete declaration, these are any
  comments appearing before and after the declaration which appear to be
  attached to the declaration.
 

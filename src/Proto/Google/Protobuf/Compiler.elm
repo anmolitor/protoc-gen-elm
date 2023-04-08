@@ -108,7 +108,13 @@ encodeCodeGeneratorResponse =
 
 
 
-error:  Error message.  If non-empty, code generation failed.  The plugin process
+## Fields
+
+
+### error
+
+
+ Error message.  If non-empty, code generation failed.  The plugin process
  should exit with status code zero even if it reports an error in this way.
 
  This should be used to indicate errors in .proto files which prevent the
@@ -119,7 +125,10 @@ error:  Error message.  If non-empty, code generation failed.  The plugin proces
 
 
 
-supported_features:  A bitmask of supported features that the code generator supports.
+### supported_features
+
+
+ A bitmask of supported features that the code generator supports.
  This is a bitwise "or" of values from the Feature enum.
 
 
@@ -169,17 +178,29 @@ encodeCodeGeneratorRequest =
 
 
 
-file_to_generate:  The .proto files that were explicitly listed on the command-line.  The
+## Fields
+
+
+### file_to_generate
+
+
+ The .proto files that were explicitly listed on the command-line.  The
  code generator should generate code only for these files.  Each file's
  descriptor will be included in proto_file, below.
 
 
 
-parameter:  The generator parameter passed on the command-line.
+### parameter
+
+
+ The generator parameter passed on the command-line.
 
 
 
-proto_file:  FileDescriptorProtos for all files in files_to_generate and everything
+### proto_file
+
+
+ FileDescriptorProtos for all files in files_to_generate and everything
  they import.  The files will appear in topological order, so each file
  appears before any file that imports it.
 
@@ -196,7 +217,10 @@ proto_file:  FileDescriptorProtos for all files in files_to_generate and everyth
 
 
 
-compiler_version:  The version number of protocol compiler.
+### compiler_version
+
+
+ The version number of protocol compiler.
 
 
 
@@ -245,7 +269,13 @@ encodeVersion =
 
 
 
-suffix:  A suffix for alpha, beta or rc release, e.g., "alpha-1", "rc2". It should
+## Fields
+
+
+### suffix
+
+
+ A suffix for alpha, beta or rc release, e.g., "alpha-1", "rc2". It should
  be empty for mainline stable releases.
 
 

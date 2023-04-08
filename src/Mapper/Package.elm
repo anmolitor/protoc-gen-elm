@@ -34,17 +34,19 @@ unify rootModName packages =
                 , originFiles = struct.originFiles
                 , oneOfs =
                     List.map
-                        (\( name, oneOf ) ->
-                            ( Name.internalize ( moduleName, name )
-                            , List.map
-                                (\o ->
-                                    { o
-                                        | dataType = Name.internalize ( moduleName, o.dataType )
-                                        , fieldType = Model.unqualifySelectedFieldType rootModName o.fieldType
-                                    }
-                                )
-                                oneOf
-                            )
+                        (\{ oneOfName, options, docs } ->
+                            { oneOfName = Name.internalize ( moduleName, oneOfName )
+                            , options =
+                                List.map
+                                    (\o ->
+                                        { o
+                                            | dataType = Name.internalize ( moduleName, o.dataType )
+                                            , fieldType = Model.unqualifySelectedFieldType rootModName o.fieldType
+                                        }
+                                    )
+                                    options
+                            , docs = docs
+                            }
                         )
                         struct.oneOfs
                 }

@@ -60,11 +60,20 @@ encodeReservedRange =
 
 
 
-start:  Inclusive.
+## Fields
+
+
+### start
+
+
+ Inclusive.
 
 
 
-end:  Exclusive.
+### end
+
+
+ Exclusive.
 
 
 
@@ -109,11 +118,20 @@ encodeExtensionRange =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__DescriptorProto__ExtensionRange
 
 
-{-| start:  Inclusive.
+{-| ## Fields
+
+
+### start
+
+
+ Inclusive.
 
 
 
-end:  Exclusive.
+### end
+
+
+ Exclusive.
 
 
 

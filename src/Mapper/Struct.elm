@@ -8,7 +8,7 @@ type alias Struct =
     { messages : List Message
     , enums : List Enum
     , services : List Service
-    , oneOfs : List ( String, OneOf )
+    , oneOfs : List { oneOfName : String, options : OneOf, docs : List String }
     , docs : List String
     , originFiles : Set String
     }

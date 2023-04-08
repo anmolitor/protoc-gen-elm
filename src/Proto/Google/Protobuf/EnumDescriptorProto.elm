@@ -63,11 +63,20 @@ encodeEnumReservedRange =
 
 
 
-start:  Inclusive.
+## Fields
+
+
+### start
+
+
+ Inclusive.
 
 
 
-end:  Inclusive.
+### end
+
+
+ Inclusive.
 
 
 

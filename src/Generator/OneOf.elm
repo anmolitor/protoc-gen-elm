@@ -2,7 +2,7 @@ module Generator.OneOf exposing (..)
 
 import Elm.CodeGen as C exposing (ModuleName)
 import Generator.Common as Common
-import Generator.Message exposing (fieldTypeToEncoder, fieldTypeToTypeAnnotation)
+import Generator.Message exposing (fieldTypeToEncoder, fieldTypeToTypeAnnotation, oneofDocumentation)
 import Mapper.Name
 import Meta.Decode
 import Meta.Encode
@@ -10,14 +10,24 @@ import Meta.Type
 import Model exposing (Cardinality(..), FieldType(..), OneOf)
 
 
-reexportAST : ModuleName -> ModuleName -> ( String, OneOf ) -> List C.Declaration
-reexportAST internalsModule moduleName ( dataType, opts ) =
+reexportAST : ModuleName -> ModuleName -> { oneOfName : String, options : OneOf, docs : List String } -> List C.Declaration
+reexportAST internalsModule moduleName { oneOfName, options, docs } =
     let
+        dataType =
+            oneOfName
+
+        documentation =
+            if List.isEmpty docs then
+                oneofDocumentation dataType
+
+            else
+                Common.renderDocs docs
+
         type_ =
-            C.customTypeDecl (Just <| oneofDocumentation dataType)
+            C.customTypeDecl (Just documentation)
                 dataType
                 []
-                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotationReexport o.fieldType ] )) opts)
+                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotationReexport o.fieldType ] )) options)
 
         internalName =
             Mapper.Name.internalize ( moduleName, dataType )
@@ -43,7 +53,7 @@ reexportAST internalsModule moduleName ( dataType, opts ) =
                             , C.apply [ C.val o.dataType, C.val "n_" ]
                             )
                         )
-                        opts
+                        options
                     )
                 )
 
@@ -70,7 +80,7 @@ reexportAST internalsModule moduleName ( dataType, opts ) =
                                 ]
                             )
                         )
-                        opts
+                        options
                     )
                 )
 
@@ -95,15 +105,18 @@ reexportAST internalsModule moduleName ( dataType, opts ) =
     [ type_, fromInternal, toInternal ]
 
 
-toAST : ( String, OneOf ) -> List C.Declaration
-toAST ( dataType, opts ) =
+toAST : { a | oneOfName : String, options : OneOf } -> List C.Declaration
+toAST { oneOfName, options } =
     let
+        dataType =
+            oneOfName
+
         type_ =
             C.customTypeDecl
                 (Just <| oneofDocumentation dataType)
                 dataType
                 []
-                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotation o.fieldType ] )) opts)
+                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotation o.fieldType ] )) options)
 
         encoder =
             C.funDecl Nothing
@@ -120,7 +133,7 @@ toAST ( dataType, opts ) =
                                 , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required o.fieldType, C.val "innerValue" ] ]
                                 )
                             )
-                            opts
+                            options
                     )
 
         setterAnn x =
@@ -160,7 +173,7 @@ toAST ( dataType, opts ) =
                                         ]
                                     ]
                             )
-                            opts
+                            options
                         )
                     ]
 
@@ -168,14 +181,14 @@ toAST ( dataType, opts ) =
         fieldNumbersTypeDecl =
             C.aliasDecl Nothing (Common.fieldNumbersTypeName dataType) [] <|
                 C.recordAnn <|
-                    List.map (\o -> ( o.fieldName, C.intAnn )) opts
+                    List.map (\o -> ( o.fieldName, C.intAnn )) options
 
         fieldNumbersDecl : C.Declaration
         fieldNumbersDecl =
             C.valDecl (Just <| Common.fieldNumbersDocumentation dataType)
                 (Just <| C.typed (Common.fieldNumbersTypeName dataType) [])
                 (Common.fieldNumbersName dataType)
-                (C.record <| List.map (\o -> ( o.fieldName, C.int o.fieldNumber )) opts)
+                (C.record <| List.map (\o -> ( o.fieldName, C.int o.fieldNumber )) options)
     in
     [ type_, encoder, decoder, fieldNumbersTypeDecl, fieldNumbersDecl ]
 

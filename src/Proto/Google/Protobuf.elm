@@ -102,7 +102,13 @@ encodeGeneratedCodeInfo =
 
 
 
-annotation:  An Annotation connects some span of text in generated code to an element
+## Fields
+
+
+### annotation
+
+
+ An Annotation connects some span of text in generated code to an element
  of its generating .proto file.
 
 
@@ -158,7 +164,13 @@ encodeSourceCodeInfo =
 
 
 
-location:  A Location identifies a piece of source code in a .proto file which
+## Fields
+
+
+### location
+
+
+ A Location identifies a piece of source code in a .proto file which
  corresponds to a particular definition.  This information is intended
  to be useful to IDEs, code indexers, documentation generators, and similar
  tools.
@@ -262,7 +274,13 @@ encodeUninterpretedOption =
 
 
 
-identifier_value:  The value of the uninterpreted option, in whatever type the tokenizer
+## Fields
+
+
+### identifier_value
+
+
+ The value of the uninterpreted option, in whatever type the tokenizer
  identified it as during parsing. Exactly one of these should be set.
 
 
@@ -308,21 +326,30 @@ encodeMethodOptions =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__MethodOptions
 
 
-{-| deprecated:  Note:  Field numbers 1 through 32 are reserved for Google's internal RPC
+{-| ## Fields
+
+
+### deprecated
+
+
+ Note:  Field numbers 1 through 32 are reserved for Google's internal RPC
    framework.  We apologize for hoarding these numbers to ourselves, but
    we were already using them long before we decided to release Protocol
    Buffers.
 
 
 
-  Is this method deprecated?
+ Is this method deprecated?
  Depending on the target platform, this can emit Deprecated annotations
  for the method, or it will be completely ignored; in the very least,
  this is a formalization for deprecating methods.
 
 
 
-uninterpreted_option:  The parser stores options it doesn't recognize here. See above.
+### uninterpreted_option
+
+
+ The parser stores options it doesn't recognize here. See above.
 
 
 
@@ -367,21 +394,30 @@ encodeServiceOptions =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__ServiceOptions
 
 
-{-| deprecated:  Note:  Field numbers 1 through 32 are reserved for Google's internal RPC
+{-| ## Fields
+
+
+### deprecated
+
+
+ Note:  Field numbers 1 through 32 are reserved for Google's internal RPC
    framework.  We apologize for hoarding these numbers to ourselves, but
    we were already using them long before we decided to release Protocol
    Buffers.
 
 
 
-  Is this service deprecated?
+ Is this service deprecated?
  Depending on the target platform, this can emit Deprecated annotations
  for the service, or it will be completely ignored; in the very least,
  this is a formalization for deprecating services.
 
 
 
-uninterpreted_option:  The parser stores options it doesn't recognize here. See above.
+### uninterpreted_option
+
+
+ The parser stores options it doesn't recognize here. See above.
 
 
 
@@ -426,14 +462,23 @@ encodeEnumValueOptions =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__EnumValueOptions
 
 
-{-| deprecated:  Is this enum value deprecated?
+{-| ## Fields
+
+
+### deprecated
+
+
+ Is this enum value deprecated?
  Depending on the target platform, this can emit Deprecated annotations
  for the enum value, or it will be completely ignored; in the very least,
  this is a formalization for deprecating enum values.
 
 
 
-uninterpreted_option:  The parser stores options it doesn't recognize here. See above.
+### uninterpreted_option
+
+
+ The parser stores options it doesn't recognize here. See above.
 
 
 
@@ -478,19 +523,31 @@ encodeEnumOptions =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__EnumOptions
 
 
-{-| allow_alias:  Set this option to true to allow mapping different tag names to the same
+{-| ## Fields
+
+
+### allow_alias
+
+
+ Set this option to true to allow mapping different tag names to the same
  value.
 
 
 
-deprecated:  Is this enum deprecated?
+### deprecated
+
+
+ Is this enum deprecated?
  Depending on the target platform, this can emit Deprecated annotations
  for the enum, or it will be completely ignored; in the very least, this
  is a formalization for deprecating enums.
 
 
 
-uninterpreted_option:  The parser stores options it doesn't recognize here. See above.
+### uninterpreted_option
+
+
+ The parser stores options it doesn't recognize here. See above.
 
 
 
@@ -535,7 +592,13 @@ encodeOneofOptions =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__OneofOptions
 
 
-{-| uninterpreted_option:  The parser stores options it doesn't recognize here. See above.
+{-| ## Fields
+
+
+### uninterpreted_option
+
+
+ The parser stores options it doesn't recognize here. See above.
 
 
 
@@ -581,14 +644,23 @@ encodeFieldOptions =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__FieldOptions
 
 
-{-| ctype:  The ctype option instructs the C++ code generator to use a different
+{-| ## Fields
+
+
+### ctype
+
+
+ The ctype option instructs the C++ code generator to use a different
  representation of the field than it normally would.  See the specific
  options below.  This option is not yet implemented in the open source
  release -- sorry, we'll try to include it in a future version!
 
 
 
-packed:  The packed option can be enabled for repeated primitive fields to enable
+### packed
+
+
+ The packed option can be enabled for repeated primitive fields to enable
  a more efficient representation on the wire. Rather than repeatedly
  writing the tag and type for each element, the entire array is encoded as
  a single length-delimited blob. In proto3, only explicit setting it to
@@ -596,7 +668,10 @@ packed:  The packed option can be enabled for repeated primitive fields to enabl
 
 
 
-jstype:  The jstype option determines the JavaScript type used for values of the
+### jstype
+
+
+ The jstype option determines the JavaScript type used for values of the
  field.  The option is permitted only for 64 bit integral and fixed types
  (int64, uint64, sint64, fixed64, sfixed64).  A field with jstype JS_STRING
  is represented as JavaScript string, which avoids loss of precision that
@@ -610,7 +685,10 @@ jstype:  The jstype option determines the JavaScript type used for values of the
 
 
 
-lazy:  Should this field be parsed lazily?  Lazy applies only to message-type
+### lazy
+
+
+ Should this field be parsed lazily?  Lazy applies only to message-type
  fields.  It means that when the outer message is initially parsed, the
  inner message's contents will not be parsed but instead stored in encoded
  form.  The inner message will actually be parsed when it is first accessed.
@@ -641,18 +719,27 @@ lazy:  Should this field be parsed lazily?  Lazy applies only to message-type
 
 
 
-deprecated:  Is this field deprecated?
+### deprecated
+
+
+ Is this field deprecated?
  Depending on the target platform, this can emit Deprecated annotations
  for accessors, or it will be completely ignored; in the very least, this
  is a formalization for deprecating fields.
 
 
 
-weak:  For Google-internal migration only. Do not use.
+### weak
+
+
+ For Google-internal migration only. Do not use.
 
 
 
-uninterpreted_option:  The parser stores options it doesn't recognize here. See above.
+### uninterpreted_option
+
+
+ The parser stores options it doesn't recognize here. See above.
 
 
 
@@ -703,7 +790,13 @@ encodeMessageOptions =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__MessageOptions
 
 
-{-| message_set_wire_format:  Set true to use the old proto1 MessageSet wire format for extensions.
+{-| ## Fields
+
+
+### message_set_wire_format
+
+
+ Set true to use the old proto1 MessageSet wire format for extensions.
  This is provided for backwards-compatibility with the MessageSet wire
  format.  You should not use this for any other reason:  It's less
  efficient, has fewer features, and is more complicated.
@@ -724,20 +817,29 @@ encodeMessageOptions =
 
 
 
-no_standard_descriptor_accessor:  Disables the generation of the standard "descriptor()" accessor, which can
+### no_standard_descriptor_accessor
+
+
+ Disables the generation of the standard "descriptor()" accessor, which can
  conflict with a field of the same name.  This is meant to make migration
  from proto1 easier; new code should avoid fields named "descriptor".
 
 
 
-deprecated:  Is this message deprecated?
+### deprecated
+
+
+ Is this message deprecated?
  Depending on the target platform, this can emit Deprecated annotations
  for the message, or it will be completely ignored; in the very least,
  this is a formalization for deprecating messages.
 
 
 
-map_entry:  Whether the message is an automatically generated map entry type for the
+### map_entry
+
+
+ Whether the message is an automatically generated map entry type for the
  maps field.
 
  For maps fields:
@@ -761,7 +863,10 @@ map_entry:  Whether the message is an automatically generated map entry type for
 
 
 
-uninterpreted_option:  The parser stores options it doesn't recognize here. See above.
+### uninterpreted_option
+
+
+ The parser stores options it doesn't recognize here. See above.
 
 
 
@@ -864,14 +969,23 @@ encodeFileOptions =
 
 
 
-java_package:  Sets the Java package where classes generated from this .proto will be
+## Fields
+
+
+### java_package
+
+
+ Sets the Java package where classes generated from this .proto will be
  placed.  By default, the proto package is used, but this is often
  inappropriate because proto packages do not normally start with backwards
  domain names.
 
 
 
-java_outer_classname:  Controls the name of the wrapper Java class generated for the .proto file.
+### java_outer_classname
+
+
+ Controls the name of the wrapper Java class generated for the .proto file.
  That class will always contain the .proto file's getDescriptor() method as
  well as any top-level extensions defined in the .proto file.
  If java_multiple_files is disabled, then all the other classes from the
@@ -879,7 +993,10 @@ java_outer_classname:  Controls the name of the wrapper Java class generated for
 
 
 
-java_multiple_files:  If enabled, then the Java code generator will generate a separate .java
+### java_multiple_files
+
+
+ If enabled, then the Java code generator will generate a separate .java
  file for each top-level message, enum, and service defined in the .proto
  file.  Thus, these types will *not* be nested inside the wrapper class
  named by java_outer_classname.  However, the wrapper class will still be
@@ -888,11 +1005,17 @@ java_multiple_files:  If enabled, then the Java code generator will generate a s
 
 
 
-java_generate_equals_and_hash:  This option does nothing.
+### java_generate_equals_and_hash
+
+
+ This option does nothing.
 
 
 
-java_string_check_utf8:  If set true, then the Java2 code generator will generate code that
+### java_string_check_utf8
+
+
+ If set true, then the Java2 code generator will generate code that
  throws an exception whenever an attempt is made to assign a non-UTF-8
  byte sequence to a string field.
  Message reflection will do the same.
@@ -901,7 +1024,10 @@ java_string_check_utf8:  If set true, then the Java2 code generator will generat
 
 
 
-go_package:  Sets the Go package where structs generated from this .proto will be
+### go_package
+
+
+ Sets the Go package where structs generated from this .proto will be
  placed. If omitted, the Go package will be derived from the following:
    - The basename of the package import path, if provided.
    - Otherwise, the package statement in the .proto file, if present.
@@ -909,7 +1035,10 @@ go_package:  Sets the Go package where structs generated from this .proto will b
 
 
 
-cc_generic_services:  Should generic services be generated in each language?  "Generic" services
+### cc_generic_services
+
+
+ Should generic services be generated in each language?  "Generic" services
  are not specific to any particular RPC system.  They are generated by the
  main code generators in each language (without additional plugins).
  Generic services were the only kind of service generation supported by
@@ -922,58 +1051,88 @@ cc_generic_services:  Should generic services be generated in each language?  "G
 
 
 
-deprecated:  Is this file deprecated?
+### deprecated
+
+
+ Is this file deprecated?
  Depending on the target platform, this can emit Deprecated annotations
  for everything in the file, or it will be completely ignored; in the very
  least, this is a formalization for deprecating files.
 
 
 
-cc_enable_arenas:  Enables the use of arenas for the proto messages in this file. This applies
+### cc_enable_arenas
+
+
+ Enables the use of arenas for the proto messages in this file. This applies
  only to generated classes for C++.
 
 
 
-objc_class_prefix:  Sets the objective c class prefix which is prepended to all objective c
+### objc_class_prefix
+
+
+ Sets the objective c class prefix which is prepended to all objective c
  generated classes from this .proto. There is no default.
 
 
 
-csharp_namespace:  Namespace for generated classes; defaults to the package.
+### csharp_namespace
+
+
+ Namespace for generated classes; defaults to the package.
 
 
 
-swift_prefix:  By default Swift generators will take the proto package and CamelCase it
+### swift_prefix
+
+
+ By default Swift generators will take the proto package and CamelCase it
  replacing '.' with underscore and use that to prefix the types/symbols
  defined. When this options is provided, they will use this value instead
  to prefix the types/symbols defined.
 
 
 
-php_class_prefix:  Sets the php class prefix which is prepended to all php generated classes
+### php_class_prefix
+
+
+ Sets the php class prefix which is prepended to all php generated classes
  from this .proto. Default is empty.
 
 
 
-php_namespace:  Use this option to change the namespace of php generated classes. Default
+### php_namespace
+
+
+ Use this option to change the namespace of php generated classes. Default
  is empty. When this option is empty, the package name will be used for
  determining the namespace.
 
 
 
-php_metadata_namespace:  Use this option to change the namespace of php generated metadata classes.
+### php_metadata_namespace
+
+
+ Use this option to change the namespace of php generated metadata classes.
  Default is empty. When this option is empty, the proto file name will be
  used for determining the namespace.
 
 
 
-ruby_package:  Use this option to change the package of ruby generated classes. Default
+### ruby_package
+
+
+ Use this option to change the package of ruby generated classes. Default
  is empty. When this option is not set, the package name will be used for
  determining the ruby package.
 
 
 
-uninterpreted_option:  The parser stores options it doesn't recognize here.
+### uninterpreted_option
+
+
+ The parser stores options it doesn't recognize here.
  See the documentation for the "Options" section above.
 
 
@@ -1024,16 +1183,28 @@ encodeMethodDescriptorProto =
 
 
 
-input_type:  Input and output type names.  These are resolved in the same way as
+## Fields
+
+
+### input_type
+
+
+ Input and output type names.  These are resolved in the same way as
  FieldDescriptorProto.type_name, but must refer to a message type.
 
 
 
-client_streaming:  Identifies if client streams multiple client messages
+### client_streaming
+
+
+ Identifies if client streams multiple client messages
 
 
 
-server_streaming:  Identifies if server streams multiple server messages
+### server_streaming
+
+
+ Identifies if server streams multiple server messages
 
 
 
@@ -1172,13 +1343,22 @@ encodeEnumDescriptorProto =
 
 
 
-reserved_range:  Range of reserved numeric values. Reserved numeric values may not be used
+## Fields
+
+
+### reserved_range
+
+
+ Range of reserved numeric values. Reserved numeric values may not be used
  by enum values in the same enum declaration. Reserved ranges may not
  overlap.
 
 
 
-reserved_name:  Reserved enum value names, which may not be reused. A given name may only
+### reserved_name
+
+
+ Reserved enum value names, which may not be reused. A given name may only
  be reserved once.
 
 
@@ -1285,12 +1465,21 @@ encodeFieldDescriptorProto =
 
 
 
-type:  If type_name is set, this need not be set.  If both this and type_name
+## Fields
+
+
+### type
+
+
+ If type_name is set, this need not be set.  If both this and type_name
  are set, this must be one of TYPE_ENUM, TYPE_MESSAGE or TYPE_GROUP.
 
 
 
-type_name:  For message and enum types, this is the name of the type.  If the name
+### type_name
+
+
+ For message and enum types, this is the name of the type.  If the name
  starts with a '.', it is fully-qualified.  Otherwise, C++-like scoping
  rules are used to find the type (i.e. first the nested types within this
  message are searched, then within the parent, on up to the root
@@ -1298,12 +1487,18 @@ type_name:  For message and enum types, this is the name of the type.  If the na
 
 
 
-extendee:  For extensions, this is the name of the type being extended.  It is
+### extendee
+
+
+ For extensions, this is the name of the type being extended.  It is
  resolved in the same manner as type_name.
 
 
 
-default_value:  For numeric types, contains the original text representation of the value.
+### default_value
+
+
+ For numeric types, contains the original text representation of the value.
  For booleans, "true" or "false".
  For strings, contains the default text contents (not escaped in any way).
  For bytes, contains the C escaped value.  All bytes >= 128 are escaped.
@@ -1311,19 +1506,28 @@ default_value:  For numeric types, contains the original text representation of 
 
 
 
-oneof_index:  If set, gives the index of a oneof in the containing type's oneof_decl
+### oneof_index
+
+
+ If set, gives the index of a oneof in the containing type's oneof_decl
  list.  This field is a member of that oneof.
 
 
 
-json_name:  JSON name of this field. The value is set by protocol compiler. If the
+### json_name
+
+
+ JSON name of this field. The value is set by protocol compiler. If the
  user has set a "json_name" option on this field, that option's value
  will be used. Otherwise, it's deduced from the field's name by converting
  it to camelCase.
 
 
 
-proto3_optional:  If true, this is a proto3 "optional". When a proto3 field is optional, it
+### proto3_optional
+
+
+ If true, this is a proto3 "optional". When a proto3 field is optional, it
  tracks presence regardless of field type.
 
  When proto3_optional is true, this field must be belong to a oneof to
@@ -1388,7 +1592,13 @@ encodeExtensionRangeOptions =
     Proto.Google.Protobuf.Internals_.encodeProto__Google__Protobuf__ExtensionRangeOptions
 
 
-{-| uninterpreted_option:  The parser stores options it doesn't recognize here. See above.
+{-| ## Fields
+
+
+### uninterpreted_option
+
+
+ The parser stores options it doesn't recognize here. See above.
 
 
 
@@ -1477,7 +1687,13 @@ encodeDescriptorProto =
 
 
 
-reserved_name:  Reserved field names, which may not be used by fields in the same message.
+## Fields
+
+
+### reserved_name
+
+
+ Reserved field names, which may not be used by fields in the same message.
  A given name may only be reserved once.
 
 
@@ -1540,39 +1756,66 @@ encodeFileDescriptorProto =
 
 
 
-name:  file name, relative to root of source tree
+## Fields
+
+
+### name
+
+
+ file name, relative to root of source tree
 
 
 
-package:  e.g. "foo", "foo.bar", etc.
+### package
+
+
+ e.g. "foo", "foo.bar", etc.
 
 
 
-dependency:  Names of files imported by this file.
+### dependency
+
+
+ Names of files imported by this file.
 
 
 
-public_dependency:  Indexes of the public imported files in the dependency list above.
+### public_dependency
+
+
+ Indexes of the public imported files in the dependency list above.
 
 
 
-weak_dependency:  Indexes of the weak imported files in the dependency list.
+### weak_dependency
+
+
+ Indexes of the weak imported files in the dependency list.
  For Google-internal migration only. Do not use.
 
 
 
-message_type:  All top-level definitions in this file.
+### message_type
+
+
+ All top-level definitions in this file.
 
 
 
-source_code_info:  This field contains optional information about the original source code.
+### source_code_info
+
+
+ This field contains optional information about the original source code.
  You may safely remove this entire field without harming runtime
  functionality of the descriptors -- the information is needed only by
  development tools.
 
 
 
-syntax:  The syntax of the proto file.
+### syntax
+
+
+ The syntax of the proto file.
  The supported values are "proto2" and "proto3".
 
 

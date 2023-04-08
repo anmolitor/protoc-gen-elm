@@ -265,8 +265,8 @@ message moduleRef ctx sourceCodePath descriptor =
                 _ ->
                     Nothing
 
-        messageFieldMeta : FieldDescriptorProto -> Res { field : ( FieldName, Field ), oneOfIndex : Int }
-        messageFieldMeta fieldDescriptor =
+        messageFieldMeta : Int -> FieldDescriptorProto -> Res { field : ( FieldName, Field ), oneOfIndex : Int, docs : List String }
+        messageFieldMeta index fieldDescriptor =
             (case getFromMaps fieldDescriptor of
                 Just { key, value } ->
                     case key of
@@ -297,12 +297,14 @@ message moduleRef ctx sourceCodePath descriptor =
 
                             else
                                 fieldDescriptor.oneofIndex
+                        , docs = sourceDocumentation ctx (sourceCodePath ++ [ fieldNumbersDescriptorProto.field, index ])
                         }
                     )
 
-        fieldsMetaResult : Res (List { field : ( FieldName, Field ), oneOfIndex : Int })
+        fieldsMetaResult : Res (List { field : ( FieldName, Field ), oneOfIndex : Int, docs : List String })
         fieldsMetaResult =
-            Errors.combineMap messageFieldMeta descriptor.field
+            List.indexedMap messageFieldMeta descriptor.field
+                |> Errors.combine
 
         nestedTypes =
             List.map unwrapDescriptorProto descriptor.nestedType
@@ -347,17 +349,27 @@ message moduleRef ctx sourceCodePath descriptor =
                 |> Result.map Package.concat
 
         docs =
-            sourceDocumentation ctx sourceCodePath ++ fieldDocs
+            sourceDocumentation ctx sourceCodePath
+                ++ (if List.isEmpty fieldDocs then
+                        []
+
+                    else
+                        "## Fields" :: fieldDocs
+                   )
 
         fieldDocs =
             List.indexedMap
                 (\index field ->
-                    case sourceDocumentation ctx (sourceCodePath ++ [ fieldNumbersDescriptorProto.field, index ]) of
-                        [] ->
-                            []
+                    if field.oneofIndex >= 0 then
+                        []
 
-                        firstLine :: otherLines ->
-                            (field.name ++ ": " ++ firstLine) :: List.map ((++) " ") otherLines
+                    else
+                        case sourceDocumentation ctx (sourceCodePath ++ [ fieldNumbersDescriptorProto.field, index ]) of
+                            [] ->
+                                []
+
+                            nonEmptyLines ->
+                                ("### " ++ field.name) :: nonEmptyLines
                 )
                 descriptor.field
                 |> List.concatMap identity
@@ -409,7 +421,7 @@ message moduleRef ctx sourceCodePath descriptor =
                         identity
 
                     else
-                        Package.append (oneofStruct ctx.originFiles nestedPackageName oneOfFieldNames fieldsMeta)
+                        Package.append (oneofStruct ctx sourceCodePath nestedPackageName oneOfFieldNames fieldsMeta)
                 )
                 fieldsMetaResult
 
@@ -437,18 +449,24 @@ message moduleRef ctx sourceCodePath descriptor =
 -- FIELD
 
 
-oneofStruct : Set String -> C.ModuleName -> List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> Package.Packages
-oneofStruct originFiles basePackageName oneOfFieldNames fieldsMeta =
+oneofStruct :
+    Ctx
+    -> List Int
+    -> C.ModuleName
+    -> List String
+    -> List { field : ( FieldName, Field ), oneOfIndex : Int, docs : List String }
+    -> Package.Packages
+oneofStruct ctx messageSourceCodePath basePackageName oneOfFieldNames fieldsMeta =
     let
         oneOfFields =
-            List.indexedMap (oneOfFieldPackage fieldsMeta) oneOfFieldNames
+            List.indexedMap (oneOfFieldPackage ctx messageSourceCodePath fieldsMeta) oneOfFieldNames
     in
-    List.foldl (\oneOf -> Package.addPackage (basePackageName ++ [ Tuple.first oneOf ]) { empty | oneOfs = [ oneOf ], originFiles = originFiles })
+    List.foldl (\oneOf -> Package.addPackage (basePackageName ++ [ oneOf.oneOfName ]) { empty | oneOfs = [ oneOf ], originFiles = ctx.originFiles })
         Package.empty
         oneOfFields
 
 
-messageFields : Name.ModuleRef -> List String -> List { field : ( FieldName, Field ), oneOfIndex : Int } -> List ( FieldName, Field )
+messageFields : Name.ModuleRef -> List String -> List { a | field : ( FieldName, Field ), oneOfIndex : Int } -> List ( FieldName, Field )
 messageFields nestedModuleRef oneOfFieldNames fieldsMeta =
     let
         oneOfFields =
@@ -472,25 +490,49 @@ oneOfField moduleRef name =
         |> Tuple.pair (Name.field name)
 
 
-oneOfFieldPackage : List { field : ( FieldName, Field ), oneOfIndex : Int } -> Int -> String -> ( String, OneOf )
-oneOfFieldPackage fields index name =
+oneOfFieldPackage :
+    Ctx
+    -> List Int
+    -> List { field : ( FieldName, Field ), oneOfIndex : Int, docs : List String }
+    -> Int
+    -> String
+    -> { oneOfName : String, options : OneOf, docs : List String }
+oneOfFieldPackage ctx messageSourceCodePath fields index name =
     List.filter (\field -> field.oneOfIndex == index) fields
-        |> List.map .field
         |> List.filterMap
-            (\( fieldName, field ) ->
+            (\o ->
+                let
+                    ( fieldName, field ) =
+                        o.field
+                in
                 case field of
                     NormalField fieldNumber _ type_ ->
                         Just
-                            { fieldNumber = fieldNumber
-                            , fieldType = type_
-                            , fieldName = fieldName
-                            , dataType = Name.type_ fieldName
-                            }
+                            ( { fieldNumber = fieldNumber
+                              , fieldType = type_
+                              , fieldName = fieldName
+                              , dataType = Name.type_ fieldName
+                              }
+                            , o.docs
+                            )
 
                     _ ->
                         Nothing
             )
-        |> Tuple.pair (Name.type_ name)
+        |> (\optionsAndDocs ->
+                { oneOfName = Name.type_ name
+                , options = List.map Tuple.first optionsAndDocs
+                , docs =
+                    sourceDocumentation ctx (messageSourceCodePath ++ [ fieldNumbersDescriptorProto.oneofDecl, index ])
+                        ++ ("## Options"
+                                :: List.concatMap
+                                    (\( option, docs ) ->
+                                        ("### " ++ option.dataType) :: docs
+                                    )
+                                    optionsAndDocs
+                           )
+                }
+           )
 
 
 handleMessage : Name.Ref -> TypeRefs -> String -> FieldType
