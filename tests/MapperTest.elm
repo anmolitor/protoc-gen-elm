@@ -29,7 +29,7 @@ suite =
                                     [ "Proto", "Testpackage" ]
                                     { empty
                                         | messages =
-                                            [ { dataType = "OtherMsg", fields = [] }
+                                            [ { dataType = "OtherMsg", fields = [], docs = [] }
                                             , { dataType = "Msg"
                                               , fields =
                                                     [ ( "test"
@@ -45,13 +45,14 @@ suite =
                                                       , NormalField 0 Optional (Embedded { dataType = "Msg", moduleName = [ "Proto", "Testpackage" ], rootModuleName = [ "Proto", "Testpackage" ], typeKind = Type })
                                                       )
                                                     ]
+                                              , docs = []
                                               }
                                             ]
                                         , originFiles = Set.singleton "test.proto"
                                     }
                                 |> Package.addPackage [ "Proto", "Testpackage", "OtherMsg" ]
                                     { empty
-                                        | enums = [ { dataType = "AnEnum", fields = ( ( 0, "Bla" ), [ ( 2, "Blub" ) ] ), withUnrecognized = True } ]
+                                        | enums = [ { dataType = "AnEnum", fields = ( ( 0, "Bla" ), [ ( 2, "Blub" ) ] ), withUnrecognized = True, docs = [] } ]
                                         , originFiles = Set.singleton "test.proto"
                                     }
                                 |> Package.addPackage [ "Proto", "Testpackage", "SomeService" ]
@@ -63,8 +64,10 @@ suite =
                                                     [ { name = "SomeMethod"
                                                       , reqType = { name = "OtherMsg", package = [ "Proto", "Testpackage" ], rootPackage = [ "Proto", "Testpackage" ] }
                                                       , resType = { name = "AnEnum", package = [ "Proto", "Testpackage", "OtherMsg" ], rootPackage = [ "Proto", "Testpackage" ] }
+                                                      , docs = []
                                                       }
                                                     ]
+                                              , docs = []
                                               }
                                             ]
                                         , originFiles = Set.singleton "test.proto"
@@ -164,15 +167,15 @@ suite =
                     |> Expect.equal
                         (Dict.fromList
                             [ ( [ "Proto", "Some", "Pkg", "Name" ]
-                              , { empty | messages = [ { dataType = "Msg", fields = [] } ], originFiles = Set.singleton "test.proto" }
+                              , { empty | messages = [ { dataType = "Msg", fields = [], docs = [] } ], originFiles = Set.singleton "test.proto" }
                               )
                             , ( [ "Proto", "Some", "Pkg", "Name", "Msg" ]
-                              , { empty | messages = [ { dataType = "OtherMsg", fields = [] } ], originFiles = Set.singleton "test.proto" }
+                              , { empty | messages = [ { dataType = "OtherMsg", fields = [], docs = [] } ], originFiles = Set.singleton "test.proto" }
                               )
                             , ( [ "Proto" ]
                               , { empty
                                     | messages =
-                                        [ { dataType = "Abc", fields = [] }
+                                        [ { dataType = "Abc", fields = [], docs = [] }
                                         , { dataType = "Msg"
                                           , fields =
                                                 [ ( "field1"
@@ -198,6 +201,7 @@ suite =
                                                         )
                                                   )
                                                 ]
+                                          , docs = []
                                           }
                                         ]
                                     , originFiles = Set.fromList [ "importing.proto", "no_package.proto" ]
