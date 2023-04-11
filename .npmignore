@@ -7,8 +7,10 @@ node_modules/
 *.sh
 *.elm
 *.proto
+*.log
 
 jest.config.js
 tsconfig.json
 elm.json
+debug.js
 
