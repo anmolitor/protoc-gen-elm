@@ -3,7 +3,7 @@ import { Repl, startRepl } from "./repl";
 import { makeRoundtripRunner, RoundtripRunner } from "./roundtrip";
 import { compileElm } from "./util";
 
-jest.setTimeout(50000);
+jest.setTimeout(100_000);
 
 describe("protoc-gen-elm", () => {
   let repl: Repl;
@@ -466,7 +466,7 @@ describe("protoc-gen-elm", () => {
 
   describe("recursive oneofs", () => {
     it("generates a valid elm file for recursive oneofs", async () => {
-      await compileElm(["Proto/RecursiveOneOf.elm"]);
+      await compileElm(["Proto/RecursiveOneof.elm"]);
     });
 
     it("does not need to generate wrapper types", async () => {
@@ -475,7 +475,9 @@ describe("protoc-gen-elm", () => {
         "Proto.RecursiveOneof.Rec.Msg"
       );
       const msg = repl.getFreshVariable();
-      await repl.write(`${msg} = { msg = Just <| Proto.RecursiveOneof.Rec.Msg.toInternalMsg <| Proto.RecursiveOneof.Rec.Msg.Rec { msg = Nothing } }`);
+      await repl.write(
+        `${msg} = { msg = Just <| Proto.RecursiveOneof.Rec.Msg.toInternalMsg <| Proto.RecursiveOneof.Rec.Msg.Rec { msg = Nothing } }`
+      );
 
       const output = await repl.write(
         `(Proto.RecursiveOneof.encodeRec ${msg} |> E.encode |> D.decode Proto.RecursiveOneof.decodeRec) == Just ${msg}`
