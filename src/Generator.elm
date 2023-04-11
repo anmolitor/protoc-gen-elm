@@ -14,6 +14,7 @@ import Generator.Import as Import
 import Generator.Message as Message
 import Generator.OneOf as OneOf
 import Generator.Service as Service
+import List.Extra
 import Mapper as Mapper exposing (TypeRefs)
 import Mapper.Name as Name
 import Mapper.Package as Package exposing (Packages)
@@ -125,7 +126,7 @@ convert versions flags fileNames descriptors =
                     Export.fromDeclarations declarations
 
                 fileDocs =
-                    struct.docs
+                    List.Extra.unique struct.docs
                         ++ (struct.services |> List.concatMap .docs)
             in
             C.file
