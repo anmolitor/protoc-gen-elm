@@ -153,22 +153,17 @@ toAST { oneOfName, options } =
                         (List.map
                             (\o ->
                                 let
-                                    handleTypeKind =
+                                    wrapEmbeddedWithLazy =
                                         case o.fieldType of
-                                            Embedded e ->
-                                                case e.typeKind of
-                                                    Model.Alias ->
-                                                        identity
-
-                                                    Model.Type ->
-                                                        C.applyBinOp Meta.Decode.lazy C.pipel << C.lambda [ C.allPattern ]
+                                            Embedded _ ->
+                                                C.applyBinOp Meta.Decode.lazy C.pipel << C.lambda [ C.allPattern ]
 
                                             _ ->
                                                 identity
                                 in
                                 C.tuple
                                     [ C.int o.fieldNumber
-                                    , handleTypeKind <|
+                                    , wrapEmbeddedWithLazy <|
                                         C.apply
                                             [ Meta.Decode.map
                                             , C.val o.dataType

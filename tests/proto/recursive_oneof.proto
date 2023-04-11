@@ -8,3 +8,13 @@ message Rec {
     string other = 2;
   }
 }
+
+message LayerOne {
+  repeated LayerTwo layerTwo = 1;
+}
+
+message LayerTwo {
+  oneof msg {
+    LayerOne layerOne = 1;
+  }
+}
