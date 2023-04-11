@@ -11,6 +11,9 @@
   - Previously, the generated files were based on the `.proto` file names, i.e. `Name.proto` would always generate a `Name.elm` file.
   - This was problematic because it led to name collisions - Protoc uses packages and messages as namespaces and not files.
   - Now, one file is generated for each package, with a nested module for declarations nested in a `message` and `oneof` statements
+  - The new reliance on the protobuf module system means that we can no longer ignore weirdly named messages/packages:
+    - packages need to be lower case
+    - messages need to be upper case
 
 - Added gRPC support.
   - Run `elm install andreasewering/elm-grpc` to install the necessary dependencies if you want to use it.
