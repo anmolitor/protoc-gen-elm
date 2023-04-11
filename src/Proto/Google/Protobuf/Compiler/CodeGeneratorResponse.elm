@@ -80,7 +80,7 @@ encodeFile =
 
 
 
-### insertion_point
+### insertionPoint
 
 
  If non-empty, indicates that the named file should already exist, and the
@@ -130,7 +130,7 @@ encodeFile =
 
 
 
-### generated_code_info
+### generatedCodeInfo
 
 
  Information describing the file content being inserted. If an insertion

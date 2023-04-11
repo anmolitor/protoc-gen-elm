@@ -129,7 +129,7 @@ encodeCodeGeneratorResponse =
 
 
 
-### supported_features
+### supportedFeatures
 
 
  A bitmask of supported features that the code generator supports.
@@ -185,7 +185,7 @@ encodeCodeGeneratorRequest =
 ## Fields
 
 
-### file_to_generate
+### fileToGenerate
 
 
  The .proto files that were explicitly listed on the command-line.  The
@@ -201,7 +201,7 @@ encodeCodeGeneratorRequest =
 
 
 
-### proto_file
+### protoFile
 
 
  FileDescriptorProtos for all files in files_to_generate and everything
@@ -221,7 +221,7 @@ encodeCodeGeneratorRequest =
 
 
 
-### compiler_version
+### compilerVersion
 
 
  The version number of protocol compiler.

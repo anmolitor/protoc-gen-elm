@@ -99,7 +99,7 @@ encodeLocation =
 
 
 
-### leading_comments
+### leadingComments
 
 
  If this SourceCodeInfo represents a complete declaration, these are any

@@ -300,7 +300,7 @@ encodeUninterpretedOption =
 ## Fields
 
 
-### identifier_value
+### identifierValue
 
 
  The value of the uninterpreted option, in whatever type the tokenizer
@@ -369,7 +369,7 @@ encodeMethodOptions =
 
 
 
-### uninterpreted_option
+### uninterpretedOption
 
 
  The parser stores options it doesn't recognize here. See above.
@@ -437,7 +437,7 @@ encodeServiceOptions =
 
 
 
-### uninterpreted_option
+### uninterpretedOption
 
 
  The parser stores options it doesn't recognize here. See above.
@@ -498,7 +498,7 @@ encodeEnumValueOptions =
 
 
 
-### uninterpreted_option
+### uninterpretedOption
 
 
  The parser stores options it doesn't recognize here. See above.
@@ -549,7 +549,7 @@ encodeEnumOptions =
 {-| ## Fields
 
 
-### allow_alias
+### allowAlias
 
 
  Set this option to true to allow mapping different tag names to the same
@@ -567,7 +567,7 @@ encodeEnumOptions =
 
 
 
-### uninterpreted_option
+### uninterpretedOption
 
 
  The parser stores options it doesn't recognize here. See above.
@@ -618,7 +618,7 @@ encodeOneofOptions =
 {-| ## Fields
 
 
-### uninterpreted_option
+### uninterpretedOption
 
 
  The parser stores options it doesn't recognize here. See above.
@@ -759,7 +759,7 @@ encodeFieldOptions =
 
 
 
-### uninterpreted_option
+### uninterpretedOption
 
 
  The parser stores options it doesn't recognize here. See above.
@@ -816,7 +816,7 @@ encodeMessageOptions =
 {-| ## Fields
 
 
-### message_set_wire_format
+### messageSetWireFormat
 
 
  Set true to use the old proto1 MessageSet wire format for extensions.
@@ -840,7 +840,7 @@ encodeMessageOptions =
 
 
 
-### no_standard_descriptor_accessor
+### noStandardDescriptorAccessor
 
 
  Disables the generation of the standard "descriptor()" accessor, which can
@@ -859,7 +859,7 @@ encodeMessageOptions =
 
 
 
-### map_entry
+### mapEntry
 
 
  Whether the message is an automatically generated map entry type for the
@@ -886,7 +886,7 @@ encodeMessageOptions =
 
 
 
-### uninterpreted_option
+### uninterpretedOption
 
 
  The parser stores options it doesn't recognize here. See above.
@@ -995,7 +995,7 @@ encodeFileOptions =
 ## Fields
 
 
-### java_package
+### javaPackage
 
 
  Sets the Java package where classes generated from this .proto will be
@@ -1005,7 +1005,7 @@ encodeFileOptions =
 
 
 
-### java_outer_classname
+### javaOuterClassname
 
 
  Controls the name of the wrapper Java class generated for the .proto file.
@@ -1016,7 +1016,7 @@ encodeFileOptions =
 
 
 
-### java_multiple_files
+### javaMultipleFiles
 
 
  If enabled, then the Java code generator will generate a separate .java
@@ -1028,14 +1028,14 @@ encodeFileOptions =
 
 
 
-### java_generate_equals_and_hash
+### javaGenerateEqualsAndHash
 
 
  This option does nothing.
 
 
 
-### java_string_check_utf8
+### javaStringCheckUtf8
 
 
  If set true, then the Java2 code generator will generate code that
@@ -1047,7 +1047,7 @@ encodeFileOptions =
 
 
 
-### go_package
+### goPackage
 
 
  Sets the Go package where structs generated from this .proto will be
@@ -1058,7 +1058,7 @@ encodeFileOptions =
 
 
 
-### cc_generic_services
+### ccGenericServices
 
 
  Should generic services be generated in each language?  "Generic" services
@@ -1084,7 +1084,7 @@ encodeFileOptions =
 
 
 
-### cc_enable_arenas
+### ccEnableArenas
 
 
  Enables the use of arenas for the proto messages in this file. This applies
@@ -1092,7 +1092,7 @@ encodeFileOptions =
 
 
 
-### objc_class_prefix
+### objcClassPrefix
 
 
  Sets the objective c class prefix which is prepended to all objective c
@@ -1100,14 +1100,14 @@ encodeFileOptions =
 
 
 
-### csharp_namespace
+### csharpNamespace
 
 
  Namespace for generated classes; defaults to the package.
 
 
 
-### swift_prefix
+### swiftPrefix
 
 
  By default Swift generators will take the proto package and CamelCase it
@@ -1117,7 +1117,7 @@ encodeFileOptions =
 
 
 
-### php_class_prefix
+### phpClassPrefix
 
 
  Sets the php class prefix which is prepended to all php generated classes
@@ -1125,7 +1125,7 @@ encodeFileOptions =
 
 
 
-### php_namespace
+### phpNamespace
 
 
  Use this option to change the namespace of php generated classes. Default
@@ -1134,7 +1134,7 @@ encodeFileOptions =
 
 
 
-### php_metadata_namespace
+### phpMetadataNamespace
 
 
  Use this option to change the namespace of php generated metadata classes.
@@ -1143,7 +1143,7 @@ encodeFileOptions =
 
 
 
-### ruby_package
+### rubyPackage
 
 
  Use this option to change the package of ruby generated classes. Default
@@ -1152,7 +1152,7 @@ encodeFileOptions =
 
 
 
-### uninterpreted_option
+### uninterpretedOption
 
 
  The parser stores options it doesn't recognize here.
@@ -1209,7 +1209,7 @@ encodeMethodDescriptorProto =
 ## Fields
 
 
-### input_type
+### inputType
 
 
  Input and output type names.  These are resolved in the same way as
@@ -1217,14 +1217,14 @@ encodeMethodDescriptorProto =
 
 
 
-### client_streaming
+### clientStreaming
 
 
  Identifies if client streams multiple client messages
 
 
 
-### server_streaming
+### serverStreaming
 
 
  Identifies if server streams multiple server messages
@@ -1369,7 +1369,7 @@ encodeEnumDescriptorProto =
 ## Fields
 
 
-### reserved_range
+### reservedRange
 
 
  Range of reserved numeric values. Reserved numeric values may not be used
@@ -1378,7 +1378,7 @@ encodeEnumDescriptorProto =
 
 
 
-### reserved_name
+### reservedName
 
 
  Reserved enum value names, which may not be reused. A given name may only
@@ -1491,7 +1491,7 @@ encodeFieldDescriptorProto =
 ## Fields
 
 
-### type
+### type_
 
 
  If type_name is set, this need not be set.  If both this and type_name
@@ -1499,7 +1499,7 @@ encodeFieldDescriptorProto =
 
 
 
-### type_name
+### typeName
 
 
  For message and enum types, this is the name of the type.  If the name
@@ -1518,7 +1518,7 @@ encodeFieldDescriptorProto =
 
 
 
-### default_value
+### defaultValue
 
 
  For numeric types, contains the original text representation of the value.
@@ -1529,7 +1529,7 @@ encodeFieldDescriptorProto =
 
 
 
-### oneof_index
+### oneofIndex
 
 
  If set, gives the index of a oneof in the containing type's oneof_decl
@@ -1537,7 +1537,7 @@ encodeFieldDescriptorProto =
 
 
 
-### json_name
+### jsonName
 
 
  JSON name of this field. The value is set by protocol compiler. If the
@@ -1547,7 +1547,7 @@ encodeFieldDescriptorProto =
 
 
 
-### proto3_optional
+### proto3Optional
 
 
  If true, this is a proto3 "optional". When a proto3 field is optional, it
@@ -1618,7 +1618,7 @@ encodeExtensionRangeOptions =
 {-| ## Fields
 
 
-### uninterpreted_option
+### uninterpretedOption
 
 
  The parser stores options it doesn't recognize here. See above.
@@ -1713,7 +1713,7 @@ encodeDescriptorProto =
 ## Fields
 
 
-### reserved_name
+### reservedName
 
 
  Reserved field names, which may not be used by fields in the same message.
@@ -1803,14 +1803,14 @@ encodeFileDescriptorProto =
 
 
 
-### public_dependency
+### publicDependency
 
 
  Indexes of the public imported files in the dependency list above.
 
 
 
-### weak_dependency
+### weakDependency
 
 
  Indexes of the weak imported files in the dependency list.
@@ -1818,14 +1818,14 @@ encodeFileDescriptorProto =
 
 
 
-### message_type
+### messageType
 
 
  All top-level definitions in this file.
 
 
 
-### source_code_info
+### sourceCodeInfo
 
 
  This field contains optional information about the original source code.

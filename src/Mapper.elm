@@ -8,10 +8,9 @@ import Mapper.Name as Name
 import Mapper.Package as Package exposing (Packages)
 import Mapper.Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
-import Maybe.Extra
 import Meta.Encode
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
-import Proto.Google.Protobuf exposing (DescriptorProto, DescriptorProto_, EnumDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, fieldNumbersDescriptorProto, fieldNumbersFileDescriptorProto, fieldNumbersServiceDescriptorProto, unwrapDescriptorProto)
+import Proto.Google.Protobuf exposing (DescriptorProto, EnumDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, fieldNumbersDescriptorProto, fieldNumbersFileDescriptorProto, fieldNumbersServiceDescriptorProto, unwrapDescriptorProto)
 import Proto.Google.Protobuf.FieldDescriptorProto as FieldDescriptorProto
 import Proto.Google.Protobuf.SourceCodeInfo as SourceCodeInfo
 import Set exposing (Set)
@@ -369,7 +368,7 @@ message moduleRef ctx sourceCodePath descriptor =
                                 []
 
                             nonEmptyLines ->
-                                ("### " ++ field.name) :: nonEmptyLines
+                                ("### " ++ Name.field field.name) :: nonEmptyLines
                 )
                 descriptor.field
                 |> List.concatMap identity

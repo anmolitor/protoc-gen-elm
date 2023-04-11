@@ -66,7 +66,7 @@ encodeAnnotation =
 
 
 
-### source_file
+### sourceFile
 
 
  Identifies the filesystem path to the original source .proto.
