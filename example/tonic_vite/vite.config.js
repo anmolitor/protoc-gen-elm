@@ -1,21 +1,20 @@
 import cp from "child_process";
+import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 import { defineConfig } from "vite";
 import elmPlugin from "vite-plugin-elm";
-import which from "which";
 
 const protocPlugin = (protoPath, extraArgs, files) => {
   return {
     name: "run-protoc-plugin",
     async buildStart() {
-      const protocPath = await which("protoc");
-      const includePath = path.join(protocPath, "..", "..", "include");
-      console.log(includePath);
+      await promisify(fs.rm)(path.join(__dirname, "generated", "Proto"), {
+        recursive: true,
+        force: true,
+      });
       await promisify(cp.exec)(
-        `protoc ${extraArgs} --proto_path="${protoPath}" --proto_path="${includePath}" ${files.join(
-          " "
-        )}`
+        `protoc ${extraArgs} --proto_path="${protoPath}" ${files.join(" ")}`
       );
     },
   };
@@ -30,12 +29,8 @@ export default defineConfig({
     },
   },
   plugins: [
-    // Convert Elm files to JS
     elmPlugin(),
-    protocPlugin(__dirname, "--elm_out=generated", [
-      "todos.proto",
-      "google/protobuf/timestamp.proto",
-    ]),
+    protocPlugin(__dirname, "--elm_out=generated", ["todos.proto"]),
   ],
   server: {
     host: true,

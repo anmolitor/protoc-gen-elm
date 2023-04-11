@@ -1,5 +1,5 @@
 elm-stuff/
-generated/
+/generated/
 google/**/*.proto
 node_modules/
 /example/src/Proto

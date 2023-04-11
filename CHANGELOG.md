@@ -1,3 +1,7 @@
+## 3.1.1
+
+- Fixed wrong casing of field headlines for documentation. Now the headlines should match the Elm field names and not the proto field names.
+
 ## 3.1.0
 
 - Introduced generation of `fieldNumbers...` functions. This is primarily useful for parsing index- and fieldnumber-based paths into protobuf messages.
