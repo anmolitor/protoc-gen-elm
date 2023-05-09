@@ -57,6 +57,9 @@ reexportAST internalsModule moduleName { oneOfName, options, docs } =
                     )
                 )
 
+        toInternalFuncName =
+            "toInternal" ++ dataType
+
         toInternal =
             C.funDecl (Just <| Common.toInternalDocumentation dataType internalName)
                 (Just <|
@@ -67,7 +70,7 @@ reexportAST internalsModule moduleName { oneOfName, options, docs } =
                             []
                         )
                 )
-                ("toInternal" ++ dataType)
+                toInternalFuncName
                 [ C.varPattern "data_" ]
                 (C.caseExpr (C.val "data_")
                     (List.map
@@ -83,6 +86,21 @@ reexportAST internalsModule moduleName { oneOfName, options, docs } =
                         options
                     )
                 )
+
+        constructors =
+            List.map
+                (\option ->
+                    C.funDecl Nothing
+                        (Just <|
+                            C.funAnn
+                                (fieldTypeToTypeAnnotationReexport option.fieldType)
+                                (C.fqTyped internalsModule internalName [])
+                        )
+                        option.fieldName
+                        []
+                        (C.applyBinOp (C.val option.dataType) C.composer (C.fun toInternalFuncName))
+                )
+                options
 
         fieldTypeToTypeAnnotationReexport : FieldType -> C.TypeAnnotation
         fieldTypeToTypeAnnotationReexport fieldType =
@@ -102,7 +120,7 @@ reexportAST internalsModule moduleName { oneOfName, options, docs } =
                 Enumeration enum ->
                     C.fqTyped (Common.internalsModule enum.rootPackage) (Mapper.Name.internalize ( enum.package, enum.name )) []
     in
-    [ type_, fromInternal, toInternal ]
+    [ type_, fromInternal, toInternal ] ++ constructors
 
 
 toAST : { a | oneOfName : String, options : OneOf } -> List C.Declaration
