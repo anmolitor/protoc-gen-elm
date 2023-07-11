@@ -75,6 +75,8 @@ Elm's concept of "Only one solution to solve" a problem has several consequences
 - Each `message` and `enum` generates `encode[name]` and `decode[name]` functions, which integrate seamlessly with elm-protocol-buffers
 - Each `message` and `enum` generates a `default[name]` function, which sets the defaults as seen in the table above
 - `enum`s and `oneof`s generate `fromInternal[name]` and `toInternal[name]` functions. These are needed for use inside of other messages (you will see why in the section "Module Nesting")
+- For serialization, using `toInternal[name]` can be skipped by using lowercase enum constructor functions. I.e. for an ADT constructor `MyCons`
+  of a data type `MyDataType` a function `myCons` is generated, which is equivalent to `MyCons >> toInternalMyDataType`.
 
 ### Module Nesting
 

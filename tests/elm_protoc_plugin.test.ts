@@ -1,6 +1,6 @@
 import long from "long";
 import { Repl, startRepl } from "./repl";
-import { makeRoundtripRunner, RoundtripRunner } from "./roundtrip";
+import { RoundtripRunner, makeRoundtripRunner } from "./roundtrip";
 import { compileElm } from "./util";
 
 jest.setTimeout(100_000);
@@ -86,7 +86,15 @@ describe("protoc-gen-elm", () => {
       await repl.write(
         `${freshVar} = { msg = Just <| Proto.Oneof.OneOf.Msg.toInternalMsg <| Proto.Oneof.OneOf.Msg.AString "test" }`
       );
-      const output = await repl.write(
+      let output = await repl.write(
+        `(Proto.Oneof.encodeOneOf ${freshVar} |> E.encode |> D.decode Proto.Oneof.decodeOneOf) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+
+      await repl.write(
+        `${freshVar} = { msg = Just <| Proto.Oneof.OneOf.Msg.aString "test" }`
+      );
+      output = await repl.write(
         `(Proto.Oneof.encodeOneOf ${freshVar} |> E.encode |> D.decode Proto.Oneof.decodeOneOf) == Just ${freshVar}`
       );
       expect(output).toEqual(expect.stringContaining("True"));
