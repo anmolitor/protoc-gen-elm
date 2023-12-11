@@ -90,7 +90,8 @@ reexportAST internalsModule moduleName { oneOfName, options, docs } =
         constructors =
             List.map
                 (\option ->
-                    C.funDecl Nothing
+                    C.funDecl (C.emptyDocComment |> C.markdown ("Construct a " ++ option.dataType ++ """ and immediately turn it into an Internals_ data type.
+This is just (""" ++ option.dataType ++ " >> " ++ toInternalFuncName) |> Just)
                         (Just <|
                             C.funAnn
                                 (fieldTypeToTypeAnnotationReexport option.fieldType)
@@ -137,7 +138,7 @@ toAST { oneOfName, options } =
                 (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotation <| Model.setTypeKind Model.Alias o.fieldType ] )) options)
 
         encoder =
-            C.funDecl Nothing
+            C.funDecl (Just <| Common.encoderDocumentation dataType)
                 (Just <| C.funAnn (C.maybeAnn <| C.typed dataType []) (C.tupleAnn [ C.intAnn, C.fqTyped Meta.Encode.moduleName "Encoder" [] ]))
                 (Common.encoderName dataType)
                 [ C.varPattern "value" ]
