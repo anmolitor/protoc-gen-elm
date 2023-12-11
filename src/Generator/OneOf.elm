@@ -159,7 +159,7 @@ toAST { oneOfName, options } =
             C.funAnn x <| C.funAnn (C.typeVar "a") (C.typeVar "a")
 
         decoder =
-            C.valDecl Nothing
+            C.valDecl (Just <| Common.decoderDocumentation dataType)
                 (Just <|
                     C.funAnn (setterAnn <| C.maybeAnn <| C.typed dataType []) <|
                         C.fqTyped Meta.Decode.moduleName "FieldDecoder" [ C.typeVar "a" ]
@@ -208,7 +208,7 @@ toAST { oneOfName, options } =
 
         fieldNumbersTypeDecl : C.Declaration
         fieldNumbersTypeDecl =
-            C.aliasDecl Nothing (Common.fieldNumbersTypeName dataType) [] <|
+            C.aliasDecl (Just <| Common.fieldNumbersDocumentation dataType) (Common.fieldNumbersTypeName dataType) [] <|
                 C.recordAnn <|
                     List.map (\o -> ( o.fieldName, C.intAnn )) options
 
