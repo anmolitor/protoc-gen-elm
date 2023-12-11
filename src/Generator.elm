@@ -100,15 +100,24 @@ convert versions flags fileNames descriptors =
         packageToFile packageName struct =
             let
                 declarations =
-                    List.concatMap Enum.toAST struct.enums
-                        ++ List.concatMap Message.toAST struct.messages
-                        ++ List.concatMap OneOf.toAST struct.oneOfs
+                    removeDuplicateDeclarations
+                        (List.concatMap Enum.toAST struct.enums
+                            ++ List.concatMap Message.toAST struct.messages
+                            ++ List.concatMap OneOf.toAST struct.oneOfs
+                        )
+
+                exports =
+                    Export.fromDeclarations declarations
             in
             C.file
-                (C.normalModule packageName [])
+                (C.normalModule packageName exports)
                 (List.map (\importedModule -> C.importStmt importedModule Nothing Nothing) (Set.toList <| Import.extractImports declarations))
-                (removeDuplicateDeclarations declarations)
-                (C.emptyFileComment |> fileComment versions struct.originFiles |> Just)
+                declarations
+                (C.emptyFileComment
+                    |> fileComment versions struct.originFiles
+                    |> C.docTagsFromExposings exports
+                    |> Just
+                )
 
         packageToReexportFile : ModuleName -> ModuleName -> Struct -> C.File
         packageToReexportFile rootModName packageName struct =
