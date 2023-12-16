@@ -2,10 +2,11 @@ module Generator.OneOf exposing (..)
 
 import Elm.CodeGen as C exposing (ModuleName)
 import Generator.Common as Common
-import Generator.Message exposing (fieldTypeToEncoder, fieldTypeToTypeAnnotation, oneofDocumentation)
+import Generator.Message exposing (fieldTypeToEncoder, fieldTypeToJsonEncoder, fieldTypeToTypeAnnotation, oneofDocumentation)
 import Mapper.Name
 import Meta.Decode
 import Meta.Encode
+import Meta.JsonEncode
 import Meta.Type
 import Model exposing (Cardinality(..), FieldType(..), OneOf)
 
@@ -155,6 +156,32 @@ toAST { oneOfName, options } =
                             options
                     )
 
+        jsonEncoder =
+            C.funDecl (Just <| Common.jsonEncoderDocumentation dataType)
+                (Just <| C.funAnn (C.maybeAnn <| C.typed dataType []) <| C.listAnn (C.tupleAnn [ C.stringAnn, Meta.JsonEncode.value ]))
+                (Common.jsonEncoderName dataType)
+                [ C.varPattern "value" ]
+            <|
+                C.caseExpr
+                    (C.val "value")
+                    (( C.namedPattern "Nothing" [], C.list [] )
+                        :: List.map
+                            (\o ->
+                                ( C.namedPattern "Just" [ C.parensPattern (C.namedPattern o.dataType [ C.varPattern "innerValue" ]) ]
+                                , C.list
+                                    [ C.tuple
+                                        [ C.string o.fieldName
+                                        , C.apply
+                                            [ fieldTypeToJsonEncoder Required <| Model.setTypeKind Model.Alias o.fieldType
+                                            , C.val "innerValue"
+                                            ]
+                                        ]
+                                    ]
+                                )
+                            )
+                            options
+                    )
+
         setterAnn x =
             C.funAnn x <| C.funAnn (C.typeVar "a") (C.typeVar "a")
 
@@ -219,7 +246,7 @@ toAST { oneOfName, options } =
                 (Common.fieldNumbersName dataType)
                 (C.record <| List.map (\o -> ( o.fieldName, C.int o.fieldNumber )) options)
     in
-    [ type_, encoder, decoder, fieldNumbersTypeDecl, fieldNumbersDecl ]
+    [ type_, encoder, decoder, jsonEncoder, fieldNumbersTypeDecl, fieldNumbersDecl ]
 
 
 oneofDocumentation : String -> C.Comment C.DocComment

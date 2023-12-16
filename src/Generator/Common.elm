@@ -15,6 +15,11 @@ encoderName typeName =
     "encode" ++ typeName
 
 
+jsonEncoderName : String -> String
+jsonEncoderName typeName =
+    "jsonEncode" ++ typeName
+
+
 defaultName : String -> String
 defaultName typeName =
     "default" ++ typeName
@@ -30,9 +35,19 @@ encoderDocumentation typeName =
     C.emptyDocComment |> C.markdown ("Declares how to encode a `" ++ typeName ++ "` to Bytes. To actually perform the conversion to Bytes, you need to use Protobuf.Encode.encode from " ++ elmProtocolBuffersName ++ ".")
 
 
+jsonEncoderDocumentation : String -> C.Comment C.DocComment
+jsonEncoderDocumentation typeName =
+    C.emptyDocComment |> C.markdown ("Encode a `" ++ typeName ++ "` to JSON. Uses the canonical encoding described here: " ++ canonicalJsonEncodingLink)
+
+
 elmProtocolBuffersName : String
 elmProtocolBuffersName =
     "eriktim/elm-protocol-buffers"
+
+
+canonicalJsonEncodingLink : String
+canonicalJsonEncodingLink =
+    "https://protobuf.dev/programming-guides/proto3/#json"
 
 
 defaultDocumentation : String -> C.Comment C.DocComment

@@ -8,6 +8,7 @@ import List.NonEmpty as NonEmpty exposing (NonEmpty)
 import Mapper.Name
 import Meta.Decode
 import Meta.Encode
+import Meta.JsonEncode
 import Model exposing (Enum)
 
 
@@ -114,6 +115,15 @@ reexportAST internalsModule moduleName enum =
                     )
                 )
 
+        jsonEncoder =
+            C.valDecl (Just <| Common.jsonEncoderDocumentation enum.dataType)
+                (Just <| Meta.JsonEncode.encoder (C.typed enum.dataType []))
+                (Common.jsonEncoderName enum.dataType)
+                (C.applyBinOp (C.val <| "toInternal" ++ enum.dataType)
+                    C.composer
+                    (C.fqVal internalsModule <| Common.jsonEncoderName <| Mapper.Name.internalize ( moduleName, enum.dataType ))
+                )
+
         encoder =
             C.valDecl (Just <| Common.encoderDocumentation enum.dataType)
                 (Just <| Meta.Encode.encoder (C.typed enum.dataType []))
@@ -160,7 +170,7 @@ reexportAST internalsModule moduleName enum =
                             NonEmpty.toList enum.fields
                 )
     in
-    [ type_, decoder, encoder, fromInternal, toInternal, default, fieldNumbersDecl ]
+    [ type_, decoder, encoder, jsonEncoder, fromInternal, toInternal, default, fieldNumbersDecl ]
 
 
 toAST : Enum -> List C.Declaration
@@ -203,6 +213,32 @@ toAST enum =
                 NonEmpty.append definedCases <|
                     NonEmpty.singleton
                         ( C.namedPattern unrecognizedOption [ C.varPattern "i" ], C.val "i" )
+
+            else
+                definedCases
+
+        encodeJsonCases : NonEmpty ( Pattern, Expression )
+        encodeJsonCases =
+            let
+                definedCases =
+                    NonEmpty.map
+                        (\( _, name ) ->
+                            ( C.varPattern name
+                            , Mapper.Name.externalize name
+                                |> Tuple.second
+                                |> C.string
+                            )
+                        )
+                        enum.fields
+            in
+            if enum.withUnrecognized then
+                NonEmpty.append definedCases <|
+                    NonEmpty.singleton
+                        ( C.namedPattern unrecognizedOption [ C.varPattern "i" ]
+                        , C.applyBinOp (C.string "_UNRECOGNIZED_")
+                            C.append
+                            (C.apply [ C.fqFun [ "String" ] "fromInt", C.val "i" ])
+                        )
 
             else
                 definedCases
@@ -256,6 +292,18 @@ toAST enum =
                     (C.caseExpr (C.val "value") (NonEmpty.toList encodeCases))
                 )
 
+        jsonEncoder : C.Declaration
+        jsonEncoder =
+            C.funDecl (Just <| Common.jsonEncoderDocumentation enumName)
+                (Just <| Meta.JsonEncode.encoder (C.typed enumName []))
+                (Common.jsonEncoderName enumName)
+                [ C.varPattern "value" ]
+                (C.applyBinOp
+                    Meta.JsonEncode.string
+                    C.pipel
+                    (C.caseExpr (C.val "value") (NonEmpty.toList encodeJsonCases))
+                )
+
         defaultEnum =
             NonEmpty.find (\( index, _ ) -> index == 0) enum.fields
                 |> Maybe.withDefault (NonEmpty.head enum.fields)
@@ -268,7 +316,7 @@ toAST enum =
                 (Common.defaultName enumName)
                 (C.val defaultEnum)
     in
-    [ type_, decoder, encoder, default ]
+    [ type_, decoder, encoder, jsonEncoder, default ]
 
 
 enumDocumentation : String -> C.Comment C.DocComment

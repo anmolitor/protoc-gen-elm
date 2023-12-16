@@ -6,8 +6,9 @@ import Mapper.Name
 import Meta.Basics
 import Meta.Decode
 import Meta.Encode
+import Meta.JsonEncode
 import Meta.Type
-import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldType(..), Map, Message, TypeKind(..))
+import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldType(..), Map, Message, Primitive(..), TypeKind(..))
 
 
 reexportAST : ModuleName -> ModuleName -> Message -> List C.Declaration
@@ -29,6 +30,12 @@ reexportAST internalsModule moduleName msg =
                 (Just <| Meta.Encode.encoder (C.typed msg.dataType []))
                 (Common.encoderName msg.dataType)
                 (C.fqVal internalsModule <| Common.encoderName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
+
+        jsonEncoder =
+            C.valDecl (Just <| Common.jsonEncoderDocumentation msg.dataType)
+                (Just <| Meta.JsonEncode.encoder (C.typed msg.dataType []))
+                (Common.jsonEncoderName msg.dataType)
+                (C.fqVal internalsModule <| Common.jsonEncoderName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
 
         decoder =
             C.valDecl (Just <| Common.decoderDocumentation msg.dataType)
@@ -106,7 +113,7 @@ reexportAST internalsModule moduleName msg =
                 (Common.fieldNumbersName msg.dataType)
                 (C.fqVal internalsModule <| Common.fieldNumbersName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
     in
-    [ type_, encoder, decoder, default, fieldNumbersDecl ] ++ List.concatMap fieldDeclarationsReexport msg.fields
+    [ type_, encoder, decoder, default, jsonEncoder, fieldNumbersDecl ] ++ List.concatMap fieldDeclarationsReexport msg.fields
 
 
 toAST : Message -> List C.Declaration
@@ -132,6 +139,22 @@ toAST msg =
                 ]
                 (Meta.Encode.message
                     (List.map toEncoder msg.fields)
+                )
+
+        jsonEncoder : C.Declaration
+        jsonEncoder =
+            C.funDecl (Just <| Common.jsonEncoderDocumentation msg.dataType)
+                (Just <| Meta.JsonEncode.encoder (C.typed msg.dataType []))
+                (Common.jsonEncoderName msg.dataType)
+                [ if msg.fields == [] then
+                    C.allPattern
+
+                  else
+                    C.varPattern "value"
+                ]
+                (C.applyBinOp Meta.JsonEncode.object
+                    C.pipel
+                    (C.apply [ C.fqFun [ "List" ] "concat", C.list (List.map toJsonEncoder msg.fields) ])
                 )
 
         decoder : C.Declaration
@@ -160,7 +183,7 @@ toAST msg =
                 (Common.fieldNumbersName msg.dataType)
                 (C.record <| List.map (Tuple.mapSecond fieldNumberForField) msg.fields)
     in
-    [ type_, encoder, decoder, default, fieldNumbersDecl ]
+    [ type_, encoder, decoder, jsonEncoder, default, fieldNumbersDecl ]
         ++ List.concatMap fieldDeclarations msg.fields
 
 
@@ -426,6 +449,35 @@ toEncoder ( fieldName, field ) =
                 ]
 
 
+toJsonEncoder : ( FieldName, Field ) -> C.Expression
+toJsonEncoder ( fieldName, field ) =
+    case field of
+        NormalField _ cardinality fieldType ->
+            C.list [ C.tuple [ C.string fieldName, C.apply [ fieldTypeToJsonEncoder cardinality fieldType, C.access (C.val "value") fieldName ] ] ]
+
+        MapField _ key value ->
+            C.list
+                [ C.tuple
+                    [ C.string fieldName
+                    , C.apply
+                        [ Meta.JsonEncode.dict
+                        , fieldTypeToJsonMapKey key
+                        , fieldTypeToJsonEncoder Optional value
+                        , C.access (C.val "value") fieldName
+                        ]
+                    ]
+                ]
+
+        OneOfField ref ->
+            C.apply
+                [ C.fqFun (Common.internalsModule ref.rootPackage)
+                    (Common.jsonEncoderName <|
+                        Mapper.Name.internalize ( ref.package, ref.name )
+                    )
+                , C.access (C.val "value") fieldName
+                ]
+
+
 embeddedEncoder : { dataType : DataType, moduleName : C.ModuleName, rootModuleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
 embeddedEncoder e =
     (case e.typeKind of
@@ -442,6 +494,24 @@ embeddedEncoder e =
                     C.composer
     )
         (C.fqFun (Common.internalsModule e.rootModuleName) (Common.encoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )))
+
+
+embeddedJsonEncoder : { dataType : DataType, moduleName : C.ModuleName, rootModuleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
+embeddedJsonEncoder e =
+    (case e.typeKind of
+        Alias ->
+            identity
+
+        Type ->
+            C.parens
+                << C.applyBinOp
+                    (C.fqFun (Common.internalsModule e.rootModuleName) <|
+                        recursiveUnwrapName <|
+                            Mapper.Name.internalize ( e.moduleName, e.dataType )
+                    )
+                    C.composer
+    )
+        (C.fqFun (Common.internalsModule e.rootModuleName) (Common.jsonEncoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )))
 
 
 fieldTypeToEncoder : Cardinality -> FieldType -> C.Expression
@@ -499,6 +569,76 @@ fieldTypeToEncoder cardinality fieldType =
 
         ( Optional, Enumeration enum ) ->
             C.fqFun (Common.internalsModule enum.rootPackage) (Common.encoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+
+
+fieldTypeToJsonMapKey : FieldType -> C.Expression
+fieldTypeToJsonMapKey fieldType =
+    case fieldType of
+        Primitive Prim_String _ ->
+            Meta.Basics.identity
+
+        Primitive (Prim_Int32 _ ) _ ->
+            C.fqFun ["String"] "fromInt"    
+
+        _ ->
+            C.string "ERROR: This should not happen. Map keys are supposed to be primitive only."
+
+
+fieldTypeToJsonEncoder : Cardinality -> FieldType -> C.Expression
+fieldTypeToJsonEncoder cardinality fieldType =
+    case ( cardinality, fieldType ) of
+        ( Proto3Optional, Primitive dataType _ ) ->
+            C.parens <|
+                C.applyBinOp
+                    (C.apply [ Meta.Basics.mapMaybe, Meta.JsonEncode.forPrimitive dataType ])
+                    C.composer
+                    (C.apply [ Meta.Basics.withDefault, Meta.JsonEncode.null ])
+
+        ( Optional, Primitive dataType _ ) ->
+            Meta.JsonEncode.forPrimitive dataType
+
+        ( Required, Primitive dataType _ ) ->
+            Meta.JsonEncode.forPrimitive dataType
+
+        ( Required, Embedded e ) ->
+            embeddedJsonEncoder e
+
+        ( Required, Enumeration enum ) ->
+            C.fqFun (Common.internalsModule enum.rootPackage) (Common.jsonEncoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+
+        ( Repeated, Primitive dataType _ ) ->
+            C.apply [ Meta.JsonEncode.list, Meta.JsonEncode.forPrimitive dataType ]
+
+        ( Repeated, Embedded e ) ->
+            C.apply [ Meta.JsonEncode.list, embeddedJsonEncoder e ]
+
+        ( Repeated, Enumeration enum ) ->
+            C.apply
+                [ Meta.JsonEncode.list
+                , C.fqFun (Common.internalsModule enum.rootPackage)
+                    (Common.jsonEncoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+                ]
+
+        ( _, Embedded e ) ->
+            C.parens <|
+                C.applyBinOp
+                    (C.apply [ Meta.Basics.mapMaybe, embeddedJsonEncoder e ])
+                    C.composer
+                    (C.apply [ Meta.Basics.withDefault, Meta.JsonEncode.null ])
+
+        ( Proto3Optional, Enumeration enum ) ->
+            C.parens <|
+                C.applyBinOp
+                    (C.apply
+                        [ Meta.Basics.mapMaybe
+                        , C.fqFun (Common.internalsModule enum.rootPackage) (Common.jsonEncoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+                        ]
+                    )
+                    C.composer
+                    (C.apply [ Meta.Basics.withDefault, Meta.JsonEncode.null ])
+
+        ( Optional, Enumeration enum ) ->
+            C.fqFun (Common.internalsModule enum.rootPackage) (Common.jsonEncoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
 
 
 fieldTypeToTypeAnnotation : FieldType -> C.TypeAnnotation

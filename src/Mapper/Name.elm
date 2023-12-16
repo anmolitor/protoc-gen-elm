@@ -1,4 +1,4 @@
-module Mapper.Name exposing (ModuleRef, Ref, absoluteRef, field, internalize, moduleRef_, module_, type_)
+module Mapper.Name exposing (ModuleRef, Ref, absoluteRef, field, internalize, moduleRef_, module_, type_, externalize)
 
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import List.Extra
@@ -8,6 +8,15 @@ import String.Extra
 internalize : ( ModuleName, String ) -> String
 internalize ( moduleName, name ) =
     String.join "__" <| moduleName ++ [ name ]
+
+
+externalize : String -> ( ModuleName, String )
+externalize =
+    String.split "__"
+        >> List.Extra.unconsLast
+        >> Maybe.map
+            (\( last, rest ) -> ( rest, last ))
+        >> Maybe.withDefault ( [], "" )
 
 
 module_ : String -> ModuleName

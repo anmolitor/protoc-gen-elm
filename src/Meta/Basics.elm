@@ -9,6 +9,11 @@ nothing =
     C.fun "Nothing"
 
 
+identity : Expression
+identity =
+    C.fun "identity"
+
+
 just : Expression
 just =
     C.fun "Just"

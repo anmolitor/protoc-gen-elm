@@ -8,6 +8,7 @@ import Elm.Syntax.Node as Node
 import Errors exposing (Res)
 import Generator.Common as Common
 import Generator.Declarations exposing (removeDuplicateDeclarations)
+import Generator.DevToolsWorker exposing (generateDevToolsWorker)
 import Generator.Enum as Enum
 import Generator.Export as Export
 import Generator.Import as Import
@@ -15,8 +16,7 @@ import Generator.Message as Message
 import Generator.OneOf as OneOf
 import Generator.Service as Service
 import List.Extra
-import Mapper as Mapper exposing (TypeRefs)
-import Mapper.Name as Name
+import Mapper
 import Mapper.Package as Package exposing (Packages)
 import Mapper.Struct exposing (Struct)
 import Model exposing (Field(..))
@@ -24,7 +24,6 @@ import Proto.Google.Protobuf exposing (FileDescriptorProto)
 import Proto.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse)
 import Proto.Google.Protobuf.Compiler.CodeGeneratorResponse as CodeGeneratorResponse
 import Protobuf.Types.Int64
-import Result.Extra
 import Set exposing (Set)
 
 
@@ -150,7 +149,17 @@ convert versions flags fileNames descriptors =
                 )
     in
     Result.map
-        (Dict.toList >> List.concatMap (\( mod, package ) -> Dict.map (packageToReexportFile mod) package |> Dict.values |> (::) (mkInternalsFile mod package)))
+        (\modDict ->
+            let
+                mods =
+                    Dict.toList modDict
+
+                services =
+                    List.concatMap (\( mod, package ) -> Dict.values package |> List.concatMap .services) mods
+            in
+            generateDevToolsWorker services
+                :: List.concatMap (\( mod, package ) -> Dict.map (packageToReexportFile mod) package |> Dict.values |> (::) (mkInternalsFile mod package)) mods
+        )
         files
 
 
