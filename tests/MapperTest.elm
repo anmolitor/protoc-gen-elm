@@ -9,6 +9,7 @@ import Mapper.Package as Package exposing (Packages)
 import Mapper.Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..))
 import Model exposing (Cardinality(..), Field(..), FieldType(..), Primitive(..), TypeKind(..))
+import Options
 import Proto.Google.Protobuf exposing (DescriptorProto, DescriptorProto_, EnumDescriptorProto, EnumValueDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MessageOptions, MethodDescriptorProto, wrapDescriptorProto)
 import Proto.Google.Protobuf.FieldDescriptorProto as FieldDescriptorProto
 import Set
@@ -76,7 +77,7 @@ suite =
                           )
                         ]
                 in
-                Mapper.mapMain True
+                Mapper.mapMain Options.default
                     [ { defaultFileDescriptorProto
                         | name = "test.proto"
                         , package = "testpackage"
@@ -161,7 +162,7 @@ suite =
                                 ]
                         }
                 in
-                Mapper.mapMain True [ file1, file2, file3 ]
+                Mapper.mapMain Options.default [ file1, file2, file3 ]
                     |> List.map (Tuple.second >> Result.withDefault Dict.empty)
                     |> Package.concat
                     |> Expect.equal
