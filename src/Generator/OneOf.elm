@@ -9,6 +9,7 @@ import Meta.Encode
 import Meta.JsonEncode
 import Meta.Type
 import Model exposing (Cardinality(..), FieldType(..), OneOf)
+import Options exposing (Options)
 
 
 reexportAST : ModuleName -> ModuleName -> { oneOfName : String, options : OneOf, docs : List String } -> List C.Declaration
@@ -125,8 +126,8 @@ This is just (""" ++ option.dataType ++ " >> " ++ toInternalFuncName) |> Just)
     [ type_, fromInternal, toInternal ] ++ constructors
 
 
-toAST : { a | oneOfName : String, options : OneOf } -> List C.Declaration
-toAST { oneOfName, options } =
+toAST : Options -> { a | oneOfName : String, options : OneOf } -> List C.Declaration
+toAST opts { oneOfName, options } =
     let
         dataType =
             oneOfName
@@ -246,7 +247,13 @@ toAST { oneOfName, options } =
                 (Common.fieldNumbersName dataType)
                 (C.record <| List.map (\o -> ( o.fieldName, C.int o.fieldNumber )) options)
     in
-    [ type_, encoder, decoder, jsonEncoder, fieldNumbersTypeDecl, fieldNumbersDecl ]
+    [ type_, encoder, decoder, fieldNumbersTypeDecl, fieldNumbersDecl ]
+        ++ (if opts.json == Options.All || opts.json == Options.Encode || opts.grpcDevTools then
+                [ jsonEncoder ]
+
+            else
+                []
+           )
 
 
 oneofDocumentation : String -> C.Comment C.DocComment

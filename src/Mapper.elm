@@ -10,6 +10,7 @@ import Mapper.Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
 import Meta.Encode
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
+import Options exposing (Options)
 import Proto.Google.Protobuf exposing (DescriptorProto, EnumDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, fieldNumbersDescriptorProto, fieldNumbersFileDescriptorProto, fieldNumbersServiceDescriptorProto, unwrapDescriptorProto)
 import Proto.Google.Protobuf.FieldDescriptorProto as FieldDescriptorProto
 import Proto.Google.Protobuf.SourceCodeInfo as SourceCodeInfo
@@ -70,8 +71,8 @@ definedTypesInFileDescriptor descriptor =
         |> List.foldl Dict.union Dict.empty
 
 
-mapMain : Bool -> List FileDescriptorProto -> List ( ModuleName, Res Packages )
-mapMain grpcOn descriptors =
+mapMain : Options -> List FileDescriptorProto -> List ( ModuleName, Res Packages )
+mapMain options descriptors =
     let
         typeRefs : TypeRefs
         typeRefs =
@@ -184,7 +185,7 @@ mapMain grpcOn descriptors =
                                 )
                                 descriptor.messageType
                         )
-                        (if grpcOn then
+                        (if options.grpc then
                             List.indexedMap (\index -> mapService [ fieldNumbersFileDescriptorProto.service, index ]) descriptor.service
                                 |> Errors.combine
 

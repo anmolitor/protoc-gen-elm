@@ -9,10 +9,11 @@ import Meta.Encode
 import Meta.JsonEncode
 import Meta.Type
 import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldType(..), Map, Message, Primitive(..), TypeKind(..))
+import Options exposing (Options)
 
 
-reexportAST : ModuleName -> ModuleName -> Message -> List C.Declaration
-reexportAST internalsModule moduleName msg =
+reexportAST : Options -> ModuleName -> ModuleName -> Message -> List C.Declaration
+reexportAST options internalsModule moduleName msg =
     let
         documentation =
             if List.isEmpty msg.docs then
@@ -113,11 +114,18 @@ reexportAST internalsModule moduleName msg =
                 (Common.fieldNumbersName msg.dataType)
                 (C.fqVal internalsModule <| Common.fieldNumbersName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
     in
-    [ type_, encoder, decoder, default, jsonEncoder, fieldNumbersDecl ] ++ List.concatMap fieldDeclarationsReexport msg.fields
+    [ type_, encoder, decoder, default, fieldNumbersDecl ]
+        ++ List.concatMap fieldDeclarationsReexport msg.fields
+        ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
+                [ jsonEncoder ]
+
+            else
+                []
+           )
 
 
-toAST : Message -> List C.Declaration
-toAST msg =
+toAST : Options -> C.ModuleName -> Message -> List C.Declaration
+toAST options packageName msg =
     let
         type_ : C.Declaration
         type_ =
@@ -152,9 +160,14 @@ toAST msg =
                   else
                     C.varPattern "value"
                 ]
-                (C.applyBinOp Meta.JsonEncode.object
-                    C.pipel
-                    (C.apply [ C.fqFun [ "List" ] "concat", C.list (List.map toJsonEncoder msg.fields) ])
+                (if packageName == [ "Proto", "Google", "Protobuf" ] && msg.dataType == "Timestamp" then
+                    -- Use custom JSON encoder for timestamp
+                    C.apply [ C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonEncoder", C.val "value" ]
+
+                 else
+                    C.applyBinOp Meta.JsonEncode.object
+                        C.pipel
+                        (C.apply [ C.fqFun [ "List" ] "concat", C.list (List.map toJsonEncoder msg.fields) ])
                 )
 
         decoder : C.Declaration
@@ -183,8 +196,14 @@ toAST msg =
                 (Common.fieldNumbersName msg.dataType)
                 (C.record <| List.map (Tuple.mapSecond fieldNumberForField) msg.fields)
     in
-    [ type_, encoder, decoder, jsonEncoder, default, fieldNumbersDecl ]
+    [ type_, encoder, decoder, default, fieldNumbersDecl ]
         ++ List.concatMap fieldDeclarations msg.fields
+        ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
+                [ jsonEncoder ]
+
+            else
+                []
+           )
 
 
 mapComment : Map -> C.Comment C.DocComment
@@ -577,8 +596,8 @@ fieldTypeToJsonMapKey fieldType =
         Primitive Prim_String _ ->
             Meta.Basics.identity
 
-        Primitive (Prim_Int32 _ ) _ ->
-            C.fqFun ["String"] "fromInt"    
+        Primitive (Prim_Int32 _) _ ->
+            C.fqFun [ "String" ] "fromInt"
 
         _ ->
             C.string "ERROR: This should not happen. Map keys are supposed to be primitive only."

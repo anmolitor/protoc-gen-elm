@@ -20,6 +20,7 @@ import Mapper
 import Mapper.Package as Package exposing (Packages)
 import Mapper.Struct exposing (Struct)
 import Model exposing (Field(..))
+import Options exposing (Options)
 import Proto.Google.Protobuf exposing (FileDescriptorProto)
 import Proto.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse)
 import Proto.Google.Protobuf.Compiler.CodeGeneratorResponse as CodeGeneratorResponse
@@ -34,17 +35,12 @@ type alias Versions =
     }
 
 
-type alias Flags =
-    { grpcOn : Bool
-    }
-
-
 requestToResponse :
     Versions
-    -> Flags
+    -> Options
     -> CodeGeneratorRequest
     -> CodeGeneratorResponse
-requestToResponse versions flags req =
+requestToResponse versions options req =
     let
         filesToResponse : Res (List CodeGeneratorResponse.File) -> CodeGeneratorResponse
         filesToResponse fileResults =
@@ -56,7 +52,7 @@ requestToResponse versions flags req =
                     { error = "", supportedFeatures = Protobuf.Types.Int64.fromInts 0 3, file = file }
 
         files =
-            convert versions flags req.fileToGenerate req.protoFile
+            convert versions options req.fileToGenerate req.protoFile
     in
     files |> Result.map (List.map generate) |> filesToResponse
 
@@ -70,14 +66,14 @@ generate file =
     }
 
 
-convert : Versions -> Flags -> List String -> List FileDescriptorProto -> Res (List C.File)
-convert versions flags fileNames descriptors =
+convert : Versions -> Options -> List String -> List FileDescriptorProto -> Res (List C.File)
+convert versions options fileNames descriptors =
     let
         files : Res (Dict ModuleName Packages)
         files =
             descriptors
                 |> List.filter (.name >> (\name -> List.member name fileNames))
-                |> Mapper.mapMain flags.grpcOn
+                |> Mapper.mapMain options
                 |> Errors.combineMap (\( mod, res ) -> Result.map (Tuple.pair mod) res)
                 |> Result.map
                     (List.foldl
@@ -100,9 +96,9 @@ convert versions flags fileNames descriptors =
             let
                 declarations =
                     removeDuplicateDeclarations
-                        (List.concatMap Enum.toAST struct.enums
-                            ++ List.concatMap Message.toAST struct.messages
-                            ++ List.concatMap OneOf.toAST struct.oneOfs
+                        (List.concatMap (Enum.toAST options) struct.enums
+                            ++ List.concatMap (Message.toAST options packageName) struct.messages
+                            ++ List.concatMap (OneOf.toAST options) struct.oneOfs
                         )
 
                 exports =
@@ -125,8 +121,8 @@ convert versions flags fileNames descriptors =
                     rootModName ++ [ "Internals_" ]
 
                 declarations =
-                    List.concatMap (Enum.reexportAST internalsModule packageName) struct.enums
-                        ++ List.concatMap (Message.reexportAST internalsModule packageName) struct.messages
+                    List.concatMap (Enum.reexportAST options internalsModule packageName) struct.enums
+                        ++ List.concatMap (Message.reexportAST options internalsModule packageName) struct.messages
                         ++ List.concatMap (OneOf.reexportAST internalsModule packageName) struct.oneOfs
                         ++ List.concatMap Service.toAST struct.services
 
@@ -155,10 +151,17 @@ convert versions flags fileNames descriptors =
                     Dict.toList modDict
 
                 services =
-                    List.concatMap (\( mod, package ) -> Dict.values package |> List.concatMap .services) mods
+                    List.concatMap (\( _, package ) -> Dict.values package |> List.concatMap .services) mods
+
+                devToolsWorkerFile =
+                    if options.grpcDevTools && options.grpc then
+                        [ generateDevToolsWorker services ]
+
+                    else
+                        []
             in
-            generateDevToolsWorker services
-                :: List.concatMap (\( mod, package ) -> Dict.map (packageToReexportFile mod) package |> Dict.values |> (::) (mkInternalsFile mod package)) mods
+            devToolsWorkerFile
+                ++ List.concatMap (\( mod, package ) -> Dict.map (packageToReexportFile mod) package |> Dict.values |> (::) (mkInternalsFile mod package)) mods
         )
         files
 

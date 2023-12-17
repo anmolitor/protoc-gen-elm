@@ -10,10 +10,11 @@ import Meta.Decode
 import Meta.Encode
 import Meta.JsonEncode
 import Model exposing (Enum)
+import Options exposing (Options)
 
 
-reexportAST : ModuleName -> ModuleName -> Enum -> List C.Declaration
-reexportAST internalsModule moduleName enum =
+reexportAST : Options -> ModuleName -> ModuleName -> Enum -> List C.Declaration
+reexportAST options internalsModule moduleName enum =
     let
         fields =
             NonEmpty.toList enum.fields
@@ -170,11 +171,17 @@ reexportAST internalsModule moduleName enum =
                             NonEmpty.toList enum.fields
                 )
     in
-    [ type_, decoder, encoder, jsonEncoder, fromInternal, toInternal, default, fieldNumbersDecl ]
+    [ type_, decoder, encoder, fromInternal, toInternal, default, fieldNumbersDecl ]
+        ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
+                [ jsonEncoder ]
+
+            else
+                []
+           )
 
 
-toAST : Enum -> List C.Declaration
-toAST enum =
+toAST : Options -> Enum -> List C.Declaration
+toAST options enum =
     let
         enumName =
             enum.dataType
@@ -316,7 +323,13 @@ toAST enum =
                 (Common.defaultName enumName)
                 (C.val defaultEnum)
     in
-    [ type_, decoder, encoder, jsonEncoder, default ]
+    [ type_, decoder, encoder, default ]
+        ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
+                [ jsonEncoder ]
+
+            else
+                []
+           )
 
 
 enumDocumentation : String -> C.Comment C.DocComment

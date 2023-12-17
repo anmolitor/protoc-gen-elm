@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Base64
 import Generator
-import Mapper.Package exposing (Packages)
+import Options
 import Platform
 import Ports
 import Proto.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
@@ -23,7 +23,6 @@ main =
 type alias Versions =
     { plugin : String
     , library : String
-    , grpcOn : Bool
     }
 
 
@@ -88,7 +87,7 @@ map versions request =
             , compiler = Maybe.withDefault "unknown version" (Maybe.map version request.compilerVersion)
             }
     in
-    Generator.requestToResponse allVersions { grpcOn = versions.grpcOn } request
+    Generator.requestToResponse allVersions (Options.parse request.parameter) request
 
 
 version : Version -> String

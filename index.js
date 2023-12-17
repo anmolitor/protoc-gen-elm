@@ -29,7 +29,6 @@ const app = Elm.Main.init({
   flags: {
     plugin: pluginVersion,
     library: libraryVersion,
-    grpcOn: process.env.NO_GRPC !== "true",
   },
 });
 

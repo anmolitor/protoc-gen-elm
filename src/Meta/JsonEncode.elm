@@ -111,10 +111,14 @@ float =
 
 bytes : Expression
 bytes =
-    C.parens <| C.applyBinOp (C.fqFun [ "Hex", "Convert" ] "toString") C.composer string
+    C.fqFun [ "Protobuf", "Utils", "Bytes" ] "jsonEncoder"
 
 
 int64 : Expression
 int64 =
-    -- TODO!
-    C.lambda [ C.allPattern ] (C.apply [ string, C.string "Int64 not supported yet" ])
+    C.applyBinOp (C.fqFun [ "Protobuf", "Utils", "Int64" ] "toSignedString") C.composer string
+
+
+uint64 : Expression
+uint64 =
+    C.applyBinOp (C.fqFun [ "Protobuf", "Utils", "Int64" ] "toUnsignedString") C.composer string

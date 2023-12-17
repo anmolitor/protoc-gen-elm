@@ -41,7 +41,8 @@ let response;
 const client = {
   client_: {
     rpcCall: (method, req, metadata, info, callback) => {
-      callback(response);
+      // first argument is error
+      callback(null, response);
     },
   },
 };
@@ -85,7 +86,7 @@ function applyMonkeypatch(decoder) {
           isRequest: false,
           bytes: bufferToArr(original.response),
         });
-        response = resAsJson;
+        response = wrapToObject(resAsJson);
         client.client_.rpcCall(
           serviceAndMethod,
           wrapToObject(reqAsJson),
