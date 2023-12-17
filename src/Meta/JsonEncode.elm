@@ -116,9 +116,9 @@ bytes =
 
 int64 : Expression
 int64 =
-    C.applyBinOp (C.fqFun [ "Protobuf", "Utils", "Int64" ] "toSignedString") C.composer string
+    C.parens <| C.applyBinOp (C.fqFun [ "Protobuf", "Utils", "Int64" ] "toSignedString") C.composer string
 
 
 uint64 : Expression
 uint64 =
-    C.applyBinOp (C.fqFun [ "Protobuf", "Utils", "Int64" ] "toUnsignedString") C.composer string
+    C.parens <| C.applyBinOp (C.fqFun [ "Protobuf", "Utils", "Int64" ] "toUnsignedString") C.composer string
