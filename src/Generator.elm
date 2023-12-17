@@ -97,7 +97,7 @@ convert versions options fileNames descriptors =
                 declarations =
                     removeDuplicateDeclarations
                         (List.concatMap (Enum.toAST options) struct.enums
-                            ++ List.concatMap (Message.toAST options moduleName) struct.messages
+                            ++ List.concatMap (Message.toAST options) struct.messages
                             ++ List.concatMap (OneOf.toAST options) struct.oneOfs
                         )
 

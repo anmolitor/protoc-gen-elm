@@ -124,8 +124,8 @@ reexportAST options internalsModule moduleName msg =
            )
 
 
-toAST : Options -> C.ModuleName -> Message -> List C.Declaration
-toAST options moduleName msg =
+toAST : Options -> Message -> List C.Declaration
+toAST options msg =
     let
         type_ : C.Declaration
         type_ =
@@ -160,7 +160,7 @@ toAST options moduleName msg =
                   else
                     C.varPattern "value"
                 ]
-                (if moduleName == [ "Proto", "Google", "Protobuf" ] && msg.dataType == "Timestamp" then
+                (if msg.dataType == "Proto__Google__Protobuf__Timestamp" then
                     -- Use custom JSON encoder for timestamp
                     C.apply [ C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonEncoder", C.val "value" ]
 
