@@ -160,7 +160,7 @@ toAST options moduleName msg =
                   else
                     C.varPattern "value"
                 ]
-                (if moduleName == [ "Google", "Protobuf" ] && msg.dataType == "Timestamp" then
+                (if moduleName == [ "Proto", "Google", "Protobuf" ] && msg.dataType == "Timestamp" then
                     -- Use custom JSON encoder for timestamp
                     C.apply [ C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonEncoder", C.val "value" ]
 
