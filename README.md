@@ -2,7 +2,7 @@
 
 This [`protoc`](https://developers.google.com/protocol-buffers/) plug-in generates [Elm](https://elm-lang.org/) modules from `.proto` specification files. The generated modules make use of the [elm-protocol-buffers](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest/) library to handle the (de)serialization. They can be used to transmit bytes over HTTP(S) or via web-sockets. 
 
-Remote Procedure Call (RPC) generation is supported but experimental. If you encounter issues, please open a issue. In the meantime, you can disable gRPC generation with the environment variable `NO_GRPC=true`. If used, you need to add a dependency on the [elm-grpc](https://package.elm-lang.org/packages/andreasewering/elm-grpc/latest/) library.
+Remote Procedure Call (RPC) generation is supported but experimental. If you encounter issues, please open a issue. In the meantime, you can disable gRPC generation with the option `--elm_opt=grpc=false`. If used, you need to add a dependency on the [elm-grpc](https://package.elm-lang.org/packages/andreasewering/elm-grpc/latest/) library.
 
 **Take a look [here](https://developers.google.com/protocol-buffers/) for a general introduction on Protocol Buffers.**
 
@@ -63,6 +63,15 @@ The following table gives an overview of how `.proto` types correspond to Elm ty
 \*\*) Some default values can be overridden in `proto2` specifications. This is currently not supported.
 
 \*\*\*) Rpc is implemented via the [`elm-grpc`](https://package.elm-lang.org/packages/andreasewering/elm-grpc/latest/) library.
+
+## Json Encoding
+
+Protocol Buffers specify a [canonical json encoding](https://protobuf.dev/programming-guides/proto3/#json).
+When you pass the additional option `--elm_opt=json` to the protoc invocation, you will get JSON Encoders and Decoders generated.
+If you want to be more granular `--elm_opt=json=encode` or `--elm_opt=json=decode` will only generate one or the other.
+
+**NOTE**: Json Decoding is not yet implemented. If you are interested, feel free to open a PR. Int64 decoding will be tricky and the main work
+will be done in this repository: https://github.com/andreasewering/elm-protoc-utils
 
 ## Explanations about the generated code
 
@@ -193,7 +202,7 @@ For a more advanced/realistic example, look at `/example/tonic_vite/README.md`.
 ## Well-known types
 
 If you want to use protobufs [well-known-types](https://developers.google.com/protocol-buffers/docs/reference/google.protobuf), 
-you need to include the paths to the proto files in the compilation.
+you need to install the pre-built package [elm-protoc-types](https://package.elm-lang.org/packages/andreasewering/elm-protoc-types/1.1.0/) or include the paths to the proto files in the compilation.
 
 Example: If this is your proto file `test.proto` which uses the well-known type `Timestamp`,
 ```
