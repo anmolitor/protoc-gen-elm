@@ -89,17 +89,20 @@ convert versions options fileNames descriptors =
 
         mkInternalsFile : ModuleName -> Packages -> C.File
         mkInternalsFile moduleName =
-            packageToFile (moduleName ++ [ "Internals_" ]) << Package.unify moduleName
+            packageToFile moduleName << Package.unify moduleName
 
-        packageToFile : List String -> Struct -> C.File
-        packageToFile packageName struct =
+        packageToFile : ModuleName -> Struct -> C.File
+        packageToFile moduleName struct =
             let
                 declarations =
                     removeDuplicateDeclarations
                         (List.concatMap (Enum.toAST options) struct.enums
-                            ++ List.concatMap (Message.toAST options packageName) struct.messages
+                            ++ List.concatMap (Message.toAST options moduleName) struct.messages
                             ++ List.concatMap (OneOf.toAST options) struct.oneOfs
                         )
+
+                packageName =
+                    moduleName ++ [ "Internals_" ]
 
                 exports =
                     Export.fromDeclarations declarations
