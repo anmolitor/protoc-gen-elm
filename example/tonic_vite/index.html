@@ -4,10 +4,13 @@
 </head>
 
 <body>
-  <script type="module" src="./generated/monkeypatch.js"></script>
   <script type="module">
     import { Elm } from './src/Main.elm';
     import './src/main.css';
+
+    if (__DEV__) {
+      await import('./generated/Proto/dev-tools.mjs').then(() => console.warn('Grpc Dev Tools enabled.'));
+    }
 
     const USER_ID_KEY = "current_user_id";
 

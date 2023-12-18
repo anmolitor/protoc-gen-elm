@@ -25,6 +25,9 @@ Since the requests are proxied, no CORS on the server is necessary.
 
 The UI is very ugly since this is just an example to get you going :)
 
+You can install [grpc-dev-tools](https://github.com/SafetyCulture/grpc-web-devtools) in your browser to see requests in human readable form.
+When running `npm run build`, no debug output is produced for performance reasons (dev-tools won't work).
+
 ## Hypothetical deployment
 
 Typically Vite is what you use in development and not in production.

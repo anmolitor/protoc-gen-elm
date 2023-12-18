@@ -73,6 +73,26 @@ If you want to be more granular `--elm_opt=json=encode` or `--elm_opt=json=decod
 **NOTE**: Json Decoding is not yet implemented. If you are interested, feel free to open a PR. Int64 decoding will be tricky and the main work
 will be done in this repository: https://github.com/andreasewering/elm-protoc-utils
 
+## Grpc Dev Tools
+
+This plugin supports code generation for the [grpc-dev-tools](https://github.com/SafetyCulture/grpc-web-devtools), which should primarily be used as debugging information for local development. Since it adds code bloat to your bundle and comes with a performance overhead, you should make sure it stays out of your production bundle.
+
+To enable the extra code generation, enable the `grpcDevTools` flag by adding `--elm_opt=grpcDevTools` to your protoc invocation.
+This will generate additional JsonEncoders for your data types according to the [canonical json encoding](https://protobuf.dev/programming-guides/proto3/#json), a `Proto/DevToolsWorker.elm` file and a `Proto/dev-tools.mjs` file.
+
+The `dev-tools.mjs` file internally imports the Elm file, so assuming you are using some sort of bundler with Elm support (like vite or webpack),
+all you need to do is import the file at the top of your html file or your main JS bundle, e.g.
+
+```
+<body>
+  <script type="module" src="/generated/Proto/dev-tools.mjs"></script>
+  ...
+</body>
+```
+
+You can see a vite setup example in the /example directory, which also makes sure it does not get added in the production bundle.
+
+
 ## Explanations about the generated code
 
 In general, the generated code tries to be close to what the code looks like in other languages while still being ideomatic Elm code.

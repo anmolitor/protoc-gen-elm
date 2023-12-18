@@ -21,6 +21,9 @@ const protocPlugin = (protoPath, extraArgs, files) => {
 };
 
 export default defineConfig({
+  define: {
+    __DEV__: process.env.NODE_ENV !== "production",
+  },
   build: {
     rollupOptions: {
       input: {
@@ -30,7 +33,9 @@ export default defineConfig({
   },
   plugins: [
     elmPlugin(),
-    protocPlugin(__dirname, "--elm_out=generated", ["todos.proto"]),
+    protocPlugin(__dirname, "--elm_out=generated --elm_opt=grpcDevTools", [
+      "todos.proto",
+    ]),
   ],
   server: {
     host: true,
