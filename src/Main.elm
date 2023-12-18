@@ -5,13 +5,14 @@ import Generator
 import Options
 import Platform
 import Ports
-import Proto.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, Version, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
+import Proto.Google.Protobuf.Compiler exposing (CodeGeneratorRequest, CodeGeneratorResponse, decodeCodeGeneratorRequest, encodeCodeGeneratorResponse)
 import Protobuf.Decode as Decode
 import Protobuf.Encode as Encode
 import Protobuf.Types.Int64
+import Versions exposing (PluginAndLibVersions)
 
 
-main : Program Versions Model Msg
+main : Program PluginAndLibVersions Model Msg
 main =
     Platform.worker
         { init = init
@@ -20,19 +21,13 @@ main =
         }
 
 
-type alias Versions =
-    { plugin : String
-    , library : String
-    }
-
-
 type alias Model =
     { requestCount : Int
-    , versions : Versions
+    , versions : PluginAndLibVersions
     }
 
 
-init : Versions -> ( Model, Cmd Msg )
+init : PluginAndLibVersions -> ( Model, Cmd Msg )
 init libraryVersion =
     ( Model 0 libraryVersion, Cmd.none )
 
@@ -78,21 +73,13 @@ process model base64 =
         ]
 
 
-map : Versions -> CodeGeneratorRequest -> CodeGeneratorResponse
+map : PluginAndLibVersions -> CodeGeneratorRequest -> CodeGeneratorResponse
 map versions request =
     let
         allVersions =
-            { plugin = versions.plugin
-            , library = versions.library
-            , compiler = Maybe.withDefault "unknown version" (Maybe.map version request.compilerVersion)
-            }
+            Versions.addCompilerVersion request.compilerVersion versions
     in
     Generator.requestToResponse allVersions (Options.parse request.parameter) request
-
-
-version : Version -> String
-version v =
-    String.join "." [ String.fromInt v.major, String.fromInt v.minor, String.fromInt v.patch ] ++ v.suffix
 
 
 fail : String -> CodeGeneratorResponse
