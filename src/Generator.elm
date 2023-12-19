@@ -50,7 +50,7 @@ requestToResponse versions options req =
 
         devToolsFiles =
             if options.grpcDevTools then
-                [ Generator.DevToolsWorker.devToolsJsFile versions ]
+                [ Generator.DevToolsWorker.devToolsJsFile versions, Generator.DevToolsWorker.devToolsDTsFile ]
 
             else
                 []

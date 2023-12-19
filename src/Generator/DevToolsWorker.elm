@@ -1,4 +1,4 @@
-module Generator.DevToolsWorker exposing (devToolsJsFile, generateDevToolsWorker)
+module Generator.DevToolsWorker exposing (devToolsJsFile, generateDevToolsWorker, devToolsDTsFile)
 
 import Elm.CodeGen as C
 import Generator.Common as Common
@@ -159,6 +159,11 @@ generateDevToolsWorker services =
 devToolsJsFile : AllVersions -> CodeGeneratorResponse.File
 devToolsJsFile versions =
     { name = "Proto/dev-tools.mjs", content = devToolsJsFileContent versions, insertionPoint = "", generatedCodeInfo = Nothing }
+
+
+devToolsDTsFile : CodeGeneratorResponse.File
+devToolsDTsFile =
+    { name = "Proto/dev-tools.d.mts", content = "export {}", insertionPoint = "", generatedCodeInfo = Nothing }
 
 
 devToolsJsFileContent : AllVersions -> String
