@@ -8,9 +8,9 @@
     "dependencies": {
         "direct": {
             "TSFoster/elm-uuid": "4.2.0",
-            "andreasewering/elm-grpc": "1.0.3",
-            "andreasewering/elm-protoc-types": "1.2.0",
-            "andreasewering/elm-protoc-utils": "1.1.0",
+            "anmolitor/elm-grpc": "1.0.0",
+            "anmolitor/elm-protoc-types": "1.0.1",
+            "anmolitor/elm-protoc-utils": "1.0.0",
             "elm/browser": "1.0.2",
             "elm/bytes": "1.0.8",
             "elm/core": "1.0.5",

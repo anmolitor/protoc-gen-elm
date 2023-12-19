@@ -40,12 +40,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/andreasewering/protoc-gen-elm.git"
+    "url": "git+ssh://git@github.com/anmolitor/protoc-gen-elm.git"
   },
   "author": "Andreas Molitor",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/andreasewering/protoc-gen-elm/issues"
+    "url": "https://github.com/anmolitor/protoc-gen-elm/issues"
   },
-  "homepage": "https://github.com/andreasewering/protoc-gen-elm#readme"
+  "homepage": "https://github.com/anmolitor/protoc-gen-elm#readme"
 }

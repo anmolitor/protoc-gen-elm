@@ -1,3 +1,9 @@
+## 3.4.0
+
+- Added support for JSON encoder generation
+- Added support for grpc dev tools helper code generation
+- Remove the NO_GRPC environment variable in favor of elm_opt=grpc=false
+
 ## 3.1.1
 
 - Fixed wrong casing of field headlines for documentation. Now the headlines should match the Elm field names and not the proto field names.
@@ -20,5 +26,5 @@
     - messages need to be upper case
 
 - Added gRPC support.
-  - Run `elm install andreasewering/elm-grpc` to install the necessary dependencies if you want to use it.
+  - Run `elm install anmolitor/elm-grpc` to install the necessary dependencies if you want to use it.
   - Pass `NO_GRPC=true` as an environment variable if you have some other solution and don't want gRPC code to be generated. 
