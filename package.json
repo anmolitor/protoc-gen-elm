@@ -19,7 +19,7 @@
     "@types/jest": "^27.0.2",
     "@types/node": "^20.8.4",
     "@types/parsimmon": "^1.10.6",
-    "assert": "^2.0.0",
+    "assert": "^2.1.0",
     "jest": "^27.5.1",
     "jest-matcher-deep-close-to": "^3.0.2",
     "long": "^5.2.3",
