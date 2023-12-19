@@ -19,7 +19,7 @@
       "eriktim/elm-protocol-buffers": "1.2.0",
       "jxxcarlson/hex": "4.0.1",
       "stil4m/elm-syntax": "7.3.2",
-      "the-sett/elm-syntax-dsl": "5.3.0",
+      "the-sett/elm-syntax-dsl": "6.0.2",
       "turboMaCk/non-empty-list-alias": "1.4.0"
     },
     "indirect": {
