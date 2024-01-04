@@ -1,0 +1,3 @@
+syntax = "proto3";
+
+message Int64Map { map<int64, string> idk = 2; }

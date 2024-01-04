@@ -281,10 +281,8 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("maps", () => {
-    const expectedElmFileName = "Proto/Map.elm";
-
     it("generates a valid elm file for maps", async () => {
-      await compileElm(expectedElmFileName);
+      await compileElm(["Proto/Map.elm", "Proto/Int64Map.elm"]);
     });
 
     it("generates working code for maps", async () => {
@@ -295,6 +293,16 @@ describe("protoc-gen-elm", () => {
       );
       const output = await repl.write(
         `(Proto.encodeBar ${freshVar} |> E.encode |> D.decode Proto.decodeBar) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("generates working code for int64 maps", async () => {
+      await repl.importModules("Proto", "Dict");
+      const freshVar = repl.getFreshVariable();
+      await repl.write(`${freshVar} = { idk = Dict.singleton (1, 2) "test" }`);
+      const output = await repl.write(
+        `(Proto.encodeInt64Map ${freshVar} |> E.encode |> D.decode Proto.decodeInt64Map) == Just ${freshVar}`
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });

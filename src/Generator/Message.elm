@@ -354,6 +354,18 @@ toDecoder ( fieldName, field ) =
                         , Common.setter fieldName
                         ]
 
+        MapField number (Primitive ((Prim_Int64 _) as prim) defaultValue) value ->
+            -- special case for int64 types since they are not comparable -> we use the unwrapped (int, int) representation instead
+            C.apply
+                [ Meta.Decode.mapped
+                , C.int number
+                , C.tuple [ C.apply [ C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts", defaultValue ], fieldTypeToDefaultValue value ]
+                , C.parens <| C.apply [ Meta.Decode.map, C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts", Meta.Decode.forPrimitive prim ]
+                , fieldTypeToDecoder value Optional
+                , C.accessFun <| "." ++ fieldName
+                , Common.setter fieldName
+                ]
+
         MapField number key value ->
             C.apply
                 [ Meta.Decode.mapped
@@ -446,6 +458,23 @@ toEncoder ( fieldName, field ) =
     case field of
         NormalField number cardinality fieldType ->
             C.tuple [ C.int number, C.apply [ fieldTypeToEncoder cardinality fieldType, C.access (C.val "value") fieldName ] ]
+
+        MapField number (Primitive ((Prim_Int64 _) as prim) _) value ->
+            -- special case for int64 types since they are not comparable -> we use the unwrapped (int, int) representation instead
+            C.tuple
+                [ C.int number
+                , C.apply
+                    [ Meta.Encode.dict
+                    , C.lambda [ C.tuplePattern [ C.varPattern "upper", C.varPattern "lower" ] ]
+                        (C.apply
+                            [ Meta.Encode.forPrimitive prim
+                            , C.parens <| C.apply [ C.fqFun [ "Protobuf", "Types", "Int64" ] "fromInts", C.val "upper", C.val "lower" ]
+                            ]
+                        )
+                    , fieldTypeToEncoder Optional value
+                    , C.access (C.val "value") fieldName
+                    ]
+                ]
 
         MapField number key value ->
             C.tuple
@@ -712,6 +741,11 @@ fieldToTypeAnnotation field =
             cardinalityModifier cardinality
                 fieldType
                 (fieldTypeToTypeAnnotation fieldType)
+
+        MapField _ (Primitive (Prim_Int64 _) _) value ->
+            -- special case for int64 types since they are not comparable -> we use the unwrapped (int, int) representation instead
+            Meta.Type.dict (C.tupleAnn [ C.intAnn, C.intAnn ])
+                (cardinalityModifier Optional value <| fieldTypeToTypeAnnotation value)
 
         MapField _ key value ->
             Meta.Type.dict (fieldTypeToTypeAnnotation key)
