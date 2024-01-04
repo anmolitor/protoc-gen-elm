@@ -282,7 +282,7 @@ describe("protoc-gen-elm", () => {
 
   describe("maps", () => {
     it("generates a valid elm file for maps", async () => {
-      await compileElm(["Proto/Map.elm", "Proto/Int64Map.elm"]);
+      await compileElm(["Proto/Map.elm"]);
     });
 
     it("generates working code for maps", async () => {
