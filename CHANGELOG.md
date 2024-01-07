@@ -1,3 +1,8 @@
+## 3.4.4
+
+- Fixed JSON encoder code that did not compile for map<int64, string>, since Protobuf.Types.Int64 is not comparable. Uses the (Int, Int) representation now instead.
+- Made tests generate JSON code so errors in generated code behind options are caught sooner
+
 ## 3.4.3
 
 - Fixed code that did not compile for map<int64, string>, since Protobuf.Types.Int64 is not comparable. Uses the (Int, Int) representation now instead.
