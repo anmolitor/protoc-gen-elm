@@ -622,11 +622,8 @@ fieldTypeToEncoder cardinality fieldType =
 fieldTypeToJsonMapKey : FieldType -> C.Expression
 fieldTypeToJsonMapKey fieldType =
     case fieldType of
-        Primitive Prim_String _ ->
-            Meta.Basics.identity
-
-        Primitive (Prim_Int32 _) _ ->
-            C.fqFun [ "String" ] "fromInt"
+        Primitive primitive _ ->
+            Meta.JsonEncode.primitiveToMapKey primitive
 
         _ ->
             C.string "ERROR: This should not happen. Map keys are supposed to be primitive only."
