@@ -26,7 +26,6 @@ reexportAST options internalsModule moduleName msg =
             C.aliasDecl (Just documentation) msg.dataType [] <|
                 C.fqTyped internalsModule (Mapper.Name.internalize ( moduleName, msg.dataType )) []
 
-
         encoder =
             C.valDecl (Just <| Common.encoderDocumentation msg.dataType)
                 (Just <| Meta.Encode.encoder (C.typed msg.dataType []))
@@ -51,63 +50,6 @@ reexportAST options internalsModule moduleName msg =
                 (Common.defaultName msg.dataType)
                 (C.fqVal internalsModule <| Common.defaultName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
 
-        fieldDeclarationsReexport : ( FieldName, Field ) -> List C.Declaration
-        fieldDeclarationsReexport ( _, field ) =
-            case field of
-                NormalField _ _ (Embedded embedded) ->
-                    case embedded.typeKind of
-                        Alias ->
-                            []
-
-                        Type ->
-                            let
-                                recursiveWrapperName =
-                                    recursiveDataTypeName embedded.dataType
-
-                                wrappedAnn =
-                                    C.typed embedded.dataType []
-
-                                recursiveTypeWrapper : C.Declaration
-                                recursiveTypeWrapper =
-                                    C.aliasDecl (Just <| recursiveDataTypeDocumentation embedded.dataType)
-                                        recursiveWrapperName
-                                        []
-                                        (C.fqTyped internalsModule
-                                            (Mapper.Name.internalize
-                                                ( embedded.moduleName, recursiveDataTypeName embedded.dataType )
-                                            )
-                                            []
-                                        )
-
-                                wrapper : C.Declaration
-                                wrapper =
-                                    C.valDecl (Just <| recursiveWrapDocumentation embedded.dataType)
-                                        (Just <| C.funAnn wrappedAnn (C.typed recursiveWrapperName []))
-                                        (recursiveWrapName embedded.dataType)
-                                        (C.fqVal internalsModule
-                                            (Mapper.Name.internalize
-                                                ( embedded.moduleName, recursiveDataTypeName embedded.dataType )
-                                            )
-                                        )
-
-                                unwrapper : C.Declaration
-                                unwrapper =
-                                    C.valDecl (Just <| recursiveUnwrapDocumentation embedded.dataType)
-                                        (Just <| C.funAnn (C.typed recursiveWrapperName []) wrappedAnn)
-                                        (recursiveUnwrapName embedded.dataType)
-                                        (C.fqVal internalsModule <| recursiveUnwrapName <| Mapper.Name.internalize ( embedded.moduleName, embedded.dataType ))
-                            in
-                            [ recursiveTypeWrapper, wrapper, unwrapper ]
-
-                NormalField _ _ _ ->
-                    []
-
-                MapField _ _ _ ->
-                    []
-
-                OneOfField _ ->
-                    []
-
         fieldNumbersDecl : C.Declaration
         fieldNumbersDecl =
             C.valDecl (Just <| Common.fieldNumbersDocumentation msg.dataType)
@@ -116,7 +58,7 @@ reexportAST options internalsModule moduleName msg =
                 (C.fqVal internalsModule <| Common.fieldNumbersName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
     in
     [ type_, encoder, decoder, default, fieldNumbersDecl ]
-        ++ List.concatMap fieldDeclarationsReexport msg.fields
+        ++ List.concatMap (fieldDeclarationsReexport internalsModule) msg.fields
         ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
                 [ jsonEncoder ]
 
@@ -207,6 +149,69 @@ toAST options msg =
            )
 
 
+fieldDeclarationsReexport : ModuleName -> ( FieldName, Field ) -> List C.Declaration
+fieldDeclarationsReexport internalsModule ( _, field ) =
+    case field of
+        NormalField _ _ fieldType ->
+            fieldTypeDeclarationsReexport internalsModule fieldType
+
+        MapField _ _ _ ->
+            []
+
+        OneOfField _ ->
+            []
+fieldTypeDeclarationsReexport : ModuleName -> FieldType -> List C.Declaration
+fieldTypeDeclarationsReexport internalsModule fieldType =
+    case fieldType of
+        Embedded embedded ->
+            case embedded.typeKind of
+                Alias ->
+                    []
+
+                Type ->
+                    let
+                        recursiveWrapperName =
+                            recursiveDataTypeName embedded.dataType
+
+                        wrappedAnn =
+                            C.typed embedded.dataType []
+
+                        recursiveTypeWrapper : C.Declaration
+                        recursiveTypeWrapper =
+                            C.aliasDecl (Just <| recursiveDataTypeDocumentation embedded.dataType)
+                                recursiveWrapperName
+                                []
+                                (C.fqTyped internalsModule
+                                    (Mapper.Name.internalize
+                                        ( embedded.moduleName, recursiveDataTypeName embedded.dataType )
+                                    )
+                                    []
+                                )
+
+                        wrapper : C.Declaration
+                        wrapper =
+                            C.valDecl (Just <| recursiveWrapDocumentation embedded.dataType)
+                                (Just <| C.funAnn wrappedAnn (C.typed recursiveWrapperName []))
+                                (recursiveWrapName embedded.dataType)
+                                (C.fqVal internalsModule
+                                    (Mapper.Name.internalize
+                                        ( embedded.moduleName, recursiveDataTypeName embedded.dataType )
+                                    )
+                                )
+
+                        unwrapper : C.Declaration
+                        unwrapper =
+                            C.valDecl (Just <| recursiveUnwrapDocumentation embedded.dataType)
+                                (Just <| C.funAnn (C.typed recursiveWrapperName []) wrappedAnn)
+                                (recursiveUnwrapName embedded.dataType)
+                                (C.fqVal internalsModule <| recursiveUnwrapName <| Mapper.Name.internalize ( embedded.moduleName, embedded.dataType ))
+                    in
+                    [ recursiveTypeWrapper, wrapper, unwrapper ]
+
+        _ ->
+            []
+
+
 mapComment : Map -> C.Comment C.DocComment
 mapComment map =
     C.emptyDocComment
@@ -221,7 +226,20 @@ getter fieldName =
 fieldDeclarations : ( FieldName, Field ) -> List C.Declaration
 fieldDeclarations ( _, field ) =
     case field of
-        NormalField _ _ (Embedded embedded) ->
+        NormalField _ _ fieldType ->
+            fieldTypeDeclarations fieldType
+
+        MapField _ _ _ ->
+            []
+
+        OneOfField _ ->
+            []
+
+
+fieldTypeDeclarations : FieldType -> List C.Declaration
+fieldTypeDeclarations fieldType =
+    case fieldType of
+        (Embedded embedded) ->
             case embedded.typeKind of
                 Alias ->
                     []
@@ -248,14 +266,7 @@ fieldDeclarations ( _, field ) =
                     in
                     [ recursiveTypeWrapper, unwrapper ]
 
-        NormalField _ _ _ ->
-            []
-
-        MapField _ _ _ ->
-            []
-
-        OneOfField _ ->
-            []
+        _ -> []
 
 
 fieldTypeToDefaultValue : FieldType -> C.Expression

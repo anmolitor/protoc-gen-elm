@@ -10,19 +10,24 @@ import Meta.JsonEncode
 import Model exposing (Cardinality(..), FieldType(..), OneOf)
 import Options exposing (Options)
 
-reexportDataType : ModuleName -> ModuleName -> { oneOfName : String, options : OneOf, docs : List String } -> C.Declaration
-reexportDataType internalsModule moduleName { oneOfName, docs } = 
+
+reexportDataType : ModuleName -> ModuleName -> { oneOfName : String, options : OneOf, docs : List String } -> List C.Declaration
+reexportDataType internalsModule moduleName { oneOfName, docs, options } =
     let
-                oneOfDocs =
-                    if List.isEmpty docs then
-                        oneofDocumentation oneOfName
+        oneOfDocs =
+            if List.isEmpty docs then
+                oneofDocumentation oneOfName
 
-                    else
-                        Common.renderDocs docs
+            else
+                Common.renderDocs docs
 
+        typeAliasDecl = C.aliasDecl (Just oneOfDocs) oneOfName [] (C.fqTyped internalsModule (Mapper.Name.internalize ( moduleName ++ [ oneOfName ], oneOfName )) [])
+        
+
+        recursiveFieldDecls = List.concatMap (\o -> Generator.Message.fieldTypeDeclarationsReexport internalsModule o.fieldType) options        
     in
-    C.aliasDecl (Just oneOfDocs) oneOfName [] (C.fqTyped internalsModule (Mapper.Name.internalize (moduleName ++ [oneOfName], oneOfName)) [])
-            
+    typeAliasDecl :: recursiveFieldDecls
+
 
 reexportAST : { oneOfName : String, options : OneOf, docs : List String } -> List C.Declaration
 reexportAST { oneOfName, options, docs } =
@@ -44,12 +49,12 @@ reexportAST { oneOfName, options, docs } =
             C.customTypeDecl (Just documentation)
                 dataType
                 (List.map Tuple.first optionsWithTypeParam)
-                (List.map (\( t, o ) -> ( o.dataType, [ C.typeVar t ] )) optionsWithTypeParam)
+                (List.map (\( t, o ) -> ( o.dataType, [ C.typeVar t ] )) optionsWithTypeParam)         
     in
-    [ type_ ]
+    [type_]
 
 
-toAST : Options -> { a | oneOfName : String, options : OneOf } -> List C.Declaration
+toAST :  Options -> { a | oneOfName : String, options : OneOf } -> List C.Declaration
 toAST opts { oneOfName, options } =
     let
         dataType =
@@ -65,7 +70,7 @@ toAST opts { oneOfName, options } =
                 []
                 (C.fqTyped moduleName externalDataType <|
                     List.map
-                        (\o -> fieldTypeToTypeAnnotation <| Model.setTypeKind Model.Alias o.fieldType)
+                        (\o -> fieldTypeToTypeAnnotation o.fieldType)
                         options
                 )
 
@@ -85,7 +90,7 @@ toAST opts { oneOfName, options } =
                                         Mapper.Name.externalize o.dataType
                                 in
                                 ( C.namedPattern "Just" [ C.parensPattern (C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]) ]
-                                , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required <| Model.setTypeKind Model.Alias o.fieldType, C.val "innerValue" ] ]
+                                , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required o.fieldType, C.val "innerValue" ] ]
                                 )
                             )
                             options
@@ -111,7 +116,7 @@ toAST opts { oneOfName, options } =
                                     [ C.tuple
                                         [ C.string o.fieldName
                                         , C.apply
-                                            [ fieldTypeToJsonEncoder Required <| Model.setTypeKind Model.Alias o.fieldType
+                                            [ fieldTypeToJsonEncoder Required o.fieldType
                                             , C.val "innerValue"
                                             ]
                                         ]
@@ -187,8 +192,10 @@ toAST opts { oneOfName, options } =
                 (Just <| C.typed (Common.fieldNumbersTypeName dataType) [])
                 (Common.fieldNumbersName dataType)
                 (C.record <| List.map (\o -> ( o.fieldName, C.int o.fieldNumber )) options)
+
+        recursiveFieldDecls = List.concatMap (\o -> Generator.Message.fieldTypeDeclarations o.fieldType) options       
     in
-    [ type_, encoder, decoder, fieldNumbersTypeDecl, fieldNumbersDecl ]
+    [ type_, encoder, decoder, fieldNumbersTypeDecl, fieldNumbersDecl ] ++ recursiveFieldDecls
         ++ (if opts.json == Options.All || opts.json == Options.Encode || opts.grpcDevTools then
                 [ jsonEncoder ]
 
