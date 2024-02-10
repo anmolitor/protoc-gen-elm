@@ -49,6 +49,7 @@ unify rootModName packages =
                             }
                         )
                         struct.oneOfs
+                , oneOfReexports = []
                 }
             )
 

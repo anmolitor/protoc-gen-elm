@@ -66,6 +66,12 @@ map3 f res1 res2 res3 =
         |> map2 (|>) res3
 
 
+map4 : (a -> b -> c -> d -> e) -> Res a -> Res b -> Res c -> Res d -> Res e
+map4 f res1 res2 res3 res4 =
+    map3 f res1 res2 res3
+        |> map2 (|>) res4
+
+
 combine : List (Res a) -> Res (List a)
 combine =
     List.foldr (map2 (::)) (Ok [])

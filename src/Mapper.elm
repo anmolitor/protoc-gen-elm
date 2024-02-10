@@ -8,6 +8,7 @@ import Mapper.Name as Name
 import Mapper.Package as Package exposing (Packages)
 import Mapper.Struct exposing (Struct, empty)
 import Mapper.Syntax exposing (Syntax(..), parseSyntax)
+import Meta.Decode exposing (oneOf)
 import Meta.Encode
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
 import Options exposing (Options)
@@ -425,6 +426,21 @@ message moduleRef ctx sourceCodePath descriptor =
                 )
                 fieldsMetaResult
 
+        oneOfReexportPackage =
+            Result.map
+                (\fieldsMeta ->
+                    let
+                        oneOfFields =
+                            List.indexedMap (oneOfFieldPackage ctx sourceCodePath fieldsMeta) oneOfFieldNames
+                    in
+                    if List.isEmpty oneOfFieldNames then
+                        identity
+
+                    else
+                        Package.addPackage nestedPackageName { empty | oneOfReexports = oneOfFields }
+                )
+                fieldsMetaResult
+
         oneOfFieldNames : List String
         oneOfFieldNames =
             List.map .name descriptor.oneofDecl
@@ -434,14 +450,16 @@ message moduleRef ctx sourceCodePath descriptor =
         Err <| Errors.AmbiguousMessageName descriptor.name
 
     else
-        Errors.map3
-            (\mainS addOneOfPackage nestedPackage ->
+        Errors.map4
+            (\mainS addOneOfPackage addOneOfReexportPackage nestedPackage ->
                 Package.addPackage moduleRef.package mainS nestedPackage
                     |> addOneOfPackage
+                    |> addOneOfReexportPackage
                     |> enumPackage
             )
             mainStruct
             oneofPackage
+            oneOfReexportPackage
             nested
 
 

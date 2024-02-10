@@ -7,13 +7,25 @@ import Mapper.Name
 import Meta.Decode
 import Meta.Encode
 import Meta.JsonEncode
-import Meta.Type
 import Model exposing (Cardinality(..), FieldType(..), OneOf)
 import Options exposing (Options)
 
+reexportDataType : ModuleName -> ModuleName -> { oneOfName : String, options : OneOf, docs : List String } -> C.Declaration
+reexportDataType internalsModule moduleName { oneOfName, docs } = 
+    let
+                oneOfDocs =
+                    if List.isEmpty docs then
+                        oneofDocumentation oneOfName
 
-reexportAST : ModuleName -> ModuleName -> { oneOfName : String, options : OneOf, docs : List String } -> List C.Declaration
-reexportAST internalsModule moduleName { oneOfName, options, docs } =
+                    else
+                        Common.renderDocs docs
+
+    in
+    C.aliasDecl (Just oneOfDocs) oneOfName [] (C.fqTyped internalsModule (Mapper.Name.internalize (moduleName ++ [oneOfName], oneOfName)) [])
+            
+
+reexportAST : { oneOfName : String, options : OneOf, docs : List String } -> List C.Declaration
+reexportAST { oneOfName, options, docs } =
     let
         dataType =
             oneOfName
@@ -25,105 +37,16 @@ reexportAST internalsModule moduleName { oneOfName, options, docs } =
             else
                 Common.renderDocs docs
 
+        optionsWithTypeParam =
+            List.indexedMap (\i option -> ( "a" ++ String.fromInt i, option )) options
+
         type_ =
             C.customTypeDecl (Just documentation)
                 dataType
-                []
-                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotationReexport o.fieldType ] )) options)
-
-        internalName =
-            Mapper.Name.internalize ( moduleName, dataType )
-
-        fromInternal =
-            C.funDecl (Just <| Common.fromInternalDocumentation dataType internalName)
-                (Just <|
-                    C.funAnn
-                        (C.fqTyped internalsModule
-                            internalName
-                            []
-                        )
-                        (C.typed dataType [])
-                )
-                ("fromInternal" ++ dataType)
-                [ C.varPattern "data_" ]
-                (C.caseExpr (C.val "data_")
-                    (List.map
-                        (\o ->
-                            ( C.fqNamedPattern internalsModule
-                                (Mapper.Name.internalize ( moduleName, o.dataType ))
-                                [ C.varPattern "n_" ]
-                            , C.apply [ C.val o.dataType, C.val "n_" ]
-                            )
-                        )
-                        options
-                    )
-                )
-
-        toInternalFuncName =
-            "toInternal" ++ dataType
-
-        toInternal =
-            C.funDecl (Just <| Common.toInternalDocumentation dataType internalName)
-                (Just <|
-                    C.funAnn
-                        (C.typed dataType [])
-                        (C.fqTyped internalsModule
-                            internalName
-                            []
-                        )
-                )
-                toInternalFuncName
-                [ C.varPattern "data_" ]
-                (C.caseExpr (C.val "data_")
-                    (List.map
-                        (\o ->
-                            ( C.namedPattern o.dataType [ C.varPattern "n_" ]
-                            , C.apply
-                                [ C.fqVal internalsModule
-                                    (Mapper.Name.internalize ( moduleName, o.dataType ))
-                                , C.val "n_"
-                                ]
-                            )
-                        )
-                        options
-                    )
-                )
-
-        constructors =
-            List.map
-                (\option ->
-                    C.funDecl (C.emptyDocComment |> C.markdown ("Construct a " ++ option.dataType ++ """ and immediately turn it into an Internals_ data type.
-This is just (""" ++ option.dataType ++ " >> " ++ toInternalFuncName) |> Just)
-                        (Just <|
-                            C.funAnn
-                                (fieldTypeToTypeAnnotationReexport option.fieldType)
-                                (C.fqTyped internalsModule internalName [])
-                        )
-                        option.fieldName
-                        []
-                        (C.applyBinOp (C.val option.dataType) C.composer (C.fun toInternalFuncName))
-                )
-                options
-
-        fieldTypeToTypeAnnotationReexport : FieldType -> C.TypeAnnotation
-        fieldTypeToTypeAnnotationReexport fieldType =
-            case fieldType of
-                Primitive dType _ ->
-                    Meta.Type.forPrimitive dType
-
-                Embedded e ->
-                    C.fqTyped (Common.internalsModule e.rootModuleName)
-                        (Mapper.Name.internalize
-                            ( e.moduleName
-                            , e.dataType
-                            )
-                        )
-                        []
-
-                Enumeration enum ->
-                    C.fqTyped (Common.internalsModule enum.rootPackage) (Mapper.Name.internalize ( enum.package, enum.name )) []
+                (List.map Tuple.first optionsWithTypeParam)
+                (List.map (\( t, o ) -> ( o.dataType, [ C.typeVar t ] )) optionsWithTypeParam)
     in
-    [ type_, fromInternal, toInternal ] ++ constructors
+    [ type_ ]
 
 
 toAST : Options -> { a | oneOfName : String, options : OneOf } -> List C.Declaration
@@ -132,12 +55,19 @@ toAST opts { oneOfName, options } =
         dataType =
             oneOfName
 
+        ( moduleName, externalDataType ) =
+            Mapper.Name.externalize oneOfName
+
         type_ =
-            C.customTypeDecl
+            C.aliasDecl
                 (Just <| oneofDocumentation dataType)
                 dataType
                 []
-                (List.map (\o -> ( o.dataType, [ fieldTypeToTypeAnnotation <| Model.setTypeKind Model.Alias o.fieldType ] )) options)
+                (C.fqTyped moduleName externalDataType <|
+                    List.map
+                        (\o -> fieldTypeToTypeAnnotation <| Model.setTypeKind Model.Alias o.fieldType)
+                        options
+                )
 
         encoder =
             C.funDecl (Just <| Common.encoderDocumentation dataType)
@@ -150,7 +80,11 @@ toAST opts { oneOfName, options } =
                     (( C.namedPattern "Nothing" [], C.tuple [ C.int 0, Meta.Encode.none ] )
                         :: List.map
                             (\o ->
-                                ( C.namedPattern "Just" [ C.parensPattern (C.namedPattern o.dataType [ C.varPattern "innerValue" ]) ]
+                                let
+                                    ( optModName, optDataType ) =
+                                        Mapper.Name.externalize o.dataType
+                                in
+                                ( C.namedPattern "Just" [ C.parensPattern (C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]) ]
                                 , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required <| Model.setTypeKind Model.Alias o.fieldType, C.val "innerValue" ] ]
                                 )
                             )
@@ -168,7 +102,11 @@ toAST opts { oneOfName, options } =
                     (( C.namedPattern "Nothing" [], C.list [] )
                         :: List.map
                             (\o ->
-                                ( C.namedPattern "Just" [ C.parensPattern (C.namedPattern o.dataType [ C.varPattern "innerValue" ]) ]
+                                let
+                                    ( optModName, optDataType ) =
+                                        Mapper.Name.externalize o.dataType
+                                in
+                                ( C.namedPattern "Just" [ C.parensPattern (C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]) ]
                                 , C.list
                                     [ C.tuple
                                         [ C.string o.fieldName
@@ -207,13 +145,16 @@ toAST opts { oneOfName, options } =
 
                                             _ ->
                                                 identity
+
+                                    ( optModName, optDataType ) =
+                                        Mapper.Name.externalize o.dataType
                                 in
                                 C.tuple
                                     [ C.int o.fieldNumber
                                     , wrapEmbeddedWithLazy <|
                                         C.apply
                                             [ Meta.Decode.map
-                                            , C.val o.dataType
+                                            , C.fqVal optModName optDataType
                                             , case o.fieldType of
                                                 Primitive p _ ->
                                                     Meta.Decode.forPrimitive p

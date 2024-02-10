@@ -26,6 +26,7 @@ reexportAST options internalsModule moduleName msg =
             C.aliasDecl (Just documentation) msg.dataType [] <|
                 C.fqTyped internalsModule (Mapper.Name.internalize ( moduleName, msg.dataType )) []
 
+
         encoder =
             C.valDecl (Just <| Common.encoderDocumentation msg.dataType)
                 (Just <| Meta.Encode.encoder (C.typed msg.dataType []))

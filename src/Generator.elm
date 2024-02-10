@@ -127,7 +127,8 @@ convert versions options fileNames descriptors =
                 declarations =
                     List.concatMap (Enum.reexportAST options internalsModule packageName) struct.enums
                         ++ List.concatMap (Message.reexportAST options internalsModule packageName) struct.messages
-                        ++ List.concatMap (OneOf.reexportAST internalsModule packageName) struct.oneOfs
+                        ++ List.concatMap OneOf.reexportAST struct.oneOfs
+                        ++ List.map (OneOf.reexportDataType internalsModule packageName) struct.oneOfReexports
                         ++ List.concatMap Service.toAST struct.services
 
                 exports =
