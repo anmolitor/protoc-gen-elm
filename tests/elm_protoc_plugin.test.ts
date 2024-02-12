@@ -84,17 +84,9 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto.Oneof", "Proto.Oneof.OneOf.Msg");
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { msg = Just <| Proto.Oneof.OneOf.Msg.toInternalMsg <| Proto.Oneof.OneOf.Msg.AString "test" }`
+        `${freshVar} = { msg = Just <| Proto.Oneof.OneOf.Msg.AString "test" }`
       );
       let output = await repl.write(
-        `(Proto.Oneof.encodeOneOf ${freshVar} |> E.encode |> D.decode Proto.Oneof.decodeOneOf) == Just ${freshVar}`
-      );
-      expect(output).toEqual(expect.stringContaining("True"));
-
-      await repl.write(
-        `${freshVar} = { msg = Just <| Proto.Oneof.OneOf.Msg.aString "test" }`
-      );
-      output = await repl.write(
         `(Proto.Oneof.encodeOneOf ${freshVar} |> E.encode |> D.decode Proto.Oneof.decodeOneOf) == Just ${freshVar}`
       );
       expect(output).toEqual(expect.stringContaining("True"));
@@ -132,7 +124,7 @@ describe("protoc-gen-elm", () => {
       );
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { msg = Just <| Proto.MultipleOneof.Oneof1.Msg.toInternalMsg <| Proto.MultipleOneof.Oneof1.Msg.OptionA "a" }`
+        `${freshVar} = { msg = Just <| Proto.MultipleOneof.Oneof1.Msg.OptionA "a" }`
       );
       await repl.write(
         `(Proto.MultipleOneof.encodeOneof1 ${freshVar} |> E.encode |> D.decode Proto.MultipleOneof.decodeOneof1) == Just ${freshVar}`
@@ -504,7 +496,7 @@ describe("protoc-gen-elm", () => {
     it("wrapper types work correctly for two stage recursion", async () => {
       await repl.importModules(
         "Proto.RecursiveOneof",
-        "Proto.RecursiveOneof.Rec.Msg"
+        "Proto.RecursiveOneof.LayerTwo.Msg"
       );
       const layerOne = repl.getFreshVariable();
       await repl.write(
