@@ -12,7 +12,7 @@ import Options exposing (Options)
 
 
 reexportDataType : ModuleName -> ModuleName -> { oneOfName : String, options : OneOf, docs : List String } -> List C.Declaration
-reexportDataType internalsModule moduleName { oneOfName, docs, options } =
+reexportDataType internalsModule moduleName { oneOfName, docs } =
     let
         oneOfDocs =
             if List.isEmpty docs then
@@ -21,12 +21,10 @@ reexportDataType internalsModule moduleName { oneOfName, docs, options } =
             else
                 Common.renderDocs docs
 
-        typeAliasDecl = C.aliasDecl (Just oneOfDocs) oneOfName [] (C.fqTyped internalsModule (Mapper.Name.internalize ( moduleName ++ [ oneOfName ], oneOfName )) [])
-        
-
-        recursiveFieldDecls = List.concatMap (\o -> Generator.Message.fieldTypeDeclarationsReexport internalsModule o.fieldType) options        
+        typeAliasDecl =
+            C.aliasDecl (Just oneOfDocs) oneOfName [] (C.fqTyped internalsModule (Mapper.Name.internalize ( moduleName ++ [ oneOfName ], oneOfName )) [])
     in
-    typeAliasDecl :: [] --recursiveFieldDecls
+    [ typeAliasDecl ]
 
 
 reexportAST : { oneOfName : String, options : OneOf, docs : List String } -> List C.Declaration
@@ -49,12 +47,12 @@ reexportAST { oneOfName, options, docs } =
             C.customTypeDecl (Just documentation)
                 dataType
                 (List.map Tuple.first optionsWithTypeParam)
-                (List.map (\( t, o ) -> ( o.dataType, [ C.typeVar t ] )) optionsWithTypeParam)         
+                (List.map (\( t, o ) -> ( o.dataType, [ C.typeVar t ] )) optionsWithTypeParam)
     in
-    [type_]
+    [ type_ ]
 
 
-toAST :  Options -> { a | oneOfName : String, options : OneOf } -> List C.Declaration
+toAST : Options -> { a | oneOfName : String, options : OneOf } -> List C.Declaration
 toAST opts { oneOfName, options } =
     let
         dataType =
@@ -166,10 +164,10 @@ toAST opts { oneOfName, options } =
 
                                                 Embedded e ->
                                                     Generator.Message.embeddedDecoder e
-                                                    -- C.fqFun (Common.internalsModule e.rootModuleName) <|
-                                                    --     Common.decoderName <|
-                                                    --         Mapper.Name.internalize ( e.moduleName, e.dataType )
 
+                                                -- C.fqFun (Common.internalsModule e.rootModuleName) <|
+                                                --     Common.decoderName <|
+                                                --         Mapper.Name.internalize ( e.moduleName, e.dataType )
                                                 Enumeration e ->
                                                     C.fqFun (Common.internalsModule e.rootPackage) <|
                                                         Common.decoderName <|
@@ -194,9 +192,11 @@ toAST opts { oneOfName, options } =
                 (Common.fieldNumbersName dataType)
                 (C.record <| List.map (\o -> ( o.fieldName, C.int o.fieldNumber )) options)
 
-        recursiveFieldDecls = List.concatMap (\o -> Generator.Message.fieldTypeDeclarations o.fieldType) options       
+        recursiveFieldDecls =
+            List.concatMap (\o -> Generator.Message.fieldTypeDeclarations o.fieldType) options
     in
-    [ type_, encoder, decoder, fieldNumbersTypeDecl, fieldNumbersDecl ] ++ recursiveFieldDecls
+    [ type_, encoder, decoder, fieldNumbersTypeDecl, fieldNumbersDecl ]
+        ++ recursiveFieldDecls
         ++ (if opts.json == Options.All || opts.json == Options.Encode || opts.grpcDevTools then
                 [ jsonEncoder ]
 
