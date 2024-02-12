@@ -26,7 +26,7 @@ reexportDataType internalsModule moduleName { oneOfName, docs, options } =
 
         recursiveFieldDecls = List.concatMap (\o -> Generator.Message.fieldTypeDeclarationsReexport internalsModule o.fieldType) options        
     in
-    typeAliasDecl :: recursiveFieldDecls
+    typeAliasDecl :: [] --recursiveFieldDecls
 
 
 reexportAST : { oneOfName : String, options : OneOf, docs : List String } -> List C.Declaration
@@ -165,9 +165,10 @@ toAST opts { oneOfName, options } =
                                                     Meta.Decode.forPrimitive p
 
                                                 Embedded e ->
-                                                    C.fqFun (Common.internalsModule e.rootModuleName) <|
-                                                        Common.decoderName <|
-                                                            Mapper.Name.internalize ( e.moduleName, e.dataType )
+                                                    Generator.Message.embeddedDecoder e
+                                                    -- C.fqFun (Common.internalsModule e.rootModuleName) <|
+                                                    --     Common.decoderName <|
+                                                    --         Mapper.Name.internalize ( e.moduleName, e.dataType )
 
                                                 Enumeration e ->
                                                     C.fqFun (Common.internalsModule e.rootPackage) <|

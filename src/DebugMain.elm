@@ -51,6 +51,5 @@ process base64 =
             |> Base64.fromBytes
             |> Maybe.withDefault ""
             |> Ports.response
-
-        --, debug <| Debug.toString request
+        , debug <| Debug.toString request
         ]

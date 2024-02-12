@@ -485,18 +485,40 @@ describe("protoc-gen-elm", () => {
       await compileElm(["Proto/RecursiveOneof.elm"]);
     });
 
-    it("does not need to generate wrapper types", async () => {
+    it("wrapper types work correctly for direct recursion", async () => {
       await repl.importModules(
         "Proto.RecursiveOneof",
         "Proto.RecursiveOneof.Rec.Msg"
       );
       const msg = repl.getFreshVariable();
       await repl.write(
-        `${msg} = { msg = Just <| Proto.RecursiveOneof.Rec.Msg.toInternalMsg <| Proto.RecursiveOneof.Rec.Msg.Rec { msg = Nothing } }`
+        `${msg} = { msg = Just <| Proto.RecursiveOneof.Rec.Msg.Rec <| Proto.RecursiveOneof.wrapRec { msg = Nothing } }`
       );
 
       const output = await repl.write(
         `(Proto.RecursiveOneof.encodeRec ${msg} |> E.encode |> D.decode Proto.RecursiveOneof.decodeRec) == Just ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("wrapper types work correctly for two stage recursion", async () => {
+      await repl.importModules(
+        "Proto.RecursiveOneof",
+        "Proto.RecursiveOneof.Rec.Msg"
+      );
+      const layerOne = repl.getFreshVariable();
+      await repl.write(
+        `${layerOne} = Proto.RecursiveOneof.LayerTwo.Msg.LayerOne <| Proto.RecursiveOneof.wrapLayerOne { layerTwo = [] }`
+      );
+      const layerTwo = repl.getFreshVariable();
+      await repl.write(
+        `${layerTwo} = Proto.RecursiveOneof.wrapLayerTwo { msg = Just ${layerOne} }`
+      );
+      const outerLayerOne = repl.getFreshVariable();
+      await repl.write(`${outerLayerOne} = { layerTwo = [${layerTwo}] }`);
+
+      const output = await repl.write(
+        `(Proto.RecursiveOneof.encodeLayerOne ${outerLayerOne} |> E.encode |> D.decode Proto.RecursiveOneof.decodeLayerOne) == Just ${outerLayerOne}`
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });

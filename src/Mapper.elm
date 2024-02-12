@@ -1,4 +1,4 @@
-module Mapper exposing (TypeRefs, definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, message)
+module Mapper exposing (TypeRefs, calcTypeKind, definedTypesInFileDescriptor, definedTypesInMessageDescriptor, mapMain, message)
 
 import Dict exposing (Dict)
 import Elm.CodeGen as C exposing (ModuleName)
@@ -384,6 +384,7 @@ message moduleRef ctx sourceCodePath descriptor =
                             [ { dataType = name
                               , fields = messageFields { moduleRef | package = nestedPackageName } oneOfFieldNames fieldsMeta
                               , docs = docs
+                              , typeKind = calcTypeKind ctx.typeRefs parentRef parentRef
                               }
                             ]
                         , originFiles = ctx.originFiles
@@ -563,17 +564,12 @@ handleMessage parentRef typeRefs messageName =
         { dataType = ref.name
         , moduleName = ref.package
         , rootModuleName = ref.rootPackage
-        , typeKind =
-            if isRecursive typeRefs parentRef (Name.absoluteRef messageName) then
-                Model.Type
-
-            else
-                Model.Alias
+        , typeKind = calcTypeKind typeRefs parentRef ref
         }
 
 
-isRecursive : TypeRefs -> Name.Ref -> Name.Ref -> Bool
-isRecursive typeRefs parentRef ref =
+calcTypeKind : TypeRefs -> Name.Ref -> Name.Ref -> Model.TypeKind
+calcTypeKind typeRefs parentRef ref =
     let
         isRecursiveHelper encounteredTypes currRef =
             case Dict.get currRef typeRefs of
@@ -591,7 +587,11 @@ isRecursive typeRefs parentRef ref =
                                     isRecursiveHelper (Set.insert currRef encounteredTypes) nextRef
                             )
     in
-    isRecursiveHelper Set.empty (refToKey ref)
+    if isRecursiveHelper (Set.singleton <| refToKey parentRef) (refToKey ref) then
+        Model.Type
+
+    else
+        Model.Alias
 
 
 fieldType : TypeRefs -> Name.Ref -> FieldDescriptorProto -> Res FieldType

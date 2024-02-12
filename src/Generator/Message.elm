@@ -22,6 +22,9 @@ reexportAST options internalsModule moduleName msg =
             else
                 Common.renderDocs msg.docs
 
+        messageAsFieldType =
+            Embedded { typeKind = msg.typeKind, dataType = msg.dataType, moduleName = moduleName, rootModuleName = moduleName }
+
         type_ =
             C.aliasDecl (Just documentation) msg.dataType [] <|
                 C.fqTyped internalsModule (Mapper.Name.internalize ( moduleName, msg.dataType )) []
@@ -58,6 +61,7 @@ reexportAST options internalsModule moduleName msg =
                 (C.fqVal internalsModule <| Common.fieldNumbersName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
     in
     [ type_, encoder, decoder, default, fieldNumbersDecl ]
+        ++ fieldTypeDeclarationsReexport internalsModule messageAsFieldType
         ++ List.concatMap (fieldDeclarationsReexport internalsModule) msg.fields
         ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
                 [ jsonEncoder ]
@@ -160,6 +164,8 @@ fieldDeclarationsReexport internalsModule ( _, field ) =
 
         OneOfField _ ->
             []
+
+
 fieldTypeDeclarationsReexport : ModuleName -> FieldType -> List C.Declaration
 fieldTypeDeclarationsReexport internalsModule fieldType =
     case fieldType of
@@ -239,7 +245,7 @@ fieldDeclarations ( _, field ) =
 fieldTypeDeclarations : FieldType -> List C.Declaration
 fieldTypeDeclarations fieldType =
     case fieldType of
-        (Embedded embedded) ->
+        Embedded embedded ->
             case embedded.typeKind of
                 Alias ->
                     []
@@ -266,7 +272,8 @@ fieldTypeDeclarations fieldType =
                     in
                     [ recursiveTypeWrapper, unwrapper ]
 
-        _ -> []
+        _ ->
+            []
 
 
 fieldTypeToDefaultValue : FieldType -> C.Expression

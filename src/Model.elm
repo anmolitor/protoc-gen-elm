@@ -43,6 +43,7 @@ type alias Method =
 type alias Message =
     { dataType : DataType
     , fields : List ( FieldName, Field )
+    , typeKind : TypeKind
     , docs : List String
     }
 
