@@ -373,7 +373,7 @@ describe("protoc-gen-elm", () => {
       const other = repl.getFreshVariable();
       const outerRec = repl.getFreshVariable();
       await repl.write(`${innerRec} = { rec = [], other = Nothing }`);
-      await repl.write(`${other} = { rec = Just ${innerRec} }`);
+      await repl.write(`${other} = { rec = Just <| Proto.Recursive.wrapRecursive ${innerRec} }`);
       await repl.write(
         `${outerRec} = { rec = [Proto.Recursive.wrapRecursive ${innerRec}], other = Just (Proto.Recursive.wrapOther ${other}) }`
       );
