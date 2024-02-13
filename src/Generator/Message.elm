@@ -286,7 +286,7 @@ fieldTypeToDefaultValue fieldType =
             Meta.Basics.nothing
 
         Enumeration enum ->
-            C.fqVal (Common.internalsModule enum.rootPackage) (Common.defaultName <| Mapper.Name.internalize ( enum.package, enum.name ))
+            C.fqVal (enum.package ++ [ enum.name ]) (Common.defaultName enum.name)
 
 
 toDefaultValue : Field -> C.Expression
@@ -462,14 +462,14 @@ fieldTypeToDecoder fieldType cardinality =
                     [ Meta.Decode.map
                     , Meta.Basics.just
                     , C.fqFun
-                        (Common.internalsModule enum.rootPackage)
-                        (Common.decoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+                        (enum.package ++ [ enum.name ])
+                        (Common.decoderName enum.name)
                     ]
                 )
 
         ( _, Enumeration enum ) ->
-            C.fqFun (Common.internalsModule enum.rootPackage)
-                (Common.decoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+            C.fqFun (enum.package ++ [ enum.name ])
+                (Common.decoderName enum.name)
 
 
 toEncoder : ( FieldName, Field ) -> C.Expression
@@ -601,7 +601,7 @@ fieldTypeToEncoder cardinality fieldType =
             embeddedEncoder e
 
         ( Required, Enumeration enum ) ->
-            C.fqFun (Common.internalsModule enum.rootPackage) (Common.encoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+            C.fqFun (enum.package ++ [ enum.name ]) (Common.encoderName enum.name)
 
         ( Repeated, Primitive dataType _ ) ->
             C.apply [ Meta.Encode.list, Meta.Encode.forPrimitive dataType ]
@@ -612,8 +612,8 @@ fieldTypeToEncoder cardinality fieldType =
         ( Repeated, Enumeration enum ) ->
             C.apply
                 [ Meta.Encode.list
-                , C.fqFun (Common.internalsModule enum.rootPackage)
-                    (Common.encoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+                , C.fqFun (enum.package ++ [ enum.name ])
+                    (Common.encoderName enum.name)
                 ]
 
         ( _, Embedded e ) ->
@@ -628,14 +628,14 @@ fieldTypeToEncoder cardinality fieldType =
                 C.applyBinOp
                     (C.apply
                         [ Meta.Basics.mapMaybe
-                        , C.fqFun (Common.internalsModule enum.rootPackage) (Common.encoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+                        , C.fqFun (enum.package ++ [ enum.name ]) (Common.encoderName enum.name)
                         ]
                     )
                     C.composer
                     (C.apply [ Meta.Basics.withDefault, Meta.Encode.none ])
 
         ( Optional, Enumeration enum ) ->
-            C.fqFun (Common.internalsModule enum.rootPackage) (Common.encoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+            C.fqFun (enum.package ++ [ enum.name ]) (Common.encoderName enum.name)
 
 
 fieldTypeToJsonMapKey : FieldType -> C.Expression
@@ -668,7 +668,7 @@ fieldTypeToJsonEncoder cardinality fieldType =
             embeddedJsonEncoder e
 
         ( Required, Enumeration enum ) ->
-            C.fqFun (Common.internalsModule enum.rootPackage) (Common.jsonEncoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+            C.fqFun (enum.package ++ [ enum.name ]) (Common.jsonEncoderName enum.name)
 
         ( Repeated, Primitive dataType _ ) ->
             C.apply [ Meta.JsonEncode.list, Meta.JsonEncode.forPrimitive dataType ]
@@ -679,8 +679,8 @@ fieldTypeToJsonEncoder cardinality fieldType =
         ( Repeated, Enumeration enum ) ->
             C.apply
                 [ Meta.JsonEncode.list
-                , C.fqFun (Common.internalsModule enum.rootPackage)
-                    (Common.jsonEncoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+                , C.fqFun (enum.package ++ [ enum.name ])
+                    (Common.jsonEncoderName enum.name)
                 ]
 
         ( _, Embedded e ) ->
@@ -695,14 +695,14 @@ fieldTypeToJsonEncoder cardinality fieldType =
                 C.applyBinOp
                     (C.apply
                         [ Meta.Basics.mapMaybe
-                        , C.fqFun (Common.internalsModule enum.rootPackage) (Common.jsonEncoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+                        , C.fqFun (enum.package ++ [ enum.name ]) (Common.jsonEncoderName enum.name)
                         ]
                     )
                     C.composer
                     (C.apply [ Meta.Basics.withDefault, Meta.JsonEncode.null ])
 
         ( Optional, Enumeration enum ) ->
-            C.fqFun (Common.internalsModule enum.rootPackage) (Common.jsonEncoderName <| Mapper.Name.internalize ( enum.package, enum.name ))
+            C.fqFun (enum.package ++ [ enum.name ]) (Common.jsonEncoderName enum.name)
 
 
 fieldTypeToTypeAnnotation : FieldType -> C.TypeAnnotation
@@ -726,7 +726,7 @@ fieldTypeToTypeAnnotation fieldType =
                 []
 
         Enumeration enum ->
-            C.fqTyped (Common.internalsModule enum.rootPackage) (Mapper.Name.internalize ( enum.package, enum.name )) []
+            C.fqTyped (enum.package ++ [ enum.name ]) enum.name []
 
 
 fieldToTypeAnnotation : Field -> C.TypeAnnotation

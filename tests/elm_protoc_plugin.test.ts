@@ -373,7 +373,9 @@ describe("protoc-gen-elm", () => {
       const other = repl.getFreshVariable();
       const outerRec = repl.getFreshVariable();
       await repl.write(`${innerRec} = { rec = [], other = Nothing }`);
-      await repl.write(`${other} = { rec = Just <| Proto.Recursive.wrapRecursive ${innerRec} }`);
+      await repl.write(
+        `${other} = { rec = Just <| Proto.Recursive.wrapRecursive ${innerRec} }`
+      );
       await repl.write(
         `${outerRec} = { rec = [Proto.Recursive.wrapRecursive ${innerRec}], other = Just (Proto.Recursive.wrapOther ${other}) }`
       );
@@ -454,6 +456,26 @@ describe("protoc-gen-elm", () => {
 
     it("generates a valid elm file for embedded types", async () => {
       await compileElm(expectedElmFileName);
+    });
+  });
+
+  describe("oneof with enums", () => {
+    it("generates working code for a oneof using enums", async () => {
+      await repl.importModules(
+        "Proto.EnumOf",
+        "Proto.EnumOf.MyEnum",
+        "Proto.EnumOf.EnumOneOf.YourEnum",
+        "Proto.EnumOf.EnumOneOf.Msg"
+      );
+      const msg = repl.getFreshVariable();
+      await repl.write(
+        `${msg} = { msg = Just <| Proto.EnumOf.EnumOneOf.MyEnum Proto.EnumOf.MyEnum.A }`
+      );
+
+      const output = await repl.write(
+        `(Proto.EnumOf.encodeEnumOneOf ${msg} |> E.encode |> D.decode Proto.EnumOf.decodeEnumOneOf) == Just ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
     });
   });
 

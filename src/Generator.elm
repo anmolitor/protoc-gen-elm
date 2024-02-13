@@ -97,8 +97,7 @@ convert versions options fileNames descriptors =
             let
                 declarations =
                     removeDuplicateDeclarations
-                        (List.concatMap (Enum.toAST options) struct.enums
-                            ++ List.concatMap (Message.toAST options) struct.messages
+                        (List.concatMap (Message.toAST options) struct.messages
                             ++ List.concatMap (OneOf.toAST options) struct.oneOfs
                         )
 
@@ -125,9 +124,9 @@ convert versions options fileNames descriptors =
                     rootModName ++ [ "Internals_" ]
 
                 declarations =
-                    List.concatMap (Enum.reexportAST options internalsModule packageName) struct.enums
+                    List.concatMap (Enum.toAST options) struct.enums
                         ++ List.concatMap (Message.reexportAST options internalsModule packageName) struct.messages
-                        ++ List.concatMap (OneOf.reexportAST) struct.oneOfs
+                        ++ List.concatMap OneOf.reexportAST struct.oneOfs
                         ++ List.concatMap (OneOf.reexportDataType internalsModule packageName) struct.oneOfReexports
                         ++ List.concatMap Service.toAST struct.services
 
@@ -169,6 +168,7 @@ convert versions options fileNames descriptors =
                 ++ List.concatMap (\( mod, package ) -> Dict.map (packageToReexportFile mod) package |> Dict.values |> (::) (mkInternalsFile mod package)) mods
         )
         files
+        |> Result.map (List.filter <| \file -> not <| List.isEmpty file.declarations)
 
 
 fileComment : AllVersions -> Set String -> C.Comment C.FileComment -> C.Comment C.FileComment

@@ -163,16 +163,10 @@ mapMain options descriptors =
                     , Result.map2
                         (\messagePackages services ->
                             Package.concat messagePackages
+                                |> Package.append (enumPackages ctx [] moduleRef.package descriptor.enumType)
                                 |> Package.addPackage moduleRef.package
                                     { empty
-                                        | enums =
-                                            List.indexedMap
-                                                (\index ->
-                                                    enum ctx
-                                                        [ fieldNumbersFileDescriptorProto.enumType, index ]
-                                                )
-                                                descriptor.enumType
-                                        , docs = fileDocs
+                                        | docs = fileDocs
                                         , originFiles = originFiles
                                     }
                                 |> Package.append (servicePackages services)
@@ -397,17 +391,7 @@ message moduleRef ctx sourceCodePath descriptor =
                 identity
 
             else
-                Package.addPackage nestedPackageName
-                    { empty
-                        | enums =
-                            List.indexedMap
-                                (\index ->
-                                    enum ctx
-                                        (sourceCodePath ++ [ fieldNumbersDescriptorProto.enumType, index ])
-                                )
-                                descriptor.enumType
-                        , originFiles = ctx.originFiles
-                    }
+                Package.append (enumPackages ctx sourceCodePath nestedPackageName descriptor.enumType)
 
         -- Weird: protoc generates oneof fields for proto3 optionals and then refers to those. They are always the fieldname itself prefixed with "_"
         proto3OptionalFields =
@@ -483,6 +467,22 @@ oneofStruct ctx messageSourceCodePath basePackageName oneOfFieldNames fieldsMeta
     List.foldl (\oneOf -> Package.addPackage (basePackageName ++ [ oneOf.oneOfName ]) { empty | oneOfs = [ oneOf ], originFiles = ctx.originFiles })
         Package.empty
         oneOfFields
+
+
+enumPackages : Ctx -> List Int -> C.ModuleName -> List EnumDescriptorProto -> Package.Packages
+enumPackages ctx messageSourceCodePath basePackageName enumDescriptor =
+    let
+        enums =
+            List.indexedMap
+                (\index ->
+                    enum ctx
+                        (messageSourceCodePath ++ [ fieldNumbersDescriptorProto.enumType, index ])
+                )
+                enumDescriptor
+    in
+    List.foldl (\e -> Package.addPackage (basePackageName ++ [ e.dataType ]) { empty | enums = [ e ], originFiles = ctx.originFiles })
+        Package.empty
+        enums
 
 
 messageFields : Name.ModuleRef -> List String -> List { a | field : ( FieldName, Field ), oneOfIndex : Int } -> List ( FieldName, Field )

@@ -165,13 +165,9 @@ toAST opts { oneOfName, options } =
                                                 Embedded e ->
                                                     Generator.Message.embeddedDecoder e
 
-                                                -- C.fqFun (Common.internalsModule e.rootModuleName) <|
-                                                --     Common.decoderName <|
-                                                --         Mapper.Name.internalize ( e.moduleName, e.dataType )
                                                 Enumeration e ->
-                                                    C.fqFun (Common.internalsModule e.rootPackage) <|
-                                                        Common.decoderName <|
-                                                            Mapper.Name.internalize ( e.package, e.name )
+                                                    C.fqFun (e.package ++ [ e.name ]) <|
+                                                        Common.decoderName e.name
                                             ]
                                     ]
                             )

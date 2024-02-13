@@ -1,4 +1,4 @@
-module Generator.Enum exposing (reexportAST, toAST)
+module Generator.Enum exposing (toAST)
 
 import Elm.CodeGen as C exposing (ModuleName)
 import Elm.Syntax.Expression exposing (Expression)
@@ -13,173 +13,6 @@ import Model exposing (Enum)
 import Options exposing (Options)
 
 
-reexportAST : Options -> ModuleName -> ModuleName -> Enum -> List C.Declaration
-reexportAST options internalsModule moduleName enum =
-    let
-        fields =
-            NonEmpty.toList enum.fields
-                |> List.map Tuple.second
-
-        withUnrecognized f =
-            if enum.withUnrecognized then
-                f (enum.dataType ++ "Unrecognized_")
-
-            else
-                identity
-
-        documentation =
-            if List.isEmpty enum.docs then
-                enumDocumentation enum.dataType
-
-            else
-                Common.renderDocs enum.docs
-
-        type_ =
-            C.customTypeDecl (Just documentation)
-                enum.dataType
-                []
-                (List.map (\optionName -> ( optionName, [] )) fields
-                    |> withUnrecognized (\unrecognized constructors -> constructors ++ [ ( unrecognized, [ C.intAnn ] ) ])
-                )
-
-        internalName =
-            Mapper.Name.internalize ( moduleName, enum.dataType )
-
-        fromInternal =
-            C.funDecl (Just <| Common.fromInternalDocumentation enum.dataType internalName)
-                (Just <|
-                    C.funAnn
-                        (C.fqTyped internalsModule
-                            internalName
-                            []
-                        )
-                        (C.typed enum.dataType [])
-                )
-                ("fromInternal" ++ enum.dataType)
-                [ C.varPattern "data_" ]
-                (C.caseExpr (C.val "data_")
-                    (List.map
-                        (\optionName ->
-                            ( C.fqNamedPattern internalsModule
-                                (Mapper.Name.internalize ( moduleName, optionName ))
-                                []
-                            , C.val optionName
-                            )
-                        )
-                        fields
-                        |> withUnrecognized
-                            (\unrecognized cases ->
-                                cases
-                                    ++ [ ( C.fqNamedPattern internalsModule
-                                            (Mapper.Name.internalize ( moduleName, unrecognized ))
-                                            [ C.varPattern "n_" ]
-                                         , C.apply [ C.val unrecognized, C.val "n_" ]
-                                         )
-                                       ]
-                            )
-                    )
-                )
-
-        toInternal =
-            C.funDecl (Just <| Common.toInternalDocumentation enum.dataType internalName)
-                (Just <|
-                    C.funAnn
-                        (C.typed enum.dataType [])
-                        (C.fqTyped internalsModule
-                            internalName
-                            []
-                        )
-                )
-                ("toInternal" ++ enum.dataType)
-                [ C.varPattern "data_" ]
-                (C.caseExpr (C.val "data_")
-                    (List.map
-                        (\optionName ->
-                            ( C.namedPattern optionName []
-                            , C.fqVal internalsModule
-                                (Mapper.Name.internalize ( moduleName, optionName ))
-                            )
-                        )
-                        fields
-                        |> withUnrecognized
-                            (\unrecognized cases ->
-                                cases
-                                    ++ [ ( C.namedPattern unrecognized [ C.varPattern "n_" ]
-                                         , C.apply
-                                            [ C.fqVal internalsModule
-                                                (Mapper.Name.internalize ( moduleName, unrecognized ))
-                                            , C.val "n_"
-                                            ]
-                                         )
-                                       ]
-                            )
-                    )
-                )
-
-        jsonEncoder =
-            C.valDecl (Just <| Common.jsonEncoderDocumentation enum.dataType)
-                (Just <| Meta.JsonEncode.encoder (C.typed enum.dataType []))
-                (Common.jsonEncoderName enum.dataType)
-                (C.applyBinOp (C.val <| "toInternal" ++ enum.dataType)
-                    C.composer
-                    (C.fqVal internalsModule <| Common.jsonEncoderName <| Mapper.Name.internalize ( moduleName, enum.dataType ))
-                )
-
-        encoder =
-            C.valDecl (Just <| Common.encoderDocumentation enum.dataType)
-                (Just <| Meta.Encode.encoder (C.typed enum.dataType []))
-                (Common.encoderName enum.dataType)
-                (C.applyBinOp (C.val <| "toInternal" ++ enum.dataType)
-                    C.composer
-                    (C.fqVal internalsModule <| Common.encoderName <| Mapper.Name.internalize ( moduleName, enum.dataType ))
-                )
-
-        decoder =
-            C.valDecl (Just <| Common.decoderDocumentation enum.dataType)
-                (Just <| Meta.Decode.decoder (C.typed enum.dataType []))
-                (Common.decoderName enum.dataType)
-                (C.apply
-                    [ Meta.Decode.map
-                    , C.val <| "fromInternal" ++ enum.dataType
-                    , C.fqVal internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, enum.dataType )
-                    ]
-                )
-
-        defaultEnum =
-            NonEmpty.find (\( index, _ ) -> index == 0) enum.fields
-                |> Maybe.withDefault (NonEmpty.head enum.fields)
-                |> Tuple.second
-
-        default : C.Declaration
-        default =
-            C.valDecl (Just <| Common.defaultDocumentation enum.dataType)
-                (Just <| C.typed enum.dataType [])
-                (Common.defaultName enum.dataType)
-                (C.val defaultEnum)
-
-        fieldNumbersDecl : C.Declaration
-        fieldNumbersDecl =
-            C.funDecl (Just <| Common.fieldNumbersDocumentation enum.dataType)
-                (Just <| C.funAnn (C.typed enum.dataType []) C.intAnn)
-                (Common.fieldNumbersName enum.dataType)
-                [ C.varPattern "n_" ]
-                (C.caseExpr (C.val "n_") <|
-                    withUnrecognized (\unrecognized cases -> cases ++ [ ( C.namedPattern unrecognized [ C.varPattern "m_" ], C.val "m_" ) ]) <|
-                        List.map
-                            (\( n, optName ) -> ( C.namedPattern optName [], C.int n ))
-                        <|
-                            NonEmpty.toList enum.fields
-                )
-    in
-    [ type_, decoder, encoder, fromInternal, toInternal, default, fieldNumbersDecl ]
-        ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
-                [ jsonEncoder ]
-
-            else
-                []
-           )
-
-
 toAST : Options -> Enum -> List C.Declaration
 toAST options enum =
     let
@@ -188,6 +21,13 @@ toAST options enum =
 
         unrecognizedOption =
             enumName ++ "Unrecognized_"
+
+        withUnrecognized f =
+            if enum.withUnrecognized then
+                f (enum.dataType ++ "Unrecognized_")
+
+            else
+                identity
 
         decodeCases : String -> NonEmpty ( Pattern, Expression )
         decodeCases varName =
@@ -322,8 +162,22 @@ toAST options enum =
                 (Just <| C.typed enumName [])
                 (Common.defaultName enumName)
                 (C.val defaultEnum)
+
+        fieldNumbersDecl : C.Declaration
+        fieldNumbersDecl =
+            C.funDecl (Just <| Common.fieldNumbersDocumentation enum.dataType)
+                (Just <| C.funAnn (C.typed enum.dataType []) C.intAnn)
+                (Common.fieldNumbersName enum.dataType)
+                [ C.varPattern "n_" ]
+                (C.caseExpr (C.val "n_") <|
+                    withUnrecognized (\unrecognized cases -> cases ++ [ ( C.namedPattern unrecognized [ C.varPattern "m_" ], C.val "m_" ) ]) <|
+                        List.map
+                            (\( n, optName ) -> ( C.namedPattern optName [], C.int n ))
+                        <|
+                            NonEmpty.toList enum.fields
+                )
     in
-    [ type_, decoder, encoder, default ]
+    [ type_, decoder, encoder, default, fieldNumbersDecl ]
         ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
                 [ jsonEncoder ]
 

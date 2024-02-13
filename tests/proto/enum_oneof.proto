@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package enum_of;
+
+message EnumOneOf {
+  oneof msg {
+    MyEnum myEnum = 1;
+    YourEnum yourEnum = 2;
+  }
+
+  enum YourEnum {
+    A = 0;
+    B = 1;
+  }
+}
+
+enum MyEnum {
+  A = 0;
+  B = 1;
+}
