@@ -55,20 +55,6 @@ defaultDocumentation typeName =
     C.emptyDocComment |> C.markdown ("Default for " ++ typeName ++ ". Should only be used for 'required' decoders as an initial value.")
 
 
-fromInternalDocumentation : String -> String -> C.Comment C.DocComment
-fromInternalDocumentation typeName internalName =
-    C.emptyDocComment
-        |> C.markdown ("Convert the internal type `" ++ internalName ++ "` into a `" ++ typeName ++ "`.")
-        |> C.markdown "Using two different types is necessary to avoid recursive module references while having readable constructor names."
-
-
-toInternalDocumentation : String -> String -> C.Comment C.DocComment
-toInternalDocumentation typeName internalName =
-    C.emptyDocComment
-        |> C.markdown ("Convert a `" ++ typeName ++ "` into its internal representation `" ++ internalName ++ "`.")
-        |> C.markdown "Using two different types is necessary to avoid recursive module references while having readable constructor names."
-
-
 renderDocs : List String -> C.Comment C.DocComment
 renderDocs docs =
     addDocs docs C.emptyDocComment
