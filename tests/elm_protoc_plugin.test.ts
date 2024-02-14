@@ -26,9 +26,9 @@ describe("protoc-gen-elm", () => {
     });
 
     it("generates working encoders and decoders", async () => {
-      await repl.importModules("Proto");
+      await repl.importModules("Proto.AnEnum");
       const output = await repl.write(
-        "Proto.encodeAnEnum Proto.OptionB |> E.encode |> D.decode Proto.decodeAnEnum"
+        "Proto.AnEnum.encodeAnEnum Proto.AnEnum.OptionB |> E.encode |> D.decode Proto.AnEnum.decodeAnEnum"
       );
       expect(output).toEqual(expect.stringMatching(/Just.+OptionB/));
     });
@@ -149,16 +149,16 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("nested package", () => {
-    const expectedElmFileName = "Proto/Some/Nested/Stuff.elm";
+    const expectedElmFileName = "Proto/Some/Nested/Stuff.Test.elm";
 
     it("generates a valid elm file for nested_package.proto", async () => {
       await compileElm(expectedElmFileName);
     });
 
     it("generates working code for nested_package.proto", async () => {
-      await repl.importModules("Proto.Some.Nested.Stuff");
+      await repl.importModules("Proto.Some.Nested.Stuff.Test");
       const output = await repl.write(
-        "(Proto.Some.Nested.Stuff.encodeTest Proto.Some.Nested.Stuff.A |> E.encode |> D.decode Proto.Some.Nested.Stuff.decodeTest) == Just Proto.Some.Nested.Stuff.A"
+        "(Proto.Some.Nested.Stuff.Test.encodeTest Proto.Some.Nested.Stuff.Test.A |> E.encode |> D.decode Proto.Some.Nested.Stuff.Test.decodeTest) == Just Proto.Some.Nested.Stuff.Test.A"
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
@@ -198,7 +198,7 @@ describe("protoc-gen-elm", () => {
 
   describe("enum imports", () => {
     const expectedElmFileNames = [
-      "Proto/ImportedEnum.elm",
+      "Proto/ImportedEnum.SomeEnum.elm",
       "Proto/ImportingEnum.elm",
     ];
 
@@ -207,25 +207,28 @@ describe("protoc-gen-elm", () => {
     });
 
     it("generates working code for imported_enum.proto", async () => {
-      await repl.importModules("Proto.ImportedEnum");
+      await repl.importModules("Proto.ImportedEnum.SomeEnum");
       const freshVar = repl.getFreshVariable();
-      await repl.write(`${freshVar} = Proto.ImportedEnum.OptionAImported`);
+      await repl.write(
+        `${freshVar} = Proto.ImportedEnum.SomeEnum.OptionAImported`
+      );
       const output = await repl.write(
-        `(Proto.ImportedEnum.encodeSomeEnum ${freshVar} |> E.encode |> D.decode Proto.ImportedEnum.decodeSomeEnum) == Just ${freshVar}`
+        `(Proto.ImportedEnum.SomeEnum.encodeSomeEnum ${freshVar} |> E.encode |> D.decode Proto.ImportedEnum.SomeEnum.decodeSomeEnum) == Just ${freshVar}`
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
 
     it("generates working code for importing_enum.proto", async () => {
-      await repl.importModules("Proto.ImportedEnum", "Proto.ImportingEnum");
-      const inner = repl.getFreshVariable();
-      const outer = repl.getFreshVariable();
-      await repl.write(`${inner} = Proto.ImportedEnum.OptionBImported`);
+      await repl.importModules(
+        "Proto.ImportingEnum",
+        "Proto.ImportedEnum.SomeEnum"
+      );
+      const msg = repl.getFreshVariable();
       await repl.write(
-        `${outer} = { someEnum = Proto.ImportedEnum.toInternalSomeEnum ${inner} }`
+        `${msg} = { someEnum = Proto.ImportedEnum.SomeEnum.OptionBImported }`
       );
       const output = await repl.write(
-        `(Proto.ImportingEnum.encodeMsg ${outer} |> E.encode |> D.decode Proto.ImportingEnum.decodeMsg) == Just ${outer}`
+        `(Proto.ImportingEnum.encodeMsg ${msg} |> E.encode |> D.decode Proto.ImportingEnum.decodeMsg) == Just ${msg}`
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
@@ -342,11 +345,12 @@ describe("protoc-gen-elm", () => {
         "Proto.Nested",
         "Proto.Nested.TopLevel",
         "Proto.Nested.TopLevel.LevelOne",
-        "Proto.Nested.TopLevel.LevelOne.LevelTwo"
+        "Proto.Nested.TopLevel.LevelOne.EnumLevelOne",
+        "Proto.Nested.TopLevel.LevelOne.LevelTwo.EnumLevelTwo"
       );
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { property = Proto.Nested.TopLevel.LevelOne.LevelTwo.toInternalEnumLevelTwo Proto.Nested.TopLevel.LevelOne.LevelTwo.A }`
+        `${freshVar} = { property = Proto.Nested.TopLevel.LevelOne.LevelTwo.EnumLevelTwo.A }`
       );
       const output = await repl.write(
         `(Proto.Nested.encodeTest ${freshVar} |> E.encode |> D.decode Proto.Nested.decodeTest) == Just ${freshVar}`
@@ -396,7 +400,7 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("proto2 enums", () => {
-    const expectedElmFileName = "Proto/Proto2Enum.elm";
+    const expectedElmFileName = "Proto/Proto2Enum.Proto2.elm";
 
     it("generates a valid elm file for proto2 enum", async () => {
       await compileElm(expectedElmFileName);
@@ -427,10 +431,13 @@ describe("protoc-gen-elm", () => {
     });
 
     it("generates the expected api", async () => {
-      await repl.importModules("Proto.Proto3Optional");
+      await repl.importModules(
+        "Proto.Proto3Optional",
+        "Proto.Proto3Optional.AnEnum"
+      );
       const msg = repl.getFreshVariable();
       await repl.write(
-        `${msg} = { field = Just "", field2 = Nothing, field3 = Just <| Proto.Proto3Optional.toInternalAnEnum Proto.Proto3Optional.A }`
+        `${msg} = { field = Just "", field2 = Nothing, field3 = Just <| Proto.Proto3Optional.AnEnum.A }`
       );
 
       const output = await repl.write(
@@ -469,7 +476,7 @@ describe("protoc-gen-elm", () => {
       );
       const msg = repl.getFreshVariable();
       await repl.write(
-        `${msg} = { msg = Just <| Proto.EnumOf.EnumOneOf.MyEnum Proto.EnumOf.MyEnum.A }`
+        `${msg} = { msg = Just <| Proto.EnumOf.EnumOneOf.Msg.MyEnum Proto.EnumOf.MyEnum.A }`
       );
 
       const output = await repl.write(
