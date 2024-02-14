@@ -149,7 +149,7 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("nested package", () => {
-    const expectedElmFileName = "Proto/Some/Nested/Stuff.Test.elm";
+    const expectedElmFileName = "Proto/Some/Nested/Stuff/Test.elm";
 
     it("generates a valid elm file for nested_package.proto", async () => {
       await compileElm(expectedElmFileName);
@@ -198,7 +198,7 @@ describe("protoc-gen-elm", () => {
 
   describe("enum imports", () => {
     const expectedElmFileNames = [
-      "Proto/ImportedEnum.SomeEnum.elm",
+      "Proto/ImportedEnum/SomeEnum.elm",
       "Proto/ImportingEnum.elm",
     ];
 
@@ -400,7 +400,7 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("proto2 enums", () => {
-    const expectedElmFileName = "Proto/Proto2Enum.Proto2.elm";
+    const expectedElmFileName = "Proto/Proto2Enum/Proto2.elm";
 
     it("generates a valid elm file for proto2 enum", async () => {
       await compileElm(expectedElmFileName);
