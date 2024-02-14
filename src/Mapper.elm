@@ -13,7 +13,8 @@ import Meta.Encode
 import Model exposing (Cardinality(..), Enum, Field(..), FieldName, FieldType(..), IntFlavor(..), Method, OneOf, Primitive(..), Service)
 import Options exposing (Options)
 import Proto.Google.Protobuf exposing (DescriptorProto, EnumDescriptorProto, FieldDescriptorProto, FileDescriptorProto, MethodDescriptorProto, ServiceDescriptorProto, fieldNumbersDescriptorProto, fieldNumbersFileDescriptorProto, fieldNumbersServiceDescriptorProto, unwrapDescriptorProto)
-import Proto.Google.Protobuf.FieldDescriptorProto as FieldDescriptorProto
+import Proto.Google.Protobuf.FieldDescriptorProto.Label as Label exposing (Label)
+import Proto.Google.Protobuf.FieldDescriptorProto.Type as Type
 import Proto.Google.Protobuf.SourceCodeInfo as SourceCodeInfo
 import Set exposing (Set)
 
@@ -253,8 +254,8 @@ message moduleRef ctx sourceCodePath descriptor =
                         |> List.reverse
                         |> String.join "."
             in
-            case FieldDescriptorProto.fromInternalType fieldDescriptor.type_ of
-                FieldDescriptorProto.TYPEMESSAGE ->
+            case fieldDescriptor.type_ of
+                Type.TYPEMESSAGE ->
                     Dict.get typeNameWithoutPackage maps
 
                 _ ->
@@ -279,7 +280,7 @@ message moduleRef ctx sourceCodePath descriptor =
                                     Proto3Optional
 
                                  else
-                                    cardinality <| FieldDescriptorProto.fromInternalLabel fieldDescriptor.label
+                                    cardinality fieldDescriptor.label
                                 )
                             )
             )
@@ -596,59 +597,59 @@ calcTypeKind typeRefs parentRef ref =
 
 fieldType : TypeRefs -> Name.Ref -> FieldDescriptorProto -> Res FieldType
 fieldType typeRefs parentRef descriptor =
-    case FieldDescriptorProto.fromInternalType descriptor.type_ of
-        FieldDescriptorProto.TYPEDOUBLE ->
+    case descriptor.type_ of
+        Type.TYPEDOUBLE ->
             Ok <| Primitive Prim_Double <| defaultNumber descriptor
 
-        FieldDescriptorProto.TYPEFLOAT ->
+        Type.TYPEFLOAT ->
             Ok <| Primitive Prim_Float <| defaultNumber descriptor
 
-        FieldDescriptorProto.TYPEINT64 ->
+        Type.TYPEINT64 ->
             Ok <| Primitive (Prim_Int64 Int_) <| defaultInt64 descriptor
 
-        FieldDescriptorProto.TYPEINT32 ->
+        Type.TYPEINT32 ->
             Ok <| Primitive (Prim_Int32 Int_) <| defaultNumber descriptor
 
-        FieldDescriptorProto.TYPEUINT64 ->
+        Type.TYPEUINT64 ->
             Ok <| Primitive (Prim_Int64 UInt) <| defaultInt64 descriptor
 
-        FieldDescriptorProto.TYPEUINT32 ->
+        Type.TYPEUINT32 ->
             Ok <| Primitive (Prim_Int32 UInt) <| defaultNumber descriptor
 
-        FieldDescriptorProto.TYPEFIXED64 ->
+        Type.TYPEFIXED64 ->
             Ok <| Primitive (Prim_Int64 Fixed) <| defaultInt64 descriptor
 
-        FieldDescriptorProto.TYPEFIXED32 ->
+        Type.TYPEFIXED32 ->
             Ok <| Primitive (Prim_Int32 Fixed) <| defaultNumber descriptor
 
-        FieldDescriptorProto.TYPESFIXED64 ->
+        Type.TYPESFIXED64 ->
             Ok <| Primitive (Prim_Int64 SFixed) <| defaultInt64 descriptor
 
-        FieldDescriptorProto.TYPESFIXED32 ->
+        Type.TYPESFIXED32 ->
             Ok <| Primitive (Prim_Int32 SFixed) <| defaultNumber descriptor
 
-        FieldDescriptorProto.TYPESINT64 ->
+        Type.TYPESINT64 ->
             Ok <| Primitive (Prim_Int64 SInt) <| defaultInt64 descriptor
 
-        FieldDescriptorProto.TYPESINT32 ->
+        Type.TYPESINT32 ->
             Ok <| Primitive (Prim_Int32 SInt) <| defaultNumber descriptor
 
-        FieldDescriptorProto.TYPEBOOL ->
+        Type.TYPEBOOL ->
             Ok <| Primitive Prim_Bool <| defaultBool descriptor
 
-        FieldDescriptorProto.TYPESTRING ->
+        Type.TYPESTRING ->
             Ok <| Primitive Prim_String <| defaultString descriptor
 
-        FieldDescriptorProto.TYPEGROUP ->
+        Type.TYPEGROUP ->
             Ok <| handleMessage parentRef typeRefs descriptor.typeName
 
-        FieldDescriptorProto.TYPEMESSAGE ->
+        Type.TYPEMESSAGE ->
             Ok <| handleMessage parentRef typeRefs descriptor.typeName
 
-        FieldDescriptorProto.TYPEBYTES ->
+        Type.TYPEBYTES ->
             Ok <| Primitive Prim_Bytes <| defaultBytes descriptor
 
-        FieldDescriptorProto.TYPEENUM ->
+        Type.TYPEENUM ->
             let
                 ref =
                     Name.absoluteRef descriptor.typeName
@@ -695,14 +696,14 @@ defaultString descriptor =
     C.string descriptor.defaultValue
 
 
-cardinality : FieldDescriptorProto.Label -> Cardinality
+cardinality : Label -> Cardinality
 cardinality value =
     case value of
-        FieldDescriptorProto.LABELOPTIONAL ->
+        Label.LABELOPTIONAL ->
             Optional
 
-        FieldDescriptorProto.LABELREQUIRED ->
+        Label.LABELREQUIRED ->
             Required
 
-        FieldDescriptorProto.LABELREPEATED ->
+        Label.LABELREPEATED ->
             Repeated
