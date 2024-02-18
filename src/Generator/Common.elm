@@ -20,6 +20,11 @@ jsonEncoderName typeName =
     "jsonEncode" ++ typeName
 
 
+jsonDecoderName : String -> String
+jsonDecoderName typeName =
+    "jsonDecode" ++ typeName
+
+
 defaultName : String -> String
 defaultName typeName =
     "default" ++ typeName
@@ -38,6 +43,11 @@ encoderDocumentation typeName =
 jsonEncoderDocumentation : String -> C.Comment C.DocComment
 jsonEncoderDocumentation typeName =
     C.emptyDocComment |> C.markdown ("Encode a `" ++ typeName ++ "` to JSON. Uses the canonical encoding described here: " ++ canonicalJsonEncodingLink)
+
+
+jsonDecoderDocumentation : String -> C.Comment C.DocComment
+jsonDecoderDocumentation typeName =
+    C.emptyDocComment |> C.markdown ("Decode a `" ++ typeName ++ "` from JSON. Uses the canonical encoding described here: " ++ canonicalJsonEncodingLink)
 
 
 elmProtocolBuffersName : String

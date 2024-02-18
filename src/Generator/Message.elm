@@ -6,6 +6,7 @@ import Mapper.Name
 import Meta.Basics
 import Meta.Decode
 import Meta.Encode
+import Meta.JsonDecode
 import Meta.JsonEncode
 import Meta.Type
 import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldType(..), Map, Message, Primitive(..), TypeKind(..))
@@ -47,6 +48,12 @@ reexportAST options internalsModule moduleName msg =
                 (Common.decoderName msg.dataType)
                 (C.fqVal internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
 
+        jsonDecoder =
+            C.valDecl (Just <| Common.decoderDocumentation msg.dataType)
+                (Just <| Meta.JsonDecode.decoder (C.typed msg.dataType []))
+                (Common.jsonDecoderName msg.dataType)
+                (C.fqVal internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
+
         default =
             C.valDecl (Just <| Common.defaultDocumentation msg.dataType)
                 (Just <| C.typed msg.dataType [])
@@ -65,6 +72,12 @@ reexportAST options internalsModule moduleName msg =
         ++ List.concatMap (fieldDeclarationsReexport internalsModule) msg.fields
         ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
                 [ jsonEncoder ]
+
+            else
+                []
+           )
+        ++ (if options.json == Options.All || options.json == Options.Decode then
+                [ jsonDecoder ]
 
             else
                 []
@@ -129,6 +142,15 @@ toAST options msg =
                     ]
                 )
 
+        jsonDecoder : C.Declaration
+        jsonDecoder =
+            C.valDecl (Just <| Common.jsonDecoderDocumentation msg.dataType)
+                (Just <| Meta.JsonDecode.decoder (C.typed msg.dataType []))
+                (Common.decoderName msg.dataType)
+                (Meta.JsonDecode.mapN (C.val msg.dataType) <|
+                    List.map toJsonDecoder msg.fields
+                )
+
         default : C.Declaration
         default =
             C.valDecl (Just <| Common.defaultDocumentation msg.dataType)
@@ -147,6 +169,12 @@ toAST options msg =
         ++ List.concatMap fieldDeclarations msg.fields
         ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
                 [ jsonEncoder ]
+
+            else
+                []
+           )
+        ++ (if options.json == Options.All || options.json == Options.Decode then
+                [ jsonDecoder ]
 
             else
                 []
@@ -403,6 +431,82 @@ toDecoder ( fieldName, field ) =
                 ]
 
 
+toJsonDecoder : ( FieldName, Field ) -> C.Expression
+toJsonDecoder ( fieldName, field ) =
+    case field of
+        NormalField _ cardinality fieldType ->
+            case cardinality of
+                Optional ->
+                    C.apply
+                        [ Meta.JsonDecode.maybe
+                        , C.parens <|
+                            C.apply
+                                [ Meta.JsonDecode.field
+                                , C.string fieldName
+                                , fieldTypeToJsonDecoder fieldType cardinality
+                                ]
+                        ]
+
+                Proto3Optional ->
+                    C.apply
+                        [ Meta.JsonDecode.maybe
+                        , C.parens <|
+                            C.apply
+                                [ Meta.JsonDecode.field
+                                , C.string fieldName
+                                , fieldTypeToJsonDecoder fieldType cardinality
+                                ]
+                        ]
+
+                Required ->
+                    C.apply
+                        [ Meta.JsonDecode.field
+                        , C.string fieldName
+                        , fieldTypeToJsonDecoder fieldType cardinality
+                        ]
+
+                Repeated ->
+                    C.apply
+                        [ Meta.JsonDecode.field
+                        , C.string fieldName
+                        , C.apply [ Meta.JsonDecode.list, fieldTypeToJsonDecoder fieldType cardinality ]
+                        ]
+
+        MapField _ (Primitive ((Prim_Int64 _) as prim) _) value ->
+            -- special case for int64 types since they are not comparable -> we use the unwrapped (int, int) representation instead
+            C.apply
+                [ Meta.JsonDecode.field
+                , C.string fieldName
+                , Meta.JsonDecode.dict
+                    (Meta.JsonDecode.mapN (C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts")
+                        [ Meta.JsonDecode.forPrimitive prim ]
+                    )
+                    (fieldTypeToJsonDecoder value Optional)
+                ]
+
+        MapField _ (Primitive Prim_String _) value ->
+            -- special case for String since no additional mapping step is required
+            C.apply
+                [ Meta.JsonDecode.field
+                , C.string fieldName
+                , Meta.JsonDecode.stringKeyDict (fieldTypeToJsonDecoder value Optional)
+                ]
+
+        MapField _ key value ->
+            C.apply
+                [ Meta.JsonDecode.field
+                , C.string fieldName
+                , Meta.JsonDecode.dict (fieldTypeToJsonDecoder key Optional) (fieldTypeToJsonDecoder value Optional)
+                ]
+
+        OneOfField ref ->
+            C.apply
+                [ Meta.JsonDecode.field
+                , C.string fieldName
+                , C.fqFun (Common.internalsModule ref.rootPackage) (Common.jsonDecoderName <| Mapper.Name.internalize ( ref.package, ref.name ))
+                ]
+
+
 embeddedDecoder : { dataType : DataType, moduleName : C.ModuleName, rootModuleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
 embeddedDecoder e =
     (case e.typeKind of
@@ -424,6 +528,29 @@ embeddedDecoder e =
                 << C.lambda [ C.allPattern ]
     )
         (C.fqFun (Common.internalsModule e.rootModuleName) (Common.decoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )))
+
+
+embeddedJsonDecoder : { dataType : DataType, moduleName : C.ModuleName, rootModuleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
+embeddedJsonDecoder e =
+    (case e.typeKind of
+        Alias ->
+            identity
+
+        Type ->
+            C.parens
+                << C.applyBinOp
+                    (C.apply
+                        [ Meta.JsonDecode.map
+                        , C.fqVal (Common.internalsModule e.rootModuleName) <|
+                            recursiveDataTypeName <|
+                                Mapper.Name.internalize ( e.moduleName, e.dataType )
+                        ]
+                    )
+                    C.pipel
+                << C.applyBinOp Meta.JsonDecode.lazy C.pipel
+                << C.lambda [ C.allPattern ]
+    )
+        (C.fqFun (Common.internalsModule e.rootModuleName) (Common.jsonDecoderName <| Mapper.Name.internalize ( e.moduleName, e.dataType )))
 
 
 fieldTypeToDecoder : FieldType -> Cardinality -> C.Expression
@@ -470,6 +597,46 @@ fieldTypeToDecoder fieldType cardinality =
         ( _, Enumeration enum ) ->
             C.fqFun (enum.package ++ [ enum.name ])
                 (Common.decoderName enum.name)
+
+
+fieldTypeToJsonDecoder : FieldType -> Cardinality -> C.Expression
+fieldTypeToJsonDecoder fieldType cardinality =
+    case ( cardinality, fieldType ) of
+        ( Proto3Optional, Primitive dataType _ ) ->
+            C.parens
+                (Meta.JsonDecode.mapN Meta.Basics.just
+                    [ Meta.Decode.forPrimitive dataType
+                    ]
+                )
+
+        ( _, Primitive dataType _ ) ->
+            Meta.JsonDecode.forPrimitive dataType
+
+        ( Required, Embedded e ) ->
+            embeddedJsonDecoder e
+
+        ( Repeated, Embedded e ) ->
+            embeddedJsonDecoder e
+
+        ( _, Embedded e ) ->
+            C.parens
+                (Meta.JsonDecode.mapN Meta.Basics.just
+                    [ embeddedJsonDecoder e
+                    ]
+                )
+
+        ( Proto3Optional, Enumeration enum ) ->
+            C.parens
+                (Meta.JsonDecode.mapN Meta.Basics.just
+                    [ C.fqFun
+                        (enum.package ++ [ enum.name ])
+                        (Common.jsonDecoderName enum.name)
+                    ]
+                )
+
+        ( _, Enumeration enum ) ->
+            C.fqFun (enum.package ++ [ enum.name ])
+                (Common.jsonDecoderName enum.name)
 
 
 toEncoder : ( FieldName, Field ) -> C.Expression
