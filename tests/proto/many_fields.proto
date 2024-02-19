@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package many_fields;
+
+message ManyFields {
+  int32 field1 = 1;
+  int32 field2 = 2;
+  int32 field3 = 3;
+  int32 field4 = 4;
+  int32 field5 = 5;
+  int32 field6 = 6;
+  int32 field7 = 7;
+  int32 field8 = 8;
+  int32 field9 = 9;
+  int32 field10 = 10;
+  int32 field11 = 11;
+  int32 field12 = 12;
+  int32 field13 = 13;
+  int32 field14 = 14;
+  int32 field15 = 15;
+  int32 field16 = 16;
+  int32 field17 = 17;
+  int32 field18 = 18;
+  int32 field19 = 19;
+  int32 field20 = 20;
+  int32 field21 = 21;
+  int32 field22 = 22;
+  int32 field23 = 23;
+  int32 field24 = 24;
+  int32 field25 = 25;
+}

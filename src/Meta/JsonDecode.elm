@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Elm.CodeGen as C exposing (Expression, ModuleName, TypeAnnotation)
 import Json.Decode
 import List.Extra
+import List.NonEmpty as NonEmpty exposing (NonEmpty)
 import Meta.Basics
 import Model exposing (IntFlavor(..), Primitive(..))
 
@@ -26,6 +27,11 @@ moduleName =
 null : Expression
 null =
     C.fqVal moduleName "null"
+
+
+succeed : Expression
+succeed =
+    C.fqVal moduleName "succeed"
 
 
 list : Expression
@@ -63,13 +69,18 @@ lazy =
     C.fqFun moduleName "lazy"
 
 
+oneOf : List Expression -> Expression
+oneOf decoders =
+    C.apply [ C.fqFun moduleName "oneOf", C.list decoders ]
+
+
 {-| Generates a decoder from a fixed size list of decoders and a function combining the results.
 For example,
 -> mapN (C.val "myfunc") [int, string, bool]
 will generate
 -> map3 myfunc int string bool
 -}
-mapN : Expression -> List Expression -> Expression
+mapN : Expression -> NonEmpty Expression -> Expression
 mapN funcWithNArgs decoders =
     let
         mapUpTo8 f decoderGroup =
@@ -86,9 +97,9 @@ mapN funcWithNArgs decoders =
             in
             C.apply ([ C.fqVal moduleName mapFuncName, f ] ++ decoderGroup)
     in
-    case List.Extra.greedyGroupsOf 8 decoders of
+    case List.Extra.greedyGroupsOf 8 (NonEmpty.toList decoders) of
         [] ->
-            funcWithNArgs
+            C.val "This cannot happen because the list is non-empty!"
 
         firstDecoderGroup :: otherDecoderGroups ->
             C.pipe (mapUpTo8 funcWithNArgs firstDecoderGroup)

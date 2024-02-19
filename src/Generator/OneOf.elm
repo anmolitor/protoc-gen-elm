@@ -3,9 +3,12 @@ module Generator.OneOf exposing (..)
 import Elm.CodeGen as C exposing (ModuleName)
 import Generator.Common as Common
 import Generator.Message exposing (fieldTypeToEncoder, fieldTypeToJsonEncoder, fieldTypeToTypeAnnotation, oneofDocumentation)
+import Json.Decode
 import Mapper.Name
+import Meta.Basics
 import Meta.Decode
 import Meta.Encode
+import Meta.JsonDecode
 import Meta.JsonEncode
 import Model exposing (Cardinality(..), FieldType(..), OneOf)
 import Options exposing (Options)
@@ -175,6 +178,46 @@ toAST opts { oneOfName, options } =
                         )
                     ]
 
+        jsonDecoder =
+            C.valDecl (Just <| Common.jsonDecoderDocumentation dataType)
+                (Just <| Meta.JsonDecode.decoder (C.maybeAnn <| C.typed dataType []))
+                (Common.jsonDecoderName dataType)
+            <|
+                Meta.JsonDecode.oneOf
+                    (List.map
+                        (\o ->
+                            let
+                                wrapEmbeddedWithLazy =
+                                    case o.fieldType of
+                                        Embedded _ ->
+                                            C.applyBinOp Meta.JsonDecode.lazy C.pipel << C.lambda [ C.allPattern ]
+
+                                        _ ->
+                                            identity
+
+                                ( optModName, optDataType ) =
+                                    Mapper.Name.externalize o.dataType
+                            in
+                            wrapEmbeddedWithLazy <|
+                                C.apply
+                                    [ Meta.JsonDecode.map
+                                    , C.parens (C.applyBinOp (C.fqVal optModName optDataType) C.composer Meta.Basics.just)
+                                    , case o.fieldType of
+                                        Primitive p _ ->
+                                            Meta.JsonDecode.forPrimitive p
+
+                                        Embedded e ->
+                                            Generator.Message.embeddedJsonDecoder e
+
+                                        Enumeration e ->
+                                            C.fqFun (e.package ++ [ e.name ]) <|
+                                                Common.jsonDecoderName e.name
+                                    ]
+                        )
+                        options
+                        ++ [ C.apply [ C.fqVal Meta.JsonDecode.moduleName "succeed", Meta.Basics.nothing ] ]
+                    )
+
         fieldNumbersTypeDecl : C.Declaration
         fieldNumbersTypeDecl =
             C.aliasDecl (Just <| Common.fieldNumbersDocumentation dataType) (Common.fieldNumbersTypeName dataType) [] <|
@@ -195,6 +238,12 @@ toAST opts { oneOfName, options } =
         ++ recursiveFieldDecls
         ++ (if opts.json == Options.All || opts.json == Options.Encode || opts.grpcDevTools then
                 [ jsonEncoder ]
+
+            else
+                []
+           )
+        ++ (if opts.json == Options.All || opts.json == Options.Decode then
+                [ jsonDecoder ]
 
             else
                 []

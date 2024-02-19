@@ -2,6 +2,7 @@ module Generator.Message exposing (..)
 
 import Elm.CodeGen as C exposing (ModuleName)
 import Generator.Common as Common
+import List.NonEmpty as NonEmpty
 import Mapper.Name
 import Meta.Basics
 import Meta.Decode
@@ -52,7 +53,7 @@ reexportAST options internalsModule moduleName msg =
             C.valDecl (Just <| Common.decoderDocumentation msg.dataType)
                 (Just <| Meta.JsonDecode.decoder (C.typed msg.dataType []))
                 (Common.jsonDecoderName msg.dataType)
-                (C.fqVal internalsModule <| Common.decoderName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
+                (C.fqVal internalsModule <| Common.jsonDecoderName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
 
         default =
             C.valDecl (Just <| Common.defaultDocumentation msg.dataType)
@@ -146,9 +147,14 @@ toAST options msg =
         jsonDecoder =
             C.valDecl (Just <| Common.jsonDecoderDocumentation msg.dataType)
                 (Just <| Meta.JsonDecode.decoder (C.typed msg.dataType []))
-                (Common.decoderName msg.dataType)
-                (Meta.JsonDecode.mapN (C.val msg.dataType) <|
-                    List.map toJsonDecoder msg.fields
+                (Common.jsonDecoderName msg.dataType)
+                (case NonEmpty.fromList msg.fields of
+                    Just nonEmptyFields ->
+                        Meta.JsonDecode.mapN (C.val msg.dataType) <|
+                            NonEmpty.map toJsonDecoder nonEmptyFields
+
+                    Nothing ->
+                        C.apply [ Meta.JsonDecode.succeed, C.record [] ]
                 )
 
         default : C.Declaration
@@ -437,15 +443,18 @@ toJsonDecoder ( fieldName, field ) =
         NormalField _ cardinality fieldType ->
             case cardinality of
                 Optional ->
-                    C.apply
-                        [ Meta.JsonDecode.maybe
-                        , C.parens <|
-                            C.apply
-                                [ Meta.JsonDecode.field
-                                , C.string fieldName
-                                , fieldTypeToJsonDecoder fieldType cardinality
-                                ]
-                        ]
+                    C.pipe
+                        (C.apply
+                            [ Meta.JsonDecode.maybe
+                            , C.parens <|
+                                C.apply
+                                    [ Meta.JsonDecode.field
+                                    , C.string fieldName
+                                    , fieldTypeToJsonDecoder fieldType cardinality
+                                    ]
+                            ]
+                        )
+                        [ C.apply [ Meta.JsonDecode.map, C.parens <| C.apply [ Meta.Basics.withDefault, fieldTypeToDefaultValue fieldType ] ] ]
 
                 Proto3Optional ->
                     C.apply
@@ -478,8 +487,11 @@ toJsonDecoder ( fieldName, field ) =
                 [ Meta.JsonDecode.field
                 , C.string fieldName
                 , Meta.JsonDecode.dict
-                    (Meta.JsonDecode.mapN (C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts")
-                        [ Meta.JsonDecode.forPrimitive prim ]
+                    (C.apply
+                        [ Meta.JsonDecode.map
+                        , C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts"
+                        , Meta.JsonDecode.forPrimitive prim
+                        ]
                     )
                     (fieldTypeToJsonDecoder value Optional)
                 ]
@@ -602,13 +614,6 @@ fieldTypeToDecoder fieldType cardinality =
 fieldTypeToJsonDecoder : FieldType -> Cardinality -> C.Expression
 fieldTypeToJsonDecoder fieldType cardinality =
     case ( cardinality, fieldType ) of
-        ( Proto3Optional, Primitive dataType _ ) ->
-            C.parens
-                (Meta.JsonDecode.mapN Meta.Basics.just
-                    [ Meta.Decode.forPrimitive dataType
-                    ]
-                )
-
         ( _, Primitive dataType _ ) ->
             Meta.JsonDecode.forPrimitive dataType
 
@@ -620,17 +625,10 @@ fieldTypeToJsonDecoder fieldType cardinality =
 
         ( _, Embedded e ) ->
             C.parens
-                (Meta.JsonDecode.mapN Meta.Basics.just
-                    [ embeddedJsonDecoder e
-                    ]
-                )
-
-        ( Proto3Optional, Enumeration enum ) ->
-            C.parens
-                (Meta.JsonDecode.mapN Meta.Basics.just
-                    [ C.fqFun
-                        (enum.package ++ [ enum.name ])
-                        (Common.jsonDecoderName enum.name)
+                (C.apply
+                    [ Meta.JsonDecode.map
+                    , Meta.Basics.just
+                    , embeddedJsonDecoder e
                     ]
                 )
 

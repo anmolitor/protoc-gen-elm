@@ -1,6 +1,6 @@
 module Generator.Enum exposing (toAST)
 
-import Elm.CodeGen as C exposing (ModuleName)
+import Elm.CodeGen as C
 import Elm.Syntax.Expression exposing (Expression)
 import Elm.Syntax.Pattern exposing (Pattern)
 import Generator.Common as Common
@@ -8,6 +8,7 @@ import List.NonEmpty as NonEmpty exposing (NonEmpty)
 import Mapper.Name
 import Meta.Decode
 import Meta.Encode
+import Meta.JsonDecode
 import Meta.JsonEncode
 import Model exposing (Enum)
 import Options exposing (Options)
@@ -47,6 +48,23 @@ toAST options enum =
 
                       else
                         NonEmpty.head enum.fields |> Tuple.second |> C.val
+                    )
+                )
+
+        decodeJsonCases : String -> NonEmpty ( Pattern, Expression )
+        decodeJsonCases _ =
+            NonEmpty.append
+                (NonEmpty.map
+                    (\( _, name ) ->
+                        ( C.stringPattern name
+                        , C.val name
+                        )
+                    )
+                    enum.fields
+                )
+                (NonEmpty.singleton
+                    ( C.allPattern
+                    , NonEmpty.head enum.fields |> Tuple.second |> C.val
                     )
                 )
 
@@ -151,6 +169,24 @@ toAST options enum =
                     (C.caseExpr (C.val "value") (NonEmpty.toList encodeJsonCases))
                 )
 
+        jsonDecoder : C.Declaration
+        jsonDecoder =
+            C.funDecl (Just <| Common.jsonDecoderDocumentation enumName)
+                (Just <| Meta.JsonDecode.decoder (C.typed enumName []))
+                (Common.jsonDecoderName enumName)
+                []
+                (C.applyBinOp Meta.JsonDecode.string
+                    C.piper
+                    (C.apply
+                        [ Meta.JsonDecode.map
+                        , C.parens <|
+                            C.lambda
+                                [ C.varPattern "i" ]
+                                (C.caseExpr (C.val "i") (NonEmpty.toList <| decodeJsonCases "i"))
+                        ]
+                    )
+                )
+
         defaultEnum =
             NonEmpty.find (\( index, _ ) -> index == 0) enum.fields
                 |> Maybe.withDefault (NonEmpty.head enum.fields)
@@ -180,6 +216,12 @@ toAST options enum =
     [ type_, decoder, encoder, default, fieldNumbersDecl ]
         ++ (if options.json == Options.All || options.json == Options.Encode || options.grpcDevTools then
                 [ jsonEncoder ]
+
+            else
+                []
+           )
+        ++ (if options.json == Options.All || options.json == Options.Decode then
+                [ jsonDecoder ]
 
             else
                 []
