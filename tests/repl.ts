@@ -89,7 +89,7 @@ export const startRepl = async (): Promise<Repl> => {
         throw new Error(err);
       }),
       // timeout if repl does not respond
-      waitForMs(2000).then(() => {
+      waitForMs(5000).then(() => {
         throw new Error(
           `Timed out when waiting for output of command '${input}'`
         );
