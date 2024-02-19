@@ -212,12 +212,13 @@ const workerDecoder = (workerRequest) =>
     worker.ports.inc.send(workerRequest);
   });
 
-let response;
+let responses = new Map();
 const client = {
   client_: {
     rpcCall: (method, req, metadata, info, callback) => {
       // first argument is error
-      callback(null, response);
+      callback(null, responses.get(method));
+      responses.delete(method);
     },
   },
 };
@@ -239,6 +240,25 @@ const bufferToArr = (buffer) => {
   return arr;
 };
 
+const grpcStati = {
+  1: "Cancelled",
+  2: "Unknown",
+  3: "InvalidArgument",
+  4: "DeadlineExceeded",
+  5: "NotFound",
+  6: "AlreadyExists",
+  7: "PermissionDenied",
+  8: "ResourceExhausted",
+  9: "FailedPrecondition",
+  10: "Aborted",
+  11: "OutOfRange",
+  12: "Unimplemented",
+  13: "Internal",
+  14: "Unavailable",
+  15: "DataLoss",
+  16: "Unauthenticated",
+};
+
 function applyMonkeypatch(decoder) {
   const ORIGINAL = XMLHttpRequest;
   window.XMLHttpRequest = function () {
@@ -246,30 +266,43 @@ function applyMonkeypatch(decoder) {
     let reqBody;
 
     const original = new ORIGINAL();
+
     original.addEventListener("loadend", async () => {
       if (
-        original.getResponseHeader("content-type") ===
+        original.getResponseHeader("content-type") !==
         "application/grpc-web+proto"
       ) {
-        const reqAsJson = await decoder({
-          url: serviceAndMethod,
-          isRequest: true,
-          bytes: bufferToArr(reqBody.buffer),
-        });
-        const resAsJson = await decoder({
+        return;
+      }
+      const reqAsJson = await decoder({
+        url: serviceAndMethod,
+        isRequest: true,
+        bytes: bufferToArr(reqBody.buffer),
+      });
+      const responseStatus = original.getResponseHeader("grpc-status");
+      let resAsJson;
+      if (responseStatus && responseStatus !== "0") {
+        // error!
+        const errorMessage = original.getResponseHeader("grpc-message");
+        resAsJson = {
+          error: grpcStati[responseStatus],
+          message: decodeURIComponent(errorMessage),
+        };
+      } else {
+        resAsJson = await decoder({
           url: serviceAndMethod,
           isRequest: false,
           bytes: bufferToArr(original.response),
         });
-        response = wrapToObject(resAsJson);
-        client.client_.rpcCall(
-          serviceAndMethod,
-          wrapToObject(reqAsJson),
-          null,
-          null,
-          () => {}
-        );
       }
+      responses.set(serviceAndMethod, wrapToObject(resAsJson));
+      client.client_.rpcCall(
+        serviceAndMethod,
+        wrapToObject(reqAsJson),
+        null,
+        null,
+        () => {}
+      );
     });
 
     const originalOpen = original.open.bind(original);
