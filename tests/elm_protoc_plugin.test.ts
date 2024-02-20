@@ -347,6 +347,45 @@ describe("protoc-gen-elm", () => {
       expect(output).toEqual(expect.stringContaining("True"));
     });
 
+    it("roundtrips to json", async () => {
+      await repl.importModules("Proto", "Dict");
+      const msg = repl.getFreshVariable();
+      await repl.write(
+        `${msg} = { foos = Dict.singleton "test" (Just { abc = "hi" } ), idk = Dict.fromList [(1, "a"), (5, "b")] }`
+      );
+      const json = repl.getFreshVariable();
+      await repl.write(`${json} = Proto.jsonEncodeBar ${msg} |> JE.encode 0`);
+
+      const output = await repl.write(
+        `JD.decodeString Proto.jsonDecodeBar ${json} == Ok ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("int64 map roundtrips to json", async () => {
+      await repl.importModules("Proto", "Dict");
+      const msg = repl.getFreshVariable();
+      await repl.write(`${msg} = { idk = Dict.singleton (1, 2) "test" }`);
+      const json = repl.getFreshVariable();
+      await repl.write(
+        `${json} = Proto.jsonEncodeInt64Map ${msg} |> JE.encode 0`
+      );
+      const output = await repl.write(
+        `JD.decodeString Proto.jsonDecodeInt64Map ${json} == Ok ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("json decode null or missing defaults to empty map", async () => {
+      await repl.importModules("Proto", "Dict");
+      const expected = repl.getFreshVariable();
+      await repl.write(`${expected} = { foos = Dict.empty, idk = Dict.empty }`);
+      const output = await repl.write(
+        `JD.decodeString Proto.jsonDecodeBar """{ "foos": null }""" == Ok ${expected}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
     it("is compatable with protobufjs", async () => {
       await roundtripRunner(
         { protoFileName: "map", messageName: "Bar", elmModuleName: "Proto" },
@@ -366,6 +405,7 @@ describe("protoc-gen-elm", () => {
     });
 
     it("generates working code for maps", async () => {
+      // TODO what happened to the "idk" field???
       await repl.importModules("Proto.Map", "Dict");
       const freshVar = repl.getFreshVariable();
       await repl.write(
