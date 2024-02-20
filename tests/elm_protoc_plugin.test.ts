@@ -11,7 +11,12 @@ describe("protoc-gen-elm", () => {
 
   beforeAll(async () => {
     repl = await startRepl();
-    await repl.importModules("Protobuf.Decode as D", "Protobuf.Encode as E");
+    await repl.importModules(
+      "Protobuf.Decode as D",
+      "Protobuf.Encode as E",
+      "Json.Decode as JD",
+      "Json.Encode as JE"
+    );
     console.log("Started elm repl.");
     roundtripRunner = makeRoundtripRunner(repl);
   });
@@ -49,6 +54,46 @@ describe("protoc-gen-elm", () => {
       );
       const output = await repl.write(
         `(Proto.BasicMessage.encodeBasicMessage ${freshVar} |> E.encode |> D.decode Proto.BasicMessage.decodeBasicMessage) == Just ${freshVar}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("roundtrips to json", async () => {
+      await repl.importModules("Proto.BasicMessage");
+      const msg = repl.getFreshVariable();
+      await repl.write(
+        `${msg} = { stringProperty = "hi", intProperty = 5, floatProperty = 6.0, boolProperty = True }`
+      );
+      const json = repl.getFreshVariable();
+      await repl.write(
+        `${json} = Proto.BasicMessage.jsonEncodeBasicMessage ${msg} |> JE.encode 0`
+      );
+      const output = await repl.write(
+        `JD.decodeString Proto.BasicMessage.jsonDecodeBasicMessage ${json} == Ok ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("decoding json accepts missing fields by using default values", async () => {
+      await repl.importModules("Proto.BasicMessage");
+      const msg = repl.getFreshVariable();
+      await repl.write(
+        `${msg} = { stringProperty = "", intProperty = 0, floatProperty = 0, boolProperty = False }`
+      );
+      const output = await repl.write(
+        `JD.decodeString Proto.BasicMessage.jsonDecodeBasicMessage "{}" == Ok ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("decoding json accepts null fields by using default values", async () => {
+      await repl.importModules("Proto.BasicMessage");
+      const msg = repl.getFreshVariable();
+      await repl.write(
+        `${msg} = { stringProperty = "", intProperty = 0, floatProperty = 0, boolProperty = False }`
+      );
+      const output = await repl.write(
+        `JD.decodeString Proto.BasicMessage.jsonDecodeBasicMessage "{ \\"stringProperty\\": null, \\"intProperty\\": null, \\"floatProperty\\": null, \\"boolProperty\\": null }" == Ok ${msg}`
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
