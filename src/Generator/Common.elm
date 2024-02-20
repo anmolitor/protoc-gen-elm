@@ -96,7 +96,7 @@ setter fieldName =
     C.parens <|
         C.lambda
             [ C.varPattern "a", C.varPattern "r" ]
-            (C.update "r" [ ( fieldName, C.val "a" ) ])
+            (C.update "r" [ ( fieldName.protoName, C.val "a" ) ])
 
 
 internalsModule : C.ModuleName -> C.ModuleName

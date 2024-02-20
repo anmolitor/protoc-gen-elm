@@ -111,7 +111,7 @@ type alias OneOf =
 
 
 type alias FieldName =
-    String
+    { jsonName : String, protoName : String }
 
 
 type alias FieldNumber =

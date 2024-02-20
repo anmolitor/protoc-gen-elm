@@ -286,7 +286,17 @@ message moduleRef ctx sourceCodePath descriptor =
             )
                 |> Result.map
                     (\field ->
-                        { field = ( Name.field fieldDescriptor.name, field )
+                        { field =
+                            ( { protoName = Name.field fieldDescriptor.name
+                              , jsonName =
+                                    if fieldDescriptor.jsonName == "" then
+                                        Name.field fieldDescriptor.name
+
+                                    else
+                                        fieldDescriptor.jsonName
+                              }
+                            , field
+                            )
                         , oneOfIndex =
                             if fieldDescriptor.proto3Optional then
                                 -1
@@ -507,7 +517,8 @@ messageFields nestedModuleRef oneOfFieldNames fieldsMeta =
 oneOfField : Name.ModuleRef -> String -> ( FieldName, Field )
 oneOfField moduleRef name =
     OneOfField { name = Name.type_ name, package = moduleRef.package ++ [ Name.type_ name ], rootPackage = moduleRef.rootPackage }
-        |> Tuple.pair (Name.field name)
+        -- We do not seem to have a .jsonName in scope anywhere here.
+        |> Tuple.pair { protoName = Name.field name, jsonName = Name.field name }
 
 
 oneOfFieldPackage :
@@ -530,8 +541,8 @@ oneOfFieldPackage ctx messageSourceCodePath fields index name =
                         Just
                             ( { fieldNumber = fieldNumber
                               , fieldType = type_
-                              , fieldName = fieldName
-                              , dataType = Name.type_ fieldName
+                              , fieldName = fieldName.protoName
+                              , dataType = Name.type_ fieldName.protoName
                               }
                             , o.docs
                             )

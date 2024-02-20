@@ -64,7 +64,7 @@ reexportAST options internalsModule moduleName msg =
         fieldNumbersDecl : C.Declaration
         fieldNumbersDecl =
             C.valDecl (Just <| Common.fieldNumbersDocumentation msg.dataType)
-                (Just <| C.recordAnn <| List.map (Tuple.mapSecond fieldNumberTypeForField) msg.fields)
+                (Just <| C.recordAnn <| List.map (Tuple.mapBoth .protoName fieldNumberTypeForField) msg.fields)
                 (Common.fieldNumbersName msg.dataType)
                 (C.fqVal internalsModule <| Common.fieldNumbersName <| Mapper.Name.internalize ( moduleName, msg.dataType ))
     in
@@ -93,7 +93,7 @@ toAST options msg =
             C.aliasDecl (Just <| messageDocumentation msg.dataType)
                 msg.dataType
                 []
-                (C.recordAnn <| List.map (Tuple.mapSecond fieldToTypeAnnotation) msg.fields)
+                (C.recordAnn <| List.map (Tuple.mapBoth .protoName fieldToTypeAnnotation) msg.fields)
 
         encoder : C.Declaration
         encoder =
@@ -162,14 +162,14 @@ toAST options msg =
             C.valDecl (Just <| Common.defaultDocumentation msg.dataType)
                 (Just <| C.typed msg.dataType [])
                 (Common.defaultName msg.dataType)
-                (C.record <| List.map (Tuple.mapSecond toDefaultValue) msg.fields)
+                (C.record <| List.map (Tuple.mapBoth .protoName toDefaultValue) msg.fields)
 
         fieldNumbersDecl : C.Declaration
         fieldNumbersDecl =
             C.valDecl (Just <| Common.fieldNumbersDocumentation msg.dataType)
-                (Just <| C.recordAnn <| List.map (Tuple.mapSecond fieldNumberTypeForField) msg.fields)
+                (Just <| C.recordAnn <| List.map (Tuple.mapBoth .protoName fieldNumberTypeForField) msg.fields)
                 (Common.fieldNumbersName msg.dataType)
-                (C.record <| List.map (Tuple.mapSecond fieldNumberForField) msg.fields)
+                (C.record <| List.map (Tuple.mapBoth .protoName fieldNumberForField) msg.fields)
     in
     [ type_, encoder, decoder, default, fieldNumbersDecl ]
         ++ List.concatMap fieldDeclarations msg.fields
@@ -260,7 +260,7 @@ mapComment map =
 
 getter : FieldName -> C.Expression
 getter fieldName =
-    C.accessFun <| "." ++ fieldName
+    C.accessFun <| "." ++ fieldName.protoName
 
 
 fieldDeclarations : ( FieldName, Field ) -> List C.Declaration
@@ -415,7 +415,7 @@ toDecoder ( fieldName, field ) =
                 , C.tuple [ C.apply [ C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts", defaultValue ], fieldTypeToDefaultValue value ]
                 , C.parens <| C.apply [ Meta.Decode.map, C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts", Meta.Decode.forPrimitive prim ]
                 , fieldTypeToDecoder value Optional
-                , C.accessFun <| "." ++ fieldName
+                , C.accessFun <| "." ++ fieldName.protoName
                 , Common.setter fieldName
                 ]
 
@@ -426,7 +426,7 @@ toDecoder ( fieldName, field ) =
                 , C.tuple [ fieldTypeToDefaultValue key, fieldTypeToDefaultValue value ]
                 , fieldTypeToDecoder key Optional
                 , fieldTypeToDecoder value Optional
-                , C.accessFun <| "." ++ fieldName
+                , C.accessFun <| "." ++ fieldName.protoName
                 , Common.setter fieldName
                 ]
 
@@ -449,7 +449,7 @@ toJsonDecoder ( fieldName, field ) =
                             , C.parens <|
                                 C.apply
                                     [ Meta.JsonDecode.field
-                                    , C.string fieldName
+                                    , C.string fieldName.jsonName
                                     , fieldTypeToJsonDecoder fieldType cardinality
                                     ]
                             ]
@@ -462,7 +462,7 @@ toJsonDecoder ( fieldName, field ) =
                         , C.parens <|
                             C.apply
                                 [ Meta.JsonDecode.field
-                                , C.string fieldName
+                                , C.string fieldName.jsonName
                                 , fieldTypeToJsonDecoder fieldType cardinality
                                 ]
                         ]
@@ -470,14 +470,14 @@ toJsonDecoder ( fieldName, field ) =
                 Required ->
                     C.apply
                         [ Meta.JsonDecode.field
-                        , C.string fieldName
+                        , C.string fieldName.jsonName
                         , fieldTypeToJsonDecoder fieldType cardinality
                         ]
 
                 Repeated ->
                     C.apply
                         [ Meta.JsonDecode.field
-                        , C.string fieldName
+                        , C.string fieldName.jsonName
                         , C.apply [ Meta.JsonDecode.list, fieldTypeToJsonDecoder fieldType cardinality ]
                         ]
 
@@ -485,7 +485,7 @@ toJsonDecoder ( fieldName, field ) =
             -- special case for int64 types since they are not comparable -> we use the unwrapped (int, int) representation instead
             C.apply
                 [ Meta.JsonDecode.field
-                , C.string fieldName
+                , C.string fieldName.jsonName
                 , Meta.JsonDecode.dict
                     (C.apply
                         [ Meta.JsonDecode.map
@@ -500,21 +500,21 @@ toJsonDecoder ( fieldName, field ) =
             -- special case for String since no additional mapping step is required
             C.apply
                 [ Meta.JsonDecode.field
-                , C.string fieldName
+                , C.string fieldName.jsonName
                 , Meta.JsonDecode.stringKeyDict (fieldTypeToJsonDecoder value Optional)
                 ]
 
         MapField _ key value ->
             C.apply
                 [ Meta.JsonDecode.field
-                , C.string fieldName
+                , C.string fieldName.jsonName
                 , Meta.JsonDecode.dict (fieldTypeToJsonDecoder key Optional) (fieldTypeToJsonDecoder value Optional)
                 ]
 
         OneOfField ref ->
             C.apply
                 [ Meta.JsonDecode.field
-                , C.string fieldName
+                , C.string fieldName.jsonName
                 , C.fqFun (Common.internalsModule ref.rootPackage) (Common.jsonDecoderName <| Mapper.Name.internalize ( ref.package, ref.name ))
                 ]
 
@@ -641,7 +641,7 @@ toEncoder : ( FieldName, Field ) -> C.Expression
 toEncoder ( fieldName, field ) =
     case field of
         NormalField number cardinality fieldType ->
-            C.tuple [ C.int number, C.apply [ fieldTypeToEncoder cardinality fieldType, C.access (C.val "value") fieldName ] ]
+            C.tuple [ C.int number, C.apply [ fieldTypeToEncoder cardinality fieldType, C.access (C.val "value") fieldName.protoName ] ]
 
         MapField number (Primitive ((Prim_Int64 _) as prim) _) value ->
             -- special case for int64 types since they are not comparable -> we use the unwrapped (int, int) representation instead
@@ -656,7 +656,7 @@ toEncoder ( fieldName, field ) =
                             ]
                         )
                     , fieldTypeToEncoder Optional value
-                    , C.access (C.val "value") fieldName
+                    , C.access (C.val "value") fieldName.protoName
                     ]
                 ]
 
@@ -667,7 +667,7 @@ toEncoder ( fieldName, field ) =
                     [ Meta.Encode.dict
                     , fieldTypeToEncoder Optional key
                     , fieldTypeToEncoder Optional value
-                    , C.access (C.val "value") fieldName
+                    , C.access (C.val "value") fieldName.protoName
                     ]
                 ]
 
@@ -677,7 +677,7 @@ toEncoder ( fieldName, field ) =
                     (Common.encoderName <|
                         Mapper.Name.internalize ( ref.package, ref.name )
                     )
-                , C.access (C.val "value") fieldName
+                , C.access (C.val "value") fieldName.protoName
                 ]
 
 
@@ -685,17 +685,17 @@ toJsonEncoder : ( FieldName, Field ) -> C.Expression
 toJsonEncoder ( fieldName, field ) =
     case field of
         NormalField _ cardinality fieldType ->
-            C.list [ C.tuple [ C.string fieldName, C.apply [ fieldTypeToJsonEncoder cardinality fieldType, C.access (C.val "value") fieldName ] ] ]
+            C.list [ C.tuple [ C.string fieldName.jsonName, C.apply [ fieldTypeToJsonEncoder cardinality fieldType, C.access (C.val "value") fieldName.protoName ] ] ]
 
         MapField _ key value ->
             C.list
                 [ C.tuple
-                    [ C.string fieldName
+                    [ C.string fieldName.jsonName
                     , C.apply
                         [ Meta.JsonEncode.dict
                         , fieldTypeToJsonMapKey key
                         , fieldTypeToJsonEncoder Optional value
-                        , C.access (C.val "value") fieldName
+                        , C.access (C.val "value") fieldName.protoName
                         ]
                     ]
                 ]
@@ -706,7 +706,7 @@ toJsonEncoder ( fieldName, field ) =
                     (Common.jsonEncoderName <|
                         Mapper.Name.internalize ( ref.package, ref.name )
                     )
-                , C.access (C.val "value") fieldName
+                , C.access (C.val "value") fieldName.protoName
                 ]
 
 
