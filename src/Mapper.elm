@@ -209,9 +209,9 @@ enum ctx sourceCodePath descriptor =
 
         fields =
             descriptor.value
-                |> List.map (\value -> ( value.number, Name.type_ value.name ))
+                |> List.map (\value -> ( value.number, { protoName = Name.type_ value.name, jsonName = value.name } ))
                 |> List.Extra.uncons
-                |> Maybe.withDefault ( ( 0, name ), [] )
+                |> Maybe.withDefault ( ( 0, { protoName = name, jsonName = descriptor.name }), [] )
     in
     { dataType = name
     , withUnrecognized = ctx.syntax == Proto3

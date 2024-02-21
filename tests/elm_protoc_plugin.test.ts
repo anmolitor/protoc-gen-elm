@@ -37,6 +37,32 @@ describe("protoc-gen-elm", () => {
       );
       expect(output).toEqual(expect.stringMatching(/Just.+OptionB/));
     });
+
+    it("roundtrips to json", async () => {
+      await repl.importModules("Proto.AnEnum");
+      const msg = repl.getFreshVariable();
+      await repl.write(`${msg} = Proto.AnEnum.OptionB`);
+      const output = await repl.write(
+        `JD.decodeString Proto.AnEnum.jsonDecodeAnEnum (JE.encode 0 (Proto.AnEnum.jsonEncodeAnEnum ${msg})) == Ok ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("decoding json accepts enum names", async () => {
+      await repl.importModules("Proto.AnEnum");
+      const enumNameOutput = await repl.write(
+        `JD.decodeString Proto.AnEnum.jsonDecodeAnEnum "\\"Option_B\\"" == Ok Proto.AnEnum.OptionB`
+      );
+      expect(enumNameOutput).toEqual(expect.stringContaining("True"));
+    });
+
+    it("decoding json accepts integer values", async () => {
+      await repl.importModules("Proto.AnEnum");
+      const enumNameOutput = await repl.write(
+        `JD.decodeString Proto.AnEnum.jsonDecodeAnEnum "2" == Ok Proto.AnEnum.OPTIONC`
+      );
+      expect(enumNameOutput).toEqual(expect.stringContaining("True"));
+    });
   });
 
   describe("basic message", () => {
@@ -277,6 +303,40 @@ describe("protoc-gen-elm", () => {
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
+
+    it("roundtrips to json", async () => {
+      await repl.importModules(
+        "Proto.ImportingEnum",
+        "Proto.ImportedEnum.SomeEnum"
+      );
+      const msg = repl.getFreshVariable();
+      await repl.write(
+        `${msg} = { someEnum = Proto.ImportedEnum.SomeEnum.OptionBImported }`
+      );
+      const output = await repl.write(
+        `(Proto.ImportingEnum.jsonEncodeMsg ${msg} |> JE.encode 0 |> JD.decodeString Proto.ImportingEnum.jsonDecodeMsg) == Ok ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("json decode null or missing enum field produces default value", async () => {
+      await repl.importModules(
+        "Proto.ImportingEnum",
+        "Proto.ImportedEnum.SomeEnum"
+      );
+      const msgWithDefaultEnum = repl.getFreshVariable();
+      await repl.write(
+        `${msgWithDefaultEnum} = { someEnum = Proto.ImportedEnum.SomeEnum.OptionAImported }`
+      );
+      const nullOutput = await repl.write(
+        `JD.decodeString Proto.ImportingEnum.jsonDecodeMsg """{ "someEnum": null }""" == Ok ${msgWithDefaultEnum}`
+      );
+      expect(nullOutput).toEqual(expect.stringContaining("True"));
+      const missingOutput = await repl.write(
+        `JD.decodeString Proto.ImportingEnum.jsonDecodeMsg "{}" == Ok ${msgWithDefaultEnum}`
+      );
+      expect(missingOutput).toEqual(expect.stringContaining("True"));
+    });
   });
 
   describe("subdirectory", () => {
@@ -405,7 +465,6 @@ describe("protoc-gen-elm", () => {
     });
 
     it("generates working code for maps", async () => {
-      // TODO what happened to the "idk" field???
       await repl.importModules("Proto.Map", "Dict");
       const freshVar = repl.getFreshVariable();
       await repl.write(

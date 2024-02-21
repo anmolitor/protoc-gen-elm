@@ -191,7 +191,7 @@ primitiveFromMapKey prim =
             int64_fromMapKey
 
         Prim_Int64 UInt ->
-            uint64_toMapKey
+            uint64_fromMapKey
 
         Prim_Int64 Fixed ->
             int64_fromMapKey
@@ -242,21 +242,23 @@ int64 =
 
 int32_fromMapKey : Expression
 int32_fromMapKey =
-    C.fqFun [ "String" ] "toInt"
+    C.applyBinOp (C.fqFun [ "String" ] "toInt") C.composer (C.apply [ C.fqFun [ "Result" ] "fromMaybe", C.string "Expected int32" ])
 
 
 int64_fromMapKey : Expression
 int64_fromMapKey =
-    C.applyBinOp int64_fromString
-        C.composer
-        (C.apply [ Meta.Basics.mapMaybe, C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts" ])
+    C.chain int64_fromString
+        [ C.apply [ Meta.Basics.mapMaybe, C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts" ]
+        , C.apply [ C.fqFun [ "Result" ] "fromMaybe", C.string "Expected int64" ]
+        ]
 
 
-uint64_toMapKey : Expression
-uint64_toMapKey =
-    C.applyBinOp uint64_fromString
-        C.composer
-        (C.apply [ Meta.Basics.mapMaybe, C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts" ])
+uint64_fromMapKey : Expression
+uint64_fromMapKey =
+    C.chain uint64_fromString
+        [ C.apply [ Meta.Basics.mapMaybe, C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts" ]
+        , C.apply [ C.fqFun [ "Result" ] "fromMaybe", C.string "Expected uint64" ]
+        ]
 
 
 int64_fromString : Expression

@@ -25,7 +25,13 @@ unify rootModName packages =
                         (\enum ->
                             { enum
                                 | dataType = Name.internalize ( moduleName, enum.dataType )
-                                , fields = NonEmpty.map (Tuple.mapSecond <| \optionName -> Name.internalize ( moduleName, optionName )) enum.fields
+                                , fields =
+                                    NonEmpty.map
+                                        (Tuple.mapSecond <|
+                                            \optionName ->
+                                                { protoName = Name.internalize ( moduleName, optionName.protoName ), jsonName = optionName.jsonName }
+                                        )
+                                        enum.fields
                             }
                         )
                         struct.enums

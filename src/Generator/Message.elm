@@ -481,30 +481,6 @@ toJsonDecoder ( fieldName, field ) =
                         , C.apply [ Meta.JsonDecode.list, fieldTypeToJsonDecoder fieldType cardinality ]
                         ]
 
-        MapField _ (Primitive ((Prim_Int64 _) as prim) _) value ->
-            -- special case for int64 types since they are not comparable -> we use the unwrapped (int, int) representation instead
-            C.pipe
-                (C.apply
-                    [ Meta.JsonDecode.field
-                    , C.string fieldName.jsonName
-                    , Meta.JsonDecode.dict
-                        (C.apply
-                            [ Meta.JsonDecode.map
-                            , C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts"
-                            , Meta.JsonDecode.forPrimitive prim
-                            ]
-                        )
-                        (fieldTypeToJsonDecoder value Optional)
-                    ]
-                )
-                [ C.apply [ Meta.JsonDecode.maybe ]
-                , C.apply
-                    [ Meta.JsonDecode.map
-                    , C.parens <|
-                        C.apply [ Meta.Basics.withDefault, C.fqFun [ "Dict" ] "empty" ]
-                    ]
-                ]
-
         MapField _ (Primitive Prim_String _) value ->
             -- special case for String since no additional mapping step is required
             C.pipe
@@ -522,12 +498,12 @@ toJsonDecoder ( fieldName, field ) =
                     ]
                 ]
 
-        MapField _ key value ->
+        MapField _ (Primitive primKey _) value ->
             C.pipe
                 (C.apply
                     [ Meta.JsonDecode.field
                     , C.string fieldName.jsonName
-                    , Meta.JsonDecode.dict (fieldTypeToJsonDecoder key Optional) (fieldTypeToJsonDecoder value Optional)
+                    , Meta.JsonDecode.dict (Meta.JsonDecode.primitiveFromMapKey primKey) (fieldTypeToJsonDecoder value Optional)
                     ]
                 )
                 [ C.apply [ Meta.JsonDecode.maybe ]
@@ -537,6 +513,9 @@ toJsonDecoder ( fieldName, field ) =
                         C.apply [ Meta.Basics.withDefault, C.fqFun [ "Dict" ] "empty" ]
                     ]
                 ]
+
+        MapField _ _ _ ->
+            C.val "Non Primitive Keys are not supported."
 
         OneOfField ref ->
             C.apply

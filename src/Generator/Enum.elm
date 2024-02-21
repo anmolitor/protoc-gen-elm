@@ -36,7 +36,7 @@ toAST options enum =
                 (NonEmpty.map
                     (\( number, name ) ->
                         ( C.intPattern number
-                        , C.val name
+                        , C.val name.protoName
                         )
                     )
                     enum.fields
@@ -47,7 +47,7 @@ toAST options enum =
                         C.apply [ C.val unrecognizedOption, C.val varName ]
 
                       else
-                        NonEmpty.head enum.fields |> Tuple.second |> C.val
+                        NonEmpty.head enum.fields |> Tuple.second |> .protoName |> C.val
                     )
                 )
 
@@ -56,15 +56,32 @@ toAST options enum =
             NonEmpty.append
                 (NonEmpty.map
                     (\( _, name ) ->
-                        ( C.stringPattern name
-                        , C.val name
+                        ( C.stringPattern name.jsonName
+                        , C.val name.protoName
                         )
                     )
                     enum.fields
                 )
                 (NonEmpty.singleton
                     ( C.allPattern
-                    , NonEmpty.head enum.fields |> Tuple.second |> C.val
+                    , NonEmpty.head enum.fields |> Tuple.second |> .protoName |> C.val
+                    )
+                )
+
+        decodeJsonIntegerCases : String -> NonEmpty ( Pattern, Expression )
+        decodeJsonIntegerCases _ =
+            NonEmpty.append
+                (NonEmpty.map
+                    (\( number, name ) ->
+                        ( C.intPattern number
+                        , C.val name.protoName
+                        )
+                    )
+                    enum.fields
+                )
+                (NonEmpty.singleton
+                    ( C.allPattern
+                    , NonEmpty.head enum.fields |> Tuple.second |> .protoName |> C.val
                     )
                 )
 
@@ -72,7 +89,7 @@ toAST options enum =
         encodeCases =
             let
                 definedCases =
-                    NonEmpty.map (\( number, name ) -> ( C.varPattern name, C.int number )) enum.fields
+                    NonEmpty.map (\( number, name ) -> ( C.varPattern name.protoName, C.int number )) enum.fields
             in
             if enum.withUnrecognized then
                 NonEmpty.append definedCases <|
@@ -88,10 +105,8 @@ toAST options enum =
                 definedCases =
                     NonEmpty.map
                         (\( _, name ) ->
-                            ( C.varPattern name
-                            , Mapper.Name.externalize name
-                                |> Tuple.second
-                                |> C.string
+                            ( C.varPattern name.protoName
+                            , C.string name.jsonName
                             )
                         )
                         enum.fields
@@ -112,7 +127,7 @@ toAST options enum =
         constructors =
             let
                 knownConstructors =
-                    NonEmpty.map (\( _, name ) -> ( name, [] )) enum.fields
+                    NonEmpty.map (\( _, name ) -> ( name.protoName, [] )) enum.fields
             in
             if enum.withUnrecognized then
                 NonEmpty.append knownConstructors (NonEmpty.singleton ( unrecognizedOption, [ C.intAnn ] ))
@@ -175,17 +190,29 @@ toAST options enum =
                 (Just <| Meta.JsonDecode.decoder (C.typed enumName []))
                 (Common.jsonDecoderName enumName)
                 []
-                (C.applyBinOp Meta.JsonDecode.string
-                    C.piper
-                    (C.apply
-                        [ Meta.JsonDecode.map
-                        , C.parens <|
-                            C.lambda
-                                [ C.varPattern "i" ]
-                                (C.caseExpr (C.val "i") (NonEmpty.toList <| decodeJsonCases "i"))
-                        ]
-                    )
-                )
+            <|
+                Meta.JsonDecode.oneOf
+                    [ C.applyBinOp Meta.JsonDecode.string
+                        C.piper
+                        (C.apply
+                            [ Meta.JsonDecode.map
+                            , C.parens <|
+                                C.lambda
+                                    [ C.varPattern "i" ]
+                                    (C.caseExpr (C.val "i") (NonEmpty.toList <| decodeJsonCases "i"))
+                            ]
+                        )
+                    , C.applyBinOp Meta.JsonDecode.int32
+                        C.piper
+                        (C.apply
+                            [ Meta.JsonDecode.map
+                            , C.parens <|
+                                C.lambda
+                                    [ C.varPattern "i" ]
+                                    (C.caseExpr (C.val "i") (NonEmpty.toList <| decodeJsonIntegerCases "i"))
+                            ]
+                        )
+                    ]
 
         defaultEnum =
             NonEmpty.find (\( index, _ ) -> index == 0) enum.fields
@@ -197,7 +224,7 @@ toAST options enum =
             C.valDecl (Just <| Common.defaultDocumentation enumName)
                 (Just <| C.typed enumName [])
                 (Common.defaultName enumName)
-                (C.val defaultEnum)
+                (C.val defaultEnum.protoName)
 
         fieldNumbersDecl : C.Declaration
         fieldNumbersDecl =
@@ -208,7 +235,7 @@ toAST options enum =
                 (C.caseExpr (C.val "n_") <|
                     withUnrecognized (\unrecognized cases -> cases ++ [ ( C.namedPattern unrecognized [ C.varPattern "m_" ], C.val "m_" ) ]) <|
                         List.map
-                            (\( n, optName ) -> ( C.namedPattern optName [], C.int n ))
+                            (\( n, optName ) -> ( C.namedPattern optName.protoName [], C.int n ))
                         <|
                             NonEmpty.toList enum.fields
                 )

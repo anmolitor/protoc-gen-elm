@@ -14,8 +14,9 @@ module Model exposing
     , Primitive(..)
     , Service
     , TypeKind(..)
+    , setTypeKind
     , unqualifySelectedFieldType
-    , unqualifySelectedMessage, setTypeKind
+    , unqualifySelectedMessage
     )
 
 import Elm.CodeGen as C exposing (ModuleName)
@@ -94,7 +95,7 @@ unqualifySelectedFieldType modName fieldType =
 type alias Enum =
     { dataType : DataType
     , withUnrecognized : Bool
-    , fields : NonEmpty ( Int, String )
+    , fields : NonEmpty ( Int, FieldName )
     , docs : List String
     }
 
