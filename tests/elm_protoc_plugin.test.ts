@@ -727,8 +727,25 @@ describe("protoc-gen-elm", () => {
 
     it("integrates with elm-grpc", async () => {
       await repl.importModules("Proto.SomeGrpc.GrpcService", "Grpc");
-      repl.write(
+      await repl.write(
         "Grpc.new Proto.SomeGrpc.GrpcService.getOrders {} |> Grpc.toCmd identity"
+      );
+    });
+  });
+
+  describe("well-known-types", () => {
+    it("json timestamp encoding", async () => {
+      await repl.importModules("Proto.Time");
+      const timestamp = repl.getFreshVariable();
+      const jsIsoTimestamp = new Date().toISOString();
+      await repl.write(
+        `${timestamp} = JD.decodeString Proto.Time.jsonDecodeStamp """{ "timestamp": "${jsIsoTimestamp}" }"""`
+      );
+      const output = await repl.write(
+        `Result.map (Proto.Time.jsonEncodeStamp >> JE.encode 0) ${timestamp}`
+      );
+      expect(output).toEqual(
+        expect.stringContaining(`{\\"timestamp\\":\\"${jsIsoTimestamp}\\"}`)
       );
     });
   });

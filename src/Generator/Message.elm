@@ -121,14 +121,15 @@ toAST options msg =
                   else
                     C.varPattern "value"
                 ]
-                (if msg.dataType == "Proto__Google__Protobuf__Timestamp" then
-                    -- Use custom JSON encoder for timestamp
-                    C.apply [ C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonEncoder", C.val "value" ]
+                -- Custom JSON encoders for some well-known types
+                (case msg.dataType of
+                    "Proto__Google__Protobuf__Timestamp" ->
+                        C.apply [ C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonEncoder", C.val "value" ]
 
-                 else
-                    C.applyBinOp Meta.JsonEncode.object
-                        C.pipel
-                        (C.apply [ C.fqFun [ "List" ] "concat", C.list (List.map toJsonEncoder msg.fields) ])
+                    _ ->
+                        C.applyBinOp Meta.JsonEncode.object
+                            C.pipel
+                            (C.apply [ C.fqFun [ "List" ] "concat", C.list (List.map toJsonEncoder msg.fields) ])
                 )
 
         decoder : C.Declaration
@@ -148,13 +149,18 @@ toAST options msg =
             C.valDecl (Just <| Common.jsonDecoderDocumentation msg.dataType)
                 (Just <| Meta.JsonDecode.decoder (C.typed msg.dataType []))
                 (Common.jsonDecoderName msg.dataType)
-                (case NonEmpty.fromList msg.fields of
-                    Just nonEmptyFields ->
-                        Meta.JsonDecode.mapN (C.val msg.dataType) <|
-                            NonEmpty.map toJsonDecoder nonEmptyFields
+                (case msg.dataType of
+                    "Proto__Google__Protobuf__Timestamp" ->
+                        C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonDecoder"
 
-                    Nothing ->
-                        C.apply [ Meta.JsonDecode.succeed, C.record [] ]
+                    _ ->
+                        case NonEmpty.fromList msg.fields of
+                            Just nonEmptyFields ->
+                                Meta.JsonDecode.mapN (C.val msg.dataType) <|
+                                    NonEmpty.map toJsonDecoder nonEmptyFields
+
+                            Nothing ->
+                                C.apply [ Meta.JsonDecode.succeed, C.record [] ]
                 )
 
         default : C.Declaration
