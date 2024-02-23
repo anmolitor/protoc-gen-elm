@@ -1638,12 +1638,9 @@ jsonDecodeProto__Google__Protobuf__ListValue : Json.Decode.Decoder Proto__Google
 jsonDecodeProto__Google__Protobuf__ListValue =
     Json.Decode.map
         Proto__Google__Protobuf__ListValue
-        (Json.Decode.field
-            "values"
-            (Json.Decode.list
-                (Json.Decode.map Proto__Google__Protobuf__Value_ <|
-                     Json.Decode.lazy <| \_ -> jsonDecodeProto__Google__Protobuf__Value
-                )
+        (Json.Decode.list
+            (Json.Decode.map Proto__Google__Protobuf__Value_ <|
+                 Json.Decode.lazy <| \_ -> jsonDecodeProto__Google__Protobuf__Value
             )
         )
 

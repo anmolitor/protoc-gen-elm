@@ -222,7 +222,16 @@ toAST options msg =
                         C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive (Prim_Int64 UInt) ]
 
                     "Proto__Google__Protobuf__ListValue" ->
-                        C.apply ([ Meta.JsonDecode.map, C.val msg.dataType ] ++ List.map toJsonDecoder msg.fields)
+                        case msg.fields of
+                            [ ( _, NormalField _ Repeated fieldType ) ] ->
+                                C.apply
+                                    [ Meta.JsonDecode.map
+                                    , C.val msg.dataType
+                                    , C.apply [ Meta.JsonDecode.list, fieldTypeToJsonDecoder fieldType Repeated ]
+                                    ]
+
+                            _ ->
+                                C.val "Expected well-known type ListValue to have a single repeated field."
 
                     "Proto__Google__Protobuf__Struct" ->
                         case msg.fields of
