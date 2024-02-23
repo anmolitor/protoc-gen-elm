@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package wrapper;
+
+import "google/protobuf/wrappers.proto";
+
+message Wrapper {
+  google.protobuf.BoolValue bool = 1;
+  google.protobuf.Int32Value int32 = 2;
+  google.protobuf.Int64Value int64 = 3;
+  google.protobuf.UInt32Value uint32 = 4;
+  google.protobuf.UInt64Value uint64 = 5;
+  google.protobuf.BytesValue bytes = 6;
+  google.protobuf.FloatValue float = 7;
+  google.protobuf.DoubleValue double = 8;
+  google.protobuf.StringValue string = 9;
+}

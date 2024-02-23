@@ -748,5 +748,59 @@ describe("protoc-gen-elm", () => {
         expect.stringContaining(`{\\"timestamp\\":\\"${jsIsoTimestamp}\\"}`)
       );
     });
+
+    it("json wrapper types encoding", async () => {
+      await repl.importModules(
+        "Proto.Wrapper",
+        "Protobuf.Types.Int64 as Int64",
+        "Bytes.Encode"
+      );
+      const wrapper = repl.getFreshVariable();
+      await repl.write(
+        `${wrapper} = { bool = Just { value =  True }, int32 = Just { value = -42 }, int64 = Just { value = Int64.fromInts -5 123 }, uint32 = Just { value = 543 }, uint64 = Just { value = Int64.fromInts 12 34 }, bytes = Just { value = Bytes.Encode.encode (Bytes.Encode.unsignedInt8 7) }, float = Just { value = 7.89 }, double = Just { value = 8.91 }, string = Just { value = "a string" } }`
+      );
+
+      const json = repl.getFreshVariable();
+      await repl.write(
+        `${json} = Proto.Wrapper.jsonEncodeWrapper ${wrapper} |> JE.encode 0`
+      );
+      const jsonOutput = await repl.write(`${json}`);
+      expect(jsonOutput).toEqual(
+        expect.stringContaining(
+          `{\\"bool\\":true,\\"int32\\":-42,\\"int64\\":\\"-21474836357\\",\\"uint32\\":543,\\"uint64\\":\\"51539607586\\",\\"bytes\\":\\"Bw==\\",\\"float\\":7.89,\\"double\\":8.91,\\"string\\":\\"a string\\"}`
+        )
+      );
+      const output = await repl.write(
+        `Ok ${wrapper} == JD.decodeString Proto.Wrapper.jsonDecodeWrapper ${json}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("json wrapper types encoding allows null", async () => {
+      await repl.importModules(
+        "Proto.Wrapper",
+        "Protobuf.Types.Int64 as Int64",
+        "Bytes.Encode"
+      );
+      const wrapper = repl.getFreshVariable();
+      await repl.write(
+        `${wrapper} = { bool = Nothing, int32 = Nothing, int64 = Nothing, uint32 = Nothing, uint64 = Nothing, bytes = Nothing, float = Nothing, double = Nothing, string = Nothing }`
+      );
+
+      const json = repl.getFreshVariable();
+      await repl.write(
+        `${json} = Proto.Wrapper.jsonEncodeWrapper ${wrapper} |> JE.encode 0`
+      );
+      const jsonOutput = await repl.write(`${json}`);
+      expect(jsonOutput).toEqual(
+        expect.stringContaining(
+          `{\\"bool\\":null,\\"int32\\":null,\\"int64\\":null,\\"uint32\\":null,\\"uint64\\":null,\\"bytes\\":null,\\"float\\":null,\\"double\\":null,\\"string\\":null}`
+        )
+      );
+      const output = await repl.write(
+        `Ok ${wrapper} == JD.decodeString Proto.Wrapper.jsonDecodeWrapper ${json}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
   });
 });

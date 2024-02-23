@@ -1051,11 +1051,7 @@ type alias Proto__Google__Protobuf__DescriptorProto__ExtensionRange =
 -}
 jsonDecodeProto__Google__Protobuf__BytesValue : Json.Decode.Decoder Proto__Google__Protobuf__BytesValue
 jsonDecodeProto__Google__Protobuf__BytesValue =
-    Json.Decode.map
-        Proto__Google__Protobuf__BytesValue
-        (Json.Decode.maybe (Json.Decode.field "value" Protobuf.Utils.Bytes.jsonDecoder)
-            |> Json.Decode.map (Maybe.withDefault (Protobuf.Encode.encode <| Protobuf.Encode.string ""))
-        )
+    Json.Decode.map Proto__Google__Protobuf__BytesValue Protobuf.Utils.Bytes.jsonDecoder
 
 
 {-| Encode a `Proto__Google__Protobuf__BytesValue` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1063,7 +1059,7 @@ jsonDecodeProto__Google__Protobuf__BytesValue =
 -}
 jsonEncodeProto__Google__Protobuf__BytesValue : Proto__Google__Protobuf__BytesValue -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__BytesValue value =
-    Json.Encode.object <| List.concat [ [ ( "value", Protobuf.Utils.Bytes.jsonEncoder value.value ) ] ]
+    Protobuf.Utils.Bytes.jsonEncoder value.value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__BytesValue`. This is mostly useful for internals, like documentation generation.
@@ -1112,9 +1108,7 @@ type alias Proto__Google__Protobuf__BytesValue =
 -}
 jsonDecodeProto__Google__Protobuf__StringValue : Json.Decode.Decoder Proto__Google__Protobuf__StringValue
 jsonDecodeProto__Google__Protobuf__StringValue =
-    Json.Decode.map
-        Proto__Google__Protobuf__StringValue
-        (Json.Decode.maybe (Json.Decode.field "value" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault ""))
+    Json.Decode.map Proto__Google__Protobuf__StringValue Json.Decode.string
 
 
 {-| Encode a `Proto__Google__Protobuf__StringValue` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1122,7 +1116,7 @@ jsonDecodeProto__Google__Protobuf__StringValue =
 -}
 jsonEncodeProto__Google__Protobuf__StringValue : Proto__Google__Protobuf__StringValue -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__StringValue value =
-    Json.Encode.object <| List.concat [ [ ( "value", Json.Encode.string value.value ) ] ]
+    Json.Encode.string value.value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__StringValue`. This is mostly useful for internals, like documentation generation.
@@ -1171,9 +1165,7 @@ type alias Proto__Google__Protobuf__StringValue =
 -}
 jsonDecodeProto__Google__Protobuf__BoolValue : Json.Decode.Decoder Proto__Google__Protobuf__BoolValue
 jsonDecodeProto__Google__Protobuf__BoolValue =
-    Json.Decode.map
-        Proto__Google__Protobuf__BoolValue
-        (Json.Decode.maybe (Json.Decode.field "value" Json.Decode.bool) |> Json.Decode.map (Maybe.withDefault False))
+    Json.Decode.map Proto__Google__Protobuf__BoolValue Json.Decode.bool
 
 
 {-| Encode a `Proto__Google__Protobuf__BoolValue` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1181,7 +1173,7 @@ jsonDecodeProto__Google__Protobuf__BoolValue =
 -}
 jsonEncodeProto__Google__Protobuf__BoolValue : Proto__Google__Protobuf__BoolValue -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__BoolValue value =
-    Json.Encode.object <| List.concat [ [ ( "value", Json.Encode.bool value.value ) ] ]
+    Json.Encode.bool value.value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__BoolValue`. This is mostly useful for internals, like documentation generation.
@@ -1230,9 +1222,7 @@ type alias Proto__Google__Protobuf__BoolValue =
 -}
 jsonDecodeProto__Google__Protobuf__UInt32Value : Json.Decode.Decoder Proto__Google__Protobuf__UInt32Value
 jsonDecodeProto__Google__Protobuf__UInt32Value =
-    Json.Decode.map
-        Proto__Google__Protobuf__UInt32Value
-        (Json.Decode.maybe (Json.Decode.field "value" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+    Json.Decode.map Proto__Google__Protobuf__UInt32Value Json.Decode.int
 
 
 {-| Encode a `Proto__Google__Protobuf__UInt32Value` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1240,7 +1230,7 @@ jsonDecodeProto__Google__Protobuf__UInt32Value =
 -}
 jsonEncodeProto__Google__Protobuf__UInt32Value : Proto__Google__Protobuf__UInt32Value -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__UInt32Value value =
-    Json.Encode.object <| List.concat [ [ ( "value", Json.Encode.int value.value ) ] ]
+    Json.Encode.int value.value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__UInt32Value`. This is mostly useful for internals, like documentation generation.
@@ -1289,9 +1279,7 @@ type alias Proto__Google__Protobuf__UInt32Value =
 -}
 jsonDecodeProto__Google__Protobuf__Int32Value : Json.Decode.Decoder Proto__Google__Protobuf__Int32Value
 jsonDecodeProto__Google__Protobuf__Int32Value =
-    Json.Decode.map
-        Proto__Google__Protobuf__Int32Value
-        (Json.Decode.maybe (Json.Decode.field "value" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+    Json.Decode.map Proto__Google__Protobuf__Int32Value Json.Decode.int
 
 
 {-| Encode a `Proto__Google__Protobuf__Int32Value` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1299,7 +1287,7 @@ jsonDecodeProto__Google__Protobuf__Int32Value =
 -}
 jsonEncodeProto__Google__Protobuf__Int32Value : Proto__Google__Protobuf__Int32Value -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Int32Value value =
-    Json.Encode.object <| List.concat [ [ ( "value", Json.Encode.int value.value ) ] ]
+    Json.Encode.int value.value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Int32Value`. This is mostly useful for internals, like documentation generation.
@@ -1350,22 +1338,16 @@ jsonDecodeProto__Google__Protobuf__UInt64Value : Json.Decode.Decoder Proto__Goog
 jsonDecodeProto__Google__Protobuf__UInt64Value =
     Json.Decode.map
         Proto__Google__Protobuf__UInt64Value
-        (Json.Decode.maybe
-            (Json.Decode.field
-                "value"
-                (Json.Decode.string
-                    |> Json.Decode.andThen
-                        (\str ->
-                            case Protobuf.Utils.Int64.fromUnsignedString str of
-                                Maybe.Just t ->
-                                    Json.Decode.succeed t
+        (Json.Decode.string
+            |> Json.Decode.andThen
+                (\str ->
+                    case Protobuf.Utils.Int64.fromUnsignedString str of
+                        Maybe.Just t ->
+                            Json.Decode.succeed t
 
-                                Maybe.Nothing ->
-                                    Json.Decode.fail ("Expected uint64 but received: " ++ str)
-                        )
+                        Maybe.Nothing ->
+                            Json.Decode.fail ("Expected uint64 but received: " ++ str)
                 )
-            )
-            |> Json.Decode.map (Maybe.withDefault (Protobuf.Types.Int64.fromInts 0 0))
         )
 
 
@@ -1374,8 +1356,7 @@ jsonDecodeProto__Google__Protobuf__UInt64Value =
 -}
 jsonEncodeProto__Google__Protobuf__UInt64Value : Proto__Google__Protobuf__UInt64Value -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__UInt64Value value =
-    Json.Encode.object <|
-        List.concat [ [ ( "value", (Protobuf.Utils.Int64.toUnsignedString >> Json.Encode.string) value.value ) ] ]
+    (Protobuf.Utils.Int64.toUnsignedString >> Json.Encode.string) value.value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__UInt64Value`. This is mostly useful for internals, like documentation generation.
@@ -1426,22 +1407,16 @@ jsonDecodeProto__Google__Protobuf__Int64Value : Json.Decode.Decoder Proto__Googl
 jsonDecodeProto__Google__Protobuf__Int64Value =
     Json.Decode.map
         Proto__Google__Protobuf__Int64Value
-        (Json.Decode.maybe
-            (Json.Decode.field
-                "value"
-                (Json.Decode.string
-                    |> Json.Decode.andThen
-                        (\str ->
-                            case Protobuf.Utils.Int64.fromSignedString str of
-                                Maybe.Just t ->
-                                    Json.Decode.succeed t
+        (Json.Decode.string
+            |> Json.Decode.andThen
+                (\str ->
+                    case Protobuf.Utils.Int64.fromSignedString str of
+                        Maybe.Just t ->
+                            Json.Decode.succeed t
 
-                                Maybe.Nothing ->
-                                    Json.Decode.fail ("Expected int64 but received: " ++ str)
-                        )
+                        Maybe.Nothing ->
+                            Json.Decode.fail ("Expected int64 but received: " ++ str)
                 )
-            )
-            |> Json.Decode.map (Maybe.withDefault (Protobuf.Types.Int64.fromInts 0 0))
         )
 
 
@@ -1450,8 +1425,7 @@ jsonDecodeProto__Google__Protobuf__Int64Value =
 -}
 jsonEncodeProto__Google__Protobuf__Int64Value : Proto__Google__Protobuf__Int64Value -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Int64Value value =
-    Json.Encode.object <|
-        List.concat [ [ ( "value", (Protobuf.Utils.Int64.toSignedString >> Json.Encode.string) value.value ) ] ]
+    (Protobuf.Utils.Int64.toSignedString >> Json.Encode.string) value.value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Int64Value`. This is mostly useful for internals, like documentation generation.
@@ -1500,9 +1474,7 @@ type alias Proto__Google__Protobuf__Int64Value =
 -}
 jsonDecodeProto__Google__Protobuf__FloatValue : Json.Decode.Decoder Proto__Google__Protobuf__FloatValue
 jsonDecodeProto__Google__Protobuf__FloatValue =
-    Json.Decode.map
-        Proto__Google__Protobuf__FloatValue
-        (Json.Decode.maybe (Json.Decode.field "value" Json.Decode.float) |> Json.Decode.map (Maybe.withDefault 0))
+    Json.Decode.map Proto__Google__Protobuf__FloatValue Json.Decode.float
 
 
 {-| Encode a `Proto__Google__Protobuf__FloatValue` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1510,7 +1482,7 @@ jsonDecodeProto__Google__Protobuf__FloatValue =
 -}
 jsonEncodeProto__Google__Protobuf__FloatValue : Proto__Google__Protobuf__FloatValue -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__FloatValue value =
-    Json.Encode.object <| List.concat [ [ ( "value", Json.Encode.float value.value ) ] ]
+    Json.Encode.float value.value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__FloatValue`. This is mostly useful for internals, like documentation generation.
@@ -1559,9 +1531,7 @@ type alias Proto__Google__Protobuf__FloatValue =
 -}
 jsonDecodeProto__Google__Protobuf__DoubleValue : Json.Decode.Decoder Proto__Google__Protobuf__DoubleValue
 jsonDecodeProto__Google__Protobuf__DoubleValue =
-    Json.Decode.map
-        Proto__Google__Protobuf__DoubleValue
-        (Json.Decode.maybe (Json.Decode.field "value" Json.Decode.float) |> Json.Decode.map (Maybe.withDefault 0))
+    Json.Decode.map Proto__Google__Protobuf__DoubleValue Json.Decode.float
 
 
 {-| Encode a `Proto__Google__Protobuf__DoubleValue` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1569,7 +1539,7 @@ jsonDecodeProto__Google__Protobuf__DoubleValue =
 -}
 jsonEncodeProto__Google__Protobuf__DoubleValue : Proto__Google__Protobuf__DoubleValue -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__DoubleValue value =
-    Json.Encode.object <| List.concat [ [ ( "value", Json.Encode.float value.value ) ] ]
+    Json.Encode.float value.value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__DoubleValue`. This is mostly useful for internals, like documentation generation.

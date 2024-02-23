@@ -10,7 +10,7 @@ import Meta.Encode
 import Meta.JsonDecode
 import Meta.JsonEncode
 import Meta.Type
-import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldType(..), Map, Message, Primitive(..), TypeKind(..))
+import Model exposing (Cardinality(..), DataType, Field(..), FieldName, FieldType(..), IntFlavor(..), Map, Message, Primitive(..), TypeKind(..))
 import Options exposing (Options)
 
 
@@ -126,6 +126,33 @@ toAST options msg =
                     "Proto__Google__Protobuf__Timestamp" ->
                         C.apply [ C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonEncoder", C.val "value" ]
 
+                    "Proto__Google__Protobuf__BoolValue" ->
+                        C.apply [ Meta.JsonEncode.forPrimitive Prim_Bool, C.access (C.val "value") "value" ]
+
+                    "Proto__Google__Protobuf__BytesValue" ->
+                        C.apply [ Meta.JsonEncode.forPrimitive Prim_Bytes, C.access (C.val "value") "value" ]
+
+                    "Proto__Google__Protobuf__DoubleValue" ->
+                        C.apply [ Meta.JsonEncode.forPrimitive Prim_Double, C.access (C.val "value") "value" ]
+
+                    "Proto__Google__Protobuf__FloatValue" ->
+                        C.apply [ Meta.JsonEncode.forPrimitive Prim_Float, C.access (C.val "value") "value" ]
+
+                    "Proto__Google__Protobuf__Int32Value" ->
+                        C.apply [ Meta.JsonEncode.forPrimitive (Prim_Int32 Int_), C.access (C.val "value") "value" ]
+
+                    "Proto__Google__Protobuf__Int64Value" ->
+                        C.apply [ Meta.JsonEncode.forPrimitive (Prim_Int64 Int_), C.access (C.val "value") "value" ]
+
+                    "Proto__Google__Protobuf__StringValue" ->
+                        C.apply [ Meta.JsonEncode.forPrimitive Prim_String, C.access (C.val "value") "value" ]
+
+                    "Proto__Google__Protobuf__UInt32Value" ->
+                        C.apply [ Meta.JsonEncode.forPrimitive (Prim_Int32 UInt), C.access (C.val "value") "value" ]
+
+                    "Proto__Google__Protobuf__UInt64Value" ->
+                        C.apply [ Meta.JsonEncode.forPrimitive (Prim_Int64 UInt), C.access (C.val "value") "value" ]
+
                     _ ->
                         C.applyBinOp Meta.JsonEncode.object
                             C.pipel
@@ -152,6 +179,33 @@ toAST options msg =
                 (case msg.dataType of
                     "Proto__Google__Protobuf__Timestamp" ->
                         C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonDecoder"
+
+                    "Proto__Google__Protobuf__BoolValue" ->
+                        C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive Prim_Bool ]
+
+                    "Proto__Google__Protobuf__BytesValue" ->
+                        C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive Prim_Bytes ]
+
+                    "Proto__Google__Protobuf__DoubleValue" ->
+                        C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive Prim_Double ]
+
+                    "Proto__Google__Protobuf__FloatValue" ->
+                        C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive Prim_Float ]
+
+                    "Proto__Google__Protobuf__Int32Value" ->
+                        C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive (Prim_Int32 Int_) ]
+
+                    "Proto__Google__Protobuf__Int64Value" ->
+                        C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive (Prim_Int64 Int_) ]
+
+                    "Proto__Google__Protobuf__StringValue" ->
+                        C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive Prim_String ]
+
+                    "Proto__Google__Protobuf__UInt32Value" ->
+                        C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive (Prim_Int32 UInt) ]
+
+                    "Proto__Google__Protobuf__UInt64Value" ->
+                        C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive (Prim_Int64 UInt) ]
 
                     _ ->
                         case NonEmpty.fromList msg.fields of
