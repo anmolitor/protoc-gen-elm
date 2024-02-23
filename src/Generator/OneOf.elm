@@ -197,26 +197,38 @@ toAST opts { oneOfName, options } =
 
                                 ( optModName, optDataType ) =
                                     Mapper.Name.externalize o.dataType
+
+                                optionFieldDecoder =
+                                    case o.fieldType of
+                                        Primitive p _ ->
+                                            Meta.JsonDecode.forPrimitive p
+
+                                        Embedded e ->
+                                            Generator.Message.embeddedJsonDecoder e
+
+                                        Enumeration e ->
+                                            C.fqFun (e.package ++ [ e.name ]) <|
+                                                Common.jsonDecoderName e.name
                             in
                             wrapEmbeddedWithLazy <|
-                                C.apply
-                                    [ Meta.JsonDecode.map
-                                    , C.parens (C.applyBinOp (C.fqVal optModName optDataType) C.composer Meta.Basics.just)
-                                    , C.apply
-                                        [ Meta.JsonDecode.field
-                                        , C.string o.fieldName
-                                        , case o.fieldType of
-                                            Primitive p _ ->
-                                                Meta.JsonDecode.forPrimitive p
+                                case oneOfName of
+                                    "Proto__Google__Protobuf__Value__Kind__Kind" ->
+                                        C.apply
+                                            [ Meta.JsonDecode.map
+                                            , C.parens (C.applyBinOp (C.fqVal optModName optDataType) C.composer Meta.Basics.just)
+                                            , optionFieldDecoder
+                                            ]
 
-                                            Embedded e ->
-                                                Generator.Message.embeddedJsonDecoder e
-
-                                            Enumeration e ->
-                                                C.fqFun (e.package ++ [ e.name ]) <|
-                                                    Common.jsonDecoderName e.name
-                                        ]
-                                    ]
+                                    _ ->
+                                        C.apply
+                                            [ Meta.JsonDecode.map
+                                            , C.parens (C.applyBinOp (C.fqVal optModName optDataType) C.composer Meta.Basics.just)
+                                            , C.apply
+                                                [ Meta.JsonDecode.field
+                                                , C.string o.fieldName
+                                                , optionFieldDecoder
+                                                ]
+                                            ]
                         )
                         options
                         ++ [ C.apply [ C.fqVal Meta.JsonDecode.moduleName "succeed", Meta.Basics.nothing ] ]

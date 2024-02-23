@@ -412,30 +412,21 @@ jsonDecodeProto__Google__Protobuf__Value__Kind__Kind =
     Json.Decode.oneOf
         [ Json.Decode.map
             (Proto.Google.Protobuf.Value.Kind.NullValue >> Just)
-            (Json.Decode.field "nullValue" Proto.Google.Protobuf.NullValue.jsonDecodeNullValue)
-        , Json.Decode.map
-            (Proto.Google.Protobuf.Value.Kind.NumberValue >> Just)
-            (Json.Decode.field "numberValue" Json.Decode.float)
-        , Json.Decode.map
-            (Proto.Google.Protobuf.Value.Kind.StringValue >> Just)
-            (Json.Decode.field "stringValue" Json.Decode.string)
-        , Json.Decode.map
-            (Proto.Google.Protobuf.Value.Kind.BoolValue >> Just)
-            (Json.Decode.field "boolValue" Json.Decode.bool)
+            Proto.Google.Protobuf.NullValue.jsonDecodeNullValue
+        , Json.Decode.map (Proto.Google.Protobuf.Value.Kind.NumberValue >> Just) Json.Decode.float
+        , Json.Decode.map (Proto.Google.Protobuf.Value.Kind.StringValue >> Just) Json.Decode.string
+        , Json.Decode.map (Proto.Google.Protobuf.Value.Kind.BoolValue >> Just) Json.Decode.bool
         , Json.Decode.lazy <|
             \_ ->
                 Json.Decode.map
                     (Proto.Google.Protobuf.Value.Kind.StructValue >> Just)
-                    (Json.Decode.field "structValue" jsonDecodeProto__Google__Protobuf__Struct)
+                    jsonDecodeProto__Google__Protobuf__Struct
         , Json.Decode.lazy <|
             \_ ->
                 Json.Decode.map
                     (Proto.Google.Protobuf.Value.Kind.ListValue >> Just)
-                    (Json.Decode.field
-                        "listValue"
-                        (Json.Decode.map Proto__Google__Protobuf__ListValue_ <|
-                             Json.Decode.lazy <| \_ -> jsonDecodeProto__Google__Protobuf__ListValue
-                        )
+                    (Json.Decode.map Proto__Google__Protobuf__ListValue_ <|
+                         Json.Decode.lazy <| \_ -> jsonDecodeProto__Google__Protobuf__ListValue
                     )
         , Json.Decode.succeed Nothing
         ]
