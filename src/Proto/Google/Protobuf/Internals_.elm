@@ -1792,18 +1792,10 @@ jsonDecodeProto__Google__Protobuf__Struct : Json.Decode.Decoder Proto__Google__P
 jsonDecodeProto__Google__Protobuf__Struct =
     Json.Decode.map
         Proto__Google__Protobuf__Struct
-        (Json.Decode.field
-            "fields"
-            (Json.Decode.dict
-                (Json.Decode.map
-                    Just
-                    (Json.Decode.map Proto__Google__Protobuf__Value_ <|
-                         Json.Decode.lazy <| \_ -> jsonDecodeProto__Google__Protobuf__Value
-                    )
-                )
+        (Json.Decode.dict
+            (Json.Decode.map Proto__Google__Protobuf__Value_ <|
+                 Json.Decode.lazy <| \_ -> jsonDecodeProto__Google__Protobuf__Value
             )
-            |> Json.Decode.maybe
-            |> Json.Decode.map (Maybe.withDefault Dict.empty)
         )
 
 
@@ -1812,12 +1804,7 @@ jsonDecodeProto__Google__Protobuf__Struct =
 -}
 jsonEncodeProto__Google__Protobuf__Struct : Proto__Google__Protobuf__Struct -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Struct value =
-    (Json.Encode.dict
-        identity
-        (Maybe.map (unwrapProto__Google__Protobuf__Value >> jsonEncodeProto__Google__Protobuf__Value)
-            >> Maybe.withDefault Json.Encode.null
-        )
-    )
+    (Json.Encode.dict identity (unwrapProto__Google__Protobuf__Value >> jsonEncodeProto__Google__Protobuf__Value))
         value.fields
 
 
@@ -1846,13 +1833,10 @@ decodeProto__Google__Protobuf__Struct =
         defaultProto__Google__Protobuf__Struct
         [ Protobuf.Decode.mapped
             1
-            ( "", Nothing )
+            ( "", Proto__Google__Protobuf__Value_ defaultProto__Google__Protobuf__Value )
             Protobuf.Decode.string
-            (Protobuf.Decode.map
-                Just
-                (Protobuf.Decode.map Proto__Google__Protobuf__Value_ <|
-                     Protobuf.Decode.lazy <| \_ -> decodeProto__Google__Protobuf__Value
-                )
+            (Protobuf.Decode.map Proto__Google__Protobuf__Value_ <|
+                 Protobuf.Decode.lazy <| \_ -> decodeProto__Google__Protobuf__Value
             )
             .fields
             (\a r -> { r | fields = a })
@@ -1868,9 +1852,7 @@ encodeProto__Google__Protobuf__Struct value =
         [ ( 1
           , Protobuf.Encode.dict
                 Protobuf.Encode.string
-                (Maybe.map (unwrapProto__Google__Protobuf__Value >> encodeProto__Google__Protobuf__Value)
-                    >> Maybe.withDefault Protobuf.Encode.none
-                )
+                (unwrapProto__Google__Protobuf__Value >> encodeProto__Google__Protobuf__Value)
                 value.fields
           )
         ]
@@ -1880,7 +1862,7 @@ encodeProto__Google__Protobuf__Struct value =
 
 -}
 type alias Proto__Google__Protobuf__Struct =
-    { fields : Dict.Dict String (Maybe Proto__Google__Protobuf__Value_) }
+    { fields : Dict.Dict String Proto__Google__Protobuf__Value_ }
 
 
 {-| Decode a `Proto__Google__Protobuf__FieldMask` from JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json

@@ -389,7 +389,7 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto", "Dict");
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { foos = Dict.singleton "test" (Just { abc = "hi" } ), idk = Dict.fromList [(1, "a"), (5, "b")] }`
+        `${freshVar} = { foos = Dict.singleton "test" { abc = "hi" }, idk = Dict.fromList [(1, "a"), (5, "b")] }`
       );
       const output = await repl.write(
         `(Proto.encodeBar ${freshVar} |> E.encode |> D.decode Proto.decodeBar) == Just ${freshVar}`
@@ -411,7 +411,7 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto", "Dict");
       const msg = repl.getFreshVariable();
       await repl.write(
-        `${msg} = { foos = Dict.singleton "test" (Just { abc = "hi" } ), idk = Dict.fromList [(1, "a"), (5, "b")] }`
+        `${msg} = { foos = Dict.singleton "test" { abc = "hi" }, idk = Dict.fromList [(1, "a"), (5, "b")] }`
       );
       const json = repl.getFreshVariable();
       await repl.write(`${json} = Proto.jsonEncodeBar ${msg} |> JE.encode 0`);
@@ -468,7 +468,7 @@ describe("protoc-gen-elm", () => {
       await repl.importModules("Proto.Map", "Dict");
       const freshVar = repl.getFreshVariable();
       await repl.write(
-        `${freshVar} = { foos = Dict.singleton "test" (Just  { abc = "hi" }) }`
+        `${freshVar} = { foos = Dict.singleton "test" { abc = "hi" } }`
       );
       const output = await repl.write(
         `(Proto.Map.encodeBar ${freshVar} |> E.encode |> D.decode Proto.Map.decodeBar) == Just ${freshVar}`

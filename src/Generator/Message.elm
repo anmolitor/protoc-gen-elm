@@ -225,7 +225,12 @@ toAST options msg =
                         C.apply ([ Meta.JsonDecode.map, C.val msg.dataType ] ++ List.map toJsonDecoder msg.fields)
 
                     "Proto__Google__Protobuf__Struct" ->
-                        C.apply ([ Meta.JsonDecode.map, C.val msg.dataType ] ++ List.map toJsonDecoder msg.fields)
+                        case msg.fields of
+                            [ ( _, MapField _ key value ) ] ->
+                                C.apply [ Meta.JsonDecode.map, C.val msg.dataType, mapFieldJsonDecoder key value ]
+
+                            _ ->
+                                C.val "Expected well-known type Struct to have a single map type field."
 
                     _ ->
                         case NonEmpty.fromList msg.fields of
@@ -390,6 +395,36 @@ fieldTypeDeclarations fieldType =
             []
 
 
+fieldTypeToDefaultValueRequired : FieldType -> C.Expression
+fieldTypeToDefaultValueRequired fieldType =
+    case fieldType of
+        Primitive _ defaultValue ->
+            defaultValue
+
+        Embedded e ->
+            let
+                name =
+                    Mapper.Name.internalize ( e.moduleName, e.dataType )
+
+                default =
+                    C.fqVal (Common.internalsModule e.rootModuleName) (Common.defaultName name)
+            in
+            case e.typeKind of
+                Alias ->
+                    default
+
+                Type ->
+                    C.apply
+                        [ C.fqVal
+                            (Common.internalsModule e.rootModuleName)
+                            (recursiveDataTypeName name)
+                        , default
+                        ]
+
+        Enumeration enum ->
+            C.fqVal (enum.package ++ [ enum.name ]) (Common.defaultName enum.name)
+
+
 fieldTypeToDefaultValue : FieldType -> C.Expression
 fieldTypeToDefaultValue fieldType =
     case fieldType of
@@ -494,7 +529,7 @@ toDecoder ( fieldName, field ) =
                 , C.int number
                 , C.tuple [ C.apply [ C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts", defaultValue ], fieldTypeToDefaultValue value ]
                 , C.parens <| C.apply [ Meta.Decode.map, C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts", Meta.Decode.forPrimitive prim ]
-                , fieldTypeToDecoder value Optional
+                , fieldTypeToDecoder value Required
                 , C.accessFun <| "." ++ fieldName.protoName
                 , Common.setter fieldName
                 ]
@@ -503,9 +538,9 @@ toDecoder ( fieldName, field ) =
             C.apply
                 [ Meta.Decode.mapped
                 , C.int number
-                , C.tuple [ fieldTypeToDefaultValue key, fieldTypeToDefaultValue value ]
+                , C.tuple [ fieldTypeToDefaultValue key, fieldTypeToDefaultValueRequired value ]
                 , fieldTypeToDecoder key Optional
-                , fieldTypeToDecoder value Optional
+                , fieldTypeToDecoder value Required
                 , C.accessFun <| "." ++ fieldName.protoName
                 , Common.setter fieldName
                 ]
@@ -561,13 +596,12 @@ toJsonDecoder ( fieldName, field ) =
                         , C.apply [ Meta.JsonDecode.list, fieldTypeToJsonDecoder fieldType cardinality ]
                         ]
 
-        MapField _ (Primitive Prim_String _) value ->
-            -- special case for String since no additional mapping step is required
+        MapField _ key value ->
             C.pipe
                 (C.apply
                     [ Meta.JsonDecode.field
                     , C.string fieldName.jsonName
-                    , Meta.JsonDecode.stringKeyDict (fieldTypeToJsonDecoder value Optional)
+                    , mapFieldJsonDecoder key value
                     ]
                 )
                 [ C.apply [ Meta.JsonDecode.maybe ]
@@ -577,25 +611,6 @@ toJsonDecoder ( fieldName, field ) =
                         C.apply [ Meta.Basics.withDefault, C.fqFun [ "Dict" ] "empty" ]
                     ]
                 ]
-
-        MapField _ (Primitive primKey _) value ->
-            C.pipe
-                (C.apply
-                    [ Meta.JsonDecode.field
-                    , C.string fieldName.jsonName
-                    , Meta.JsonDecode.dict (Meta.JsonDecode.primitiveFromMapKey primKey) (fieldTypeToJsonDecoder value Optional)
-                    ]
-                )
-                [ C.apply [ Meta.JsonDecode.maybe ]
-                , C.apply
-                    [ Meta.JsonDecode.map
-                    , C.parens <|
-                        C.apply [ Meta.Basics.withDefault, C.fqFun [ "Dict" ] "empty" ]
-                    ]
-                ]
-
-        MapField _ _ _ ->
-            C.val "Non Primitive Keys are not supported."
 
         OneOfField ref ->
             C.apply
@@ -603,6 +618,20 @@ toJsonDecoder ( fieldName, field ) =
                 , C.string fieldName.jsonName
                 , C.fqFun (Common.internalsModule ref.rootPackage) (Common.jsonDecoderName <| Mapper.Name.internalize ( ref.package, ref.name ))
                 ]
+
+
+mapFieldJsonDecoder : FieldType -> FieldType -> C.Expression
+mapFieldJsonDecoder key value =
+    case key of
+        Primitive Prim_String _ ->
+            -- special case for String since no additional mapping step is required
+            Meta.JsonDecode.stringKeyDict (fieldTypeToJsonDecoder value Required)
+
+        Primitive primKey _ ->
+            Meta.JsonDecode.dict (Meta.JsonDecode.primitiveFromMapKey primKey) (fieldTypeToJsonDecoder value Required)
+
+        _ ->
+            C.val "Non Primitive Keys are not supported."
 
 
 embeddedDecoder : { dataType : DataType, moduleName : C.ModuleName, rootModuleName : C.ModuleName, typeKind : TypeKind } -> C.Expression
@@ -741,7 +770,7 @@ toEncoder ( fieldName, field ) =
                             , C.parens <| C.apply [ C.fqFun [ "Protobuf", "Types", "Int64" ] "fromInts", C.val "upper", C.val "lower" ]
                             ]
                         )
-                    , fieldTypeToEncoder Optional value
+                    , fieldTypeToEncoder Required value
                     , C.access (C.val "value") fieldName.protoName
                     ]
                 ]
@@ -752,7 +781,7 @@ toEncoder ( fieldName, field ) =
                 , C.apply
                     [ Meta.Encode.dict
                     , fieldTypeToEncoder Optional key
-                    , fieldTypeToEncoder Optional value
+                    , fieldTypeToEncoder Required value
                     , C.access (C.val "value") fieldName.protoName
                     ]
                 ]
@@ -800,7 +829,7 @@ fieldToJsonEncoder field =
             C.apply
                 [ Meta.JsonEncode.dict
                 , fieldTypeToJsonMapKey key
-                , fieldTypeToJsonEncoder Optional value
+                , fieldTypeToJsonEncoder Required value
                 ]
 
         OneOfField ref ->
@@ -1026,11 +1055,11 @@ fieldToTypeAnnotation field =
         MapField _ (Primitive (Prim_Int64 _) _) value ->
             -- special case for int64 types since they are not comparable -> we use the unwrapped (int, int) representation instead
             Meta.Type.dict (C.tupleAnn [ C.intAnn, C.intAnn ])
-                (cardinalityModifier Optional value <| fieldTypeToTypeAnnotation value)
+                (fieldTypeToTypeAnnotation value)
 
         MapField _ key value ->
             Meta.Type.dict (fieldTypeToTypeAnnotation key)
-                (cardinalityModifier Optional value <| fieldTypeToTypeAnnotation value)
+                (fieldTypeToTypeAnnotation value)
 
         OneOfField ref ->
             C.maybeAnn <| C.fqTyped (Common.internalsModule ref.rootPackage) (Mapper.Name.internalize ( ref.package, ref.name )) []
