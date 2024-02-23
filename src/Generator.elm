@@ -124,7 +124,7 @@ convert versions options fileNames descriptors =
                     rootModName ++ [ "Internals_" ]
 
                 declarations =
-                    List.concatMap (Enum.toAST options) struct.enums
+                    List.concatMap (Enum.toAST options packageName) struct.enums
                         ++ List.concatMap (Message.reexportAST options internalsModule packageName) struct.messages
                         ++ List.concatMap OneOf.reexportAST struct.oneOfs
                         ++ List.concatMap (OneOf.reexportDataType internalsModule packageName) struct.oneOfReexports

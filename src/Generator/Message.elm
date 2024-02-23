@@ -221,6 +221,12 @@ toAST options msg =
                     "Proto__Google__Protobuf__UInt64Value" ->
                         C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive (Prim_Int64 UInt) ]
 
+                    "Proto__Google__Protobuf__ListValue" ->
+                        C.apply ([ Meta.JsonDecode.map, C.val msg.dataType ] ++ List.map toJsonDecoder msg.fields)
+
+                    "Proto__Google__Protobuf__Struct" ->
+                        C.apply ([ Meta.JsonDecode.map, C.val msg.dataType ] ++ List.map toJsonDecoder msg.fields)
+
                     _ ->
                         case NonEmpty.fromList msg.fields of
                             Just nonEmptyFields ->

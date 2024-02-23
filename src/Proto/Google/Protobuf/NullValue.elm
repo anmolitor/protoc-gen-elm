@@ -18,7 +18,6 @@ import Json.Decode
 import Json.Encode
 import Protobuf.Decode
 import Protobuf.Encode
-import String
 
 
 {-| Decode a `NullValue` from JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -26,42 +25,15 @@ import String
 -}
 jsonDecodeNullValue : Json.Decode.Decoder NullValue
 jsonDecodeNullValue =
-    Json.Decode.oneOf
-        [ Json.Decode.string
-            |> Json.Decode.map
-                (\i ->
-                    case i of
-                        "NULL_VALUE" ->
-                            NULLVALUE
-
-                        _ ->
-                            NULLVALUE
-                )
-        , Json.Decode.int
-            |> Json.Decode.map
-                (\i ->
-                    case i of
-                        0 ->
-                            NULLVALUE
-
-                        _ ->
-                            NULLVALUE
-                )
-        ]
+    Json.Decode.null defaultNullValue
 
 
 {-| Encode a `NullValue` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
 
 -}
 jsonEncodeNullValue : NullValue -> Json.Encode.Value
-jsonEncodeNullValue value =
-    Json.Encode.string <|
-        case value of
-            NULLVALUE ->
-                "NULL_VALUE"
-
-            NullValueUnrecognized_ i ->
-                "_UNRECOGNIZED_" ++ String.fromInt i
+jsonEncodeNullValue _ =
+    Json.Encode.null
 
 
 {-| The field numbers for the fields of `NullValue`. This is mostly useful for internals, like documentation generation.

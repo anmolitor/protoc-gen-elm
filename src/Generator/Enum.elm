@@ -5,7 +5,6 @@ import Elm.Syntax.Expression exposing (Expression)
 import Elm.Syntax.Pattern exposing (Pattern)
 import Generator.Common as Common
 import List.NonEmpty as NonEmpty exposing (NonEmpty)
-import Mapper.Name
 import Meta.Decode
 import Meta.Encode
 import Meta.JsonDecode
@@ -14,8 +13,8 @@ import Model exposing (Enum)
 import Options exposing (Options)
 
 
-toAST : Options -> Enum -> List C.Declaration
-toAST options enum =
+toAST : Options -> C.ModuleName -> Enum -> List C.Declaration
+toAST options moduleName enum =
     let
         enumName =
             enum.dataType
@@ -177,11 +176,22 @@ toAST options enum =
             C.funDecl (Just <| Common.jsonEncoderDocumentation enumName)
                 (Just <| Meta.JsonEncode.encoder (C.typed enumName []))
                 (Common.jsonEncoderName enumName)
-                [ C.varPattern "value" ]
-                (C.applyBinOp
-                    Meta.JsonEncode.string
-                    C.pipel
-                    (C.caseExpr (C.val "value") (NonEmpty.toList encodeJsonCases))
+                [ case ( moduleName, enumName ) of
+                    ( [ "Proto", "Google", "Protobuf", "NullValue" ], "NullValue" ) ->
+                        C.allPattern
+
+                    _ ->
+                        C.varPattern "value"
+                ]
+                (case ( moduleName, enumName ) of
+                    ( [ "Proto", "Google", "Protobuf", "NullValue" ], "NullValue" ) ->
+                        Meta.JsonEncode.null
+
+                    _ ->
+                        C.applyBinOp
+                            Meta.JsonEncode.string
+                            C.pipel
+                            (C.caseExpr (C.val "value") (NonEmpty.toList encodeJsonCases))
                 )
 
         jsonDecoder : C.Declaration
@@ -191,28 +201,33 @@ toAST options enum =
                 (Common.jsonDecoderName enumName)
                 []
             <|
-                Meta.JsonDecode.oneOf
-                    [ C.applyBinOp Meta.JsonDecode.string
-                        C.piper
-                        (C.apply
-                            [ Meta.JsonDecode.map
-                            , C.parens <|
-                                C.lambda
-                                    [ C.varPattern "i" ]
-                                    (C.caseExpr (C.val "i") (NonEmpty.toList <| decodeJsonCases "i"))
+                case ( moduleName, enumName ) of
+                    ( [ "Proto", "Google", "Protobuf", "NullValue" ], "NullValue" ) ->
+                        C.apply [ Meta.JsonDecode.null, C.val <| Common.defaultName enumName ]
+
+                    _ ->
+                        Meta.JsonDecode.oneOf
+                            [ C.applyBinOp Meta.JsonDecode.string
+                                C.piper
+                                (C.apply
+                                    [ Meta.JsonDecode.map
+                                    , C.parens <|
+                                        C.lambda
+                                            [ C.varPattern "i" ]
+                                            (C.caseExpr (C.val "i") (NonEmpty.toList <| decodeJsonCases "i"))
+                                    ]
+                                )
+                            , C.applyBinOp Meta.JsonDecode.int32
+                                C.piper
+                                (C.apply
+                                    [ Meta.JsonDecode.map
+                                    , C.parens <|
+                                        C.lambda
+                                            [ C.varPattern "i" ]
+                                            (C.caseExpr (C.val "i") (NonEmpty.toList <| decodeJsonIntegerCases "i"))
+                                    ]
+                                )
                             ]
-                        )
-                    , C.applyBinOp Meta.JsonDecode.int32
-                        C.piper
-                        (C.apply
-                            [ Meta.JsonDecode.map
-                            , C.parens <|
-                                C.lambda
-                                    [ C.varPattern "i" ]
-                                    (C.caseExpr (C.val "i") (NonEmpty.toList <| decodeJsonIntegerCases "i"))
-                            ]
-                        )
-                    ]
 
         defaultEnum =
             NonEmpty.find (\( index, _ ) -> index == 0) enum.fields
