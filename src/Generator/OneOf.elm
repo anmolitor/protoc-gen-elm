@@ -202,16 +202,20 @@ toAST opts { oneOfName, options } =
                                 C.apply
                                     [ Meta.JsonDecode.map
                                     , C.parens (C.applyBinOp (C.fqVal optModName optDataType) C.composer Meta.Basics.just)
-                                    , case o.fieldType of
-                                        Primitive p _ ->
-                                            Meta.JsonDecode.forPrimitive p
+                                    , C.apply
+                                        [ Meta.JsonDecode.field
+                                        , C.string o.fieldName
+                                        , case o.fieldType of
+                                            Primitive p _ ->
+                                                Meta.JsonDecode.forPrimitive p
 
-                                        Embedded e ->
-                                            Generator.Message.embeddedJsonDecoder e
+                                            Embedded e ->
+                                                Generator.Message.embeddedJsonDecoder e
 
-                                        Enumeration e ->
-                                            C.fqFun (e.package ++ [ e.name ]) <|
-                                                Common.jsonDecoderName e.name
+                                            Enumeration e ->
+                                                C.fqFun (e.package ++ [ e.name ]) <|
+                                                    Common.jsonDecoderName e.name
+                                        ]
                                     ]
                         )
                         options

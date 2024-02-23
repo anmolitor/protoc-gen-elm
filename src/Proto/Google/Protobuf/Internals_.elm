@@ -412,21 +412,30 @@ jsonDecodeProto__Google__Protobuf__Value__Kind__Kind =
     Json.Decode.oneOf
         [ Json.Decode.map
             (Proto.Google.Protobuf.Value.Kind.NullValue >> Just)
-            Proto.Google.Protobuf.NullValue.jsonDecodeNullValue
-        , Json.Decode.map (Proto.Google.Protobuf.Value.Kind.NumberValue >> Just) Json.Decode.float
-        , Json.Decode.map (Proto.Google.Protobuf.Value.Kind.StringValue >> Just) Json.Decode.string
-        , Json.Decode.map (Proto.Google.Protobuf.Value.Kind.BoolValue >> Just) Json.Decode.bool
+            (Json.Decode.field "nullValue" Proto.Google.Protobuf.NullValue.jsonDecodeNullValue)
+        , Json.Decode.map
+            (Proto.Google.Protobuf.Value.Kind.NumberValue >> Just)
+            (Json.Decode.field "numberValue" Json.Decode.float)
+        , Json.Decode.map
+            (Proto.Google.Protobuf.Value.Kind.StringValue >> Just)
+            (Json.Decode.field "stringValue" Json.Decode.string)
+        , Json.Decode.map
+            (Proto.Google.Protobuf.Value.Kind.BoolValue >> Just)
+            (Json.Decode.field "boolValue" Json.Decode.bool)
         , Json.Decode.lazy <|
             \_ ->
                 Json.Decode.map
                     (Proto.Google.Protobuf.Value.Kind.StructValue >> Just)
-                    jsonDecodeProto__Google__Protobuf__Struct
+                    (Json.Decode.field "structValue" jsonDecodeProto__Google__Protobuf__Struct)
         , Json.Decode.lazy <|
             \_ ->
                 Json.Decode.map
                     (Proto.Google.Protobuf.Value.Kind.ListValue >> Just)
-                    (Json.Decode.map Proto__Google__Protobuf__ListValue_ <|
-                         Json.Decode.lazy <| \_ -> jsonDecodeProto__Google__Protobuf__ListValue
+                    (Json.Decode.field
+                        "listValue"
+                        (Json.Decode.map Proto__Google__Protobuf__ListValue_ <|
+                             Json.Decode.lazy <| \_ -> jsonDecodeProto__Google__Protobuf__ListValue
+                        )
                     )
         , Json.Decode.succeed Nothing
         ]
@@ -1728,9 +1737,7 @@ type alias Proto__Google__Protobuf__ListValue =
 -}
 jsonDecodeProto__Google__Protobuf__Value : Json.Decode.Decoder Proto__Google__Protobuf__Value
 jsonDecodeProto__Google__Protobuf__Value =
-    Json.Decode.map
-        Proto__Google__Protobuf__Value
-        (Json.Decode.field "kind" jsonDecodeProto__Google__Protobuf__Value__Kind__Kind)
+    Json.Decode.map Proto__Google__Protobuf__Value jsonDecodeProto__Google__Protobuf__Value__Kind__Kind
 
 
 {-| Encode a `Proto__Google__Protobuf__Value` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json

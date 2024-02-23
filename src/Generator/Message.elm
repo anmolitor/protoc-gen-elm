@@ -622,11 +622,7 @@ toJsonDecoder ( fieldName, field ) =
                 ]
 
         OneOfField ref ->
-            C.apply
-                [ Meta.JsonDecode.field
-                , C.string fieldName.jsonName
-                , C.fqFun (Common.internalsModule ref.rootPackage) (Common.jsonDecoderName <| Mapper.Name.internalize ( ref.package, ref.name ))
-                ]
+            C.fqFun (Common.internalsModule ref.rootPackage) (Common.jsonDecoderName <| Mapper.Name.internalize ( ref.package, ref.name ))
 
 
 mapFieldJsonDecoder : FieldType -> FieldType -> C.Expression

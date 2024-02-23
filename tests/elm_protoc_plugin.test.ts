@@ -100,6 +100,22 @@ describe("protoc-gen-elm", () => {
       expect(output).toEqual(expect.stringContaining("True"));
     });
 
+    it("roundtrips to json", async () => {
+      await repl.importModules("Proto.BasicMessage");
+      const msg = repl.getFreshVariable();
+      await repl.write(
+        `${msg} = { stringProperty = "hi", intProperty = 5, floatProperty = 6.0, boolProperty = True }`
+      );
+      const json = repl.getFreshVariable();
+      await repl.write(
+        `${json} = Proto.BasicMessage.jsonEncodeBasicMessage ${msg} |> JE.encode 0`
+      );
+      const output = await repl.write(
+        `JD.decodeString Proto.BasicMessage.jsonDecodeBasicMessage ${json} == Ok ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
     it("decoding json accepts missing fields by using default values", async () => {
       await repl.importModules("Proto.BasicMessage");
       const msg = repl.getFreshVariable();
@@ -172,6 +188,22 @@ describe("protoc-gen-elm", () => {
         },
         { anInt: 69 }
       );
+    });
+
+    it("roundtrips to json", async () => {
+      await repl.importModules("Proto.Oneof", "Proto.Oneof.OneOf.Msg");
+      const msg = repl.getFreshVariable();
+      await repl.write(
+        `${msg} = { msg = Just <| Proto.Oneof.OneOf.Msg.AString "test" }`
+      );
+      const json = repl.getFreshVariable();
+      await repl.write(
+        `${json} = Proto.Oneof.jsonEncodeOneOf ${msg} |> JE.encode 0`
+      );
+      const output = await repl.write(
+        `JD.decodeString Proto.Oneof.jsonDecodeOneOf ${json} == Ok ${msg}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
     });
   });
 
