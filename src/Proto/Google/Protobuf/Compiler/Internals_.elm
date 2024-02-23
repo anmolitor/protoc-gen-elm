@@ -56,7 +56,6 @@ To run it, add a dependency via `elm install` on [`elm-protocol-buffers`](https:
 
 import Json.Decode
 import Json.Encode
-import List
 import Maybe
 import Proto.Google.Protobuf.Internals_
 import Protobuf.Decode
@@ -97,18 +96,16 @@ jsonEncodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File :
     Proto__Google__Protobuf__Compiler__CodeGeneratorResponse__File -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "insertionPoint", Json.Encode.string value.insertionPoint ) ]
-            , [ ( "content", Json.Encode.string value.content ) ]
-            , [ ( "generatedCodeInfo"
-                , (Maybe.map Proto.Google.Protobuf.Internals_.jsonEncodeProto__Google__Protobuf__GeneratedCodeInfo
-                      >> Maybe.withDefault Json.Encode.null
-                  )
-                    value.generatedCodeInfo
-                )
-              ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "insertionPoint", Json.Encode.string value.insertionPoint )
+        , ( "content", Json.Encode.string value.content )
+        , ( "generatedCodeInfo"
+          , (Maybe.map Proto.Google.Protobuf.Internals_.jsonEncodeProto__Google__Protobuf__GeneratedCodeInfo
+                >> Maybe.withDefault Json.Encode.null
+            )
+                value.generatedCodeInfo
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Compiler__CodeGeneratorResponse__File`. This is mostly useful for internals, like documentation generation.
@@ -216,17 +213,12 @@ jsonEncodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse :
     Proto__Google__Protobuf__Compiler__CodeGeneratorResponse -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "error", Json.Encode.string value.error ) ]
-            , [ ( "supportedFeatures"
-                , (Protobuf.Utils.Int64.toUnsignedString >> Json.Encode.string) value.supportedFeatures
-                )
-              ]
-            , [ ( "file"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File) value.file
-                )
-              ]
-            ]
+        [ ( "error", Json.Encode.string value.error )
+        , ( "supportedFeatures", (Protobuf.Utils.Int64.toUnsignedString >> Json.Encode.string) value.supportedFeatures )
+        , ( "file"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File) value.file
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Compiler__CodeGeneratorResponse`. This is mostly useful for internals, like documentation generation.
@@ -318,22 +310,17 @@ jsonEncodeProto__Google__Protobuf__Compiler__CodeGeneratorRequest :
     Proto__Google__Protobuf__Compiler__CodeGeneratorRequest -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Compiler__CodeGeneratorRequest value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "fileToGenerate", (Json.Encode.list Json.Encode.string) value.fileToGenerate ) ]
-            , [ ( "parameter", Json.Encode.string value.parameter ) ]
-            , [ ( "protoFile"
-                , (Json.Encode.list
-                      Proto.Google.Protobuf.Internals_.jsonEncodeProto__Google__Protobuf__FileDescriptorProto
-                  )
-                    value.protoFile
-                )
-              ]
-            , [ ( "compilerVersion"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__Compiler__Version >> Maybe.withDefault Json.Encode.null)
-                    value.compilerVersion
-                )
-              ]
-            ]
+        [ ( "fileToGenerate", (Json.Encode.list Json.Encode.string) value.fileToGenerate )
+        , ( "parameter", Json.Encode.string value.parameter )
+        , ( "protoFile"
+          , (Json.Encode.list Proto.Google.Protobuf.Internals_.jsonEncodeProto__Google__Protobuf__FileDescriptorProto)
+                value.protoFile
+          )
+        , ( "compilerVersion"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__Compiler__Version >> Maybe.withDefault Json.Encode.null)
+                value.compilerVersion
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Compiler__CodeGeneratorRequest`. This is mostly useful for internals, like documentation generation.
@@ -425,12 +412,11 @@ jsonDecodeProto__Google__Protobuf__Compiler__Version =
 jsonEncodeProto__Google__Protobuf__Compiler__Version : Proto__Google__Protobuf__Compiler__Version -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Compiler__Version value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "major", Json.Encode.int value.major ) ]
-            , [ ( "minor", Json.Encode.int value.minor ) ]
-            , [ ( "patch", Json.Encode.int value.patch ) ]
-            , [ ( "suffix", Json.Encode.string value.suffix ) ]
-            ]
+        [ ( "major", Json.Encode.int value.major )
+        , ( "minor", Json.Encode.int value.minor )
+        , ( "patch", Json.Encode.int value.patch )
+        , ( "suffix", Json.Encode.string value.suffix )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Compiler__Version`. This is mostly useful for internals, like documentation generation.

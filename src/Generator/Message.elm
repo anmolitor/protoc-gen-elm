@@ -110,6 +110,9 @@ toAST options msg =
                     (List.map toEncoder msg.fields)
                 )
 
+        isAnyFieldAOneOfField =
+            List.any (Tuple.second >> isOneOfField) msg.fields
+
         jsonEncoder : C.Declaration
         jsonEncoder =
             C.funDecl (Just <| Common.jsonEncoderDocumentation msg.dataType)
@@ -153,10 +156,21 @@ toAST options msg =
                     "Proto__Google__Protobuf__UInt64Value" ->
                         C.apply [ Meta.JsonEncode.forPrimitive (Prim_Int64 UInt), C.access (C.val "value") "value" ]
 
+                    "Proto__Google__Protobuf__ListValue" ->
+                        C.apply (List.map (Tuple.second >> fieldToJsonEncoder) msg.fields ++ [ C.access (C.val "value") "values" ])
+
+                    "Proto__Google__Protobuf__Struct" ->
+                        C.apply (List.map (Tuple.second >> fieldToJsonEncoder) msg.fields ++ [ C.access (C.val "value") "fields" ])
+
                     _ ->
                         C.applyBinOp Meta.JsonEncode.object
                             C.pipel
-                            (C.apply [ C.fqFun [ "List" ] "concat", C.list (List.map toJsonEncoder msg.fields) ])
+                            (if isAnyFieldAOneOfField then
+                                C.apply [ C.fqFun [ "List" ] "concat", C.list (List.map (toJsonEncoder isAnyFieldAOneOfField) msg.fields) ]
+
+                             else
+                                C.list (List.map (toJsonEncoder isAnyFieldAOneOfField) msg.fields)
+                            )
                 )
 
         decoder : C.Declaration
@@ -747,33 +761,47 @@ toEncoder ( fieldName, field ) =
                 ]
 
 
-toJsonEncoder : ( FieldName, Field ) -> C.Expression
-toJsonEncoder ( fieldName, field ) =
+toJsonEncoder : Bool -> ( FieldName, Field ) -> C.Expression
+toJsonEncoder isAnyFieldAOneOfField ( fieldName, field ) =
+    case ( field, isAnyFieldAOneOfField ) of
+        ( OneOfField _, _ ) ->
+            C.apply [ fieldToJsonEncoder field, C.access (C.val "value") fieldName.protoName ]
+
+        ( _, True ) ->
+            C.list [ C.tuple [ C.string fieldName.jsonName, C.apply [ fieldToJsonEncoder field, C.access (C.val "value") fieldName.protoName ] ] ]
+
+        ( _, False ) ->
+            C.tuple [ C.string fieldName.jsonName, C.apply [ fieldToJsonEncoder field, C.access (C.val "value") fieldName.protoName ] ]
+
+
+isOneOfField : Field -> Bool
+isOneOfField field =
+    case field of
+        OneOfField _ ->
+            True
+
+        _ ->
+            False
+
+
+fieldToJsonEncoder : Field -> C.Expression
+fieldToJsonEncoder field =
     case field of
         NormalField _ cardinality fieldType ->
-            C.list [ C.tuple [ C.string fieldName.jsonName, C.apply [ fieldTypeToJsonEncoder cardinality fieldType, C.access (C.val "value") fieldName.protoName ] ] ]
+            fieldTypeToJsonEncoder cardinality fieldType
 
         MapField _ key value ->
-            C.list
-                [ C.tuple
-                    [ C.string fieldName.jsonName
-                    , C.apply
-                        [ Meta.JsonEncode.dict
-                        , fieldTypeToJsonMapKey key
-                        , fieldTypeToJsonEncoder Optional value
-                        , C.access (C.val "value") fieldName.protoName
-                        ]
-                    ]
+            C.apply
+                [ Meta.JsonEncode.dict
+                , fieldTypeToJsonMapKey key
+                , fieldTypeToJsonEncoder Optional value
                 ]
 
         OneOfField ref ->
-            C.apply
-                [ C.fqFun (Common.internalsModule ref.rootPackage)
-                    (Common.jsonEncoderName <|
-                        Mapper.Name.internalize ( ref.package, ref.name )
-                    )
-                , C.access (C.val "value") fieldName.protoName
-                ]
+            C.fqFun (Common.internalsModule ref.rootPackage)
+                (Common.jsonEncoderName <|
+                    Mapper.Name.internalize ( ref.package, ref.name )
+                )
 
 
 embeddedEncoder : { dataType : DataType, moduleName : C.ModuleName, rootModuleName : C.ModuleName, typeKind : TypeKind } -> C.Expression

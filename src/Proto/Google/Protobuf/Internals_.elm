@@ -583,10 +583,7 @@ jsonEncodeProto__Google__Protobuf__UninterpretedOption__NamePart :
     Proto__Google__Protobuf__UninterpretedOption__NamePart -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__UninterpretedOption__NamePart value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "namePart", Json.Encode.string value.namePart ) ]
-            , [ ( "isExtension", Json.Encode.bool value.isExtension ) ]
-            ]
+        [ ( "namePart", Json.Encode.string value.namePart ), ( "isExtension", Json.Encode.bool value.isExtension ) ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__UninterpretedOption__NamePart`. This is mostly useful for internals, like documentation generation.
@@ -661,13 +658,12 @@ jsonEncodeProto__Google__Protobuf__SourceCodeInfo__Location :
     Proto__Google__Protobuf__SourceCodeInfo__Location -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__SourceCodeInfo__Location value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "path", (Json.Encode.list Json.Encode.int) value.path ) ]
-            , [ ( "span", (Json.Encode.list Json.Encode.int) value.span ) ]
-            , [ ( "leadingComments", Json.Encode.string value.leadingComments ) ]
-            , [ ( "trailingComments", Json.Encode.string value.trailingComments ) ]
-            , [ ( "leadingDetachedComments", (Json.Encode.list Json.Encode.string) value.leadingDetachedComments ) ]
-            ]
+        [ ( "path", (Json.Encode.list Json.Encode.int) value.path )
+        , ( "span", (Json.Encode.list Json.Encode.int) value.span )
+        , ( "leadingComments", Json.Encode.string value.leadingComments )
+        , ( "trailingComments", Json.Encode.string value.trailingComments )
+        , ( "leadingDetachedComments", (Json.Encode.list Json.Encode.string) value.leadingDetachedComments )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__SourceCodeInfo__Location`. This is mostly useful for internals, like documentation generation.
@@ -756,12 +752,11 @@ jsonEncodeProto__Google__Protobuf__GeneratedCodeInfo__Annotation :
     Proto__Google__Protobuf__GeneratedCodeInfo__Annotation -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__GeneratedCodeInfo__Annotation value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "path", (Json.Encode.list Json.Encode.int) value.path ) ]
-            , [ ( "sourceFile", Json.Encode.string value.sourceFile ) ]
-            , [ ( "begin", Json.Encode.int value.begin ) ]
-            , [ ( "end", Json.Encode.int value.end ) ]
-            ]
+        [ ( "path", (Json.Encode.list Json.Encode.int) value.path )
+        , ( "sourceFile", Json.Encode.string value.sourceFile )
+        , ( "begin", Json.Encode.int value.begin )
+        , ( "end", Json.Encode.int value.end )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__GeneratedCodeInfo__Annotation`. This is mostly useful for internals, like documentation generation.
@@ -835,8 +830,7 @@ jsonDecodeProto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange =
 jsonEncodeProto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange :
     Proto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange value =
-    Json.Encode.object <|
-        List.concat [ [ ( "start", Json.Encode.int value.start ) ], [ ( "end", Json.Encode.int value.end ) ] ]
+    Json.Encode.object <| [ ( "start", Json.Encode.int value.start ), ( "end", Json.Encode.int value.end ) ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange`. This is mostly useful for internals, like documentation generation.
@@ -903,8 +897,7 @@ jsonDecodeProto__Google__Protobuf__DescriptorProto__ReservedRange =
 jsonEncodeProto__Google__Protobuf__DescriptorProto__ReservedRange :
     Proto__Google__Protobuf__DescriptorProto__ReservedRange -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__DescriptorProto__ReservedRange value =
-    Json.Encode.object <|
-        List.concat [ [ ( "start", Json.Encode.int value.start ) ], [ ( "end", Json.Encode.int value.end ) ] ]
+    Json.Encode.object <| [ ( "start", Json.Encode.int value.start ), ( "end", Json.Encode.int value.end ) ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__DescriptorProto__ReservedRange`. This is mostly useful for internals, like documentation generation.
@@ -976,17 +969,13 @@ jsonEncodeProto__Google__Protobuf__DescriptorProto__ExtensionRange :
     Proto__Google__Protobuf__DescriptorProto__ExtensionRange -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__DescriptorProto__ExtensionRange value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "start", Json.Encode.int value.start ) ]
-            , [ ( "end", Json.Encode.int value.end ) ]
-            , [ ( "options"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__ExtensionRangeOptions
-                      >> Maybe.withDefault Json.Encode.null
-                  )
-                    value.options
-                )
-              ]
-            ]
+        [ ( "start", Json.Encode.int value.start )
+        , ( "end", Json.Encode.int value.end )
+        , ( "options"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__ExtensionRangeOptions >> Maybe.withDefault Json.Encode.null)
+                value.options
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__DescriptorProto__ExtensionRange`. This is mostly useful for internals, like documentation generation.
@@ -1664,14 +1653,7 @@ jsonDecodeProto__Google__Protobuf__ListValue =
 -}
 jsonEncodeProto__Google__Protobuf__ListValue : Proto__Google__Protobuf__ListValue -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__ListValue value =
-    Json.Encode.object <|
-        List.concat
-            [ [ ( "values"
-                , (Json.Encode.list (unwrapProto__Google__Protobuf__Value >> jsonEncodeProto__Google__Protobuf__Value))
-                    value.values
-                )
-              ]
-            ]
+    (Json.Encode.list (unwrapProto__Google__Protobuf__Value >> jsonEncodeProto__Google__Protobuf__Value)) value.values
 
 
 {-| Unwrap a `Value` from its wrapper `Value_.`
@@ -1830,18 +1812,13 @@ jsonDecodeProto__Google__Protobuf__Struct =
 -}
 jsonEncodeProto__Google__Protobuf__Struct : Proto__Google__Protobuf__Struct -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Struct value =
-    Json.Encode.object <|
-        List.concat
-            [ [ ( "fields"
-                , Json.Encode.dict
-                    identity
-                    (Maybe.map (unwrapProto__Google__Protobuf__Value >> jsonEncodeProto__Google__Protobuf__Value)
-                        >> Maybe.withDefault Json.Encode.null
-                    )
-                    value.fields
-                )
-              ]
-            ]
+    (Json.Encode.dict
+        identity
+        (Maybe.map (unwrapProto__Google__Protobuf__Value >> jsonEncodeProto__Google__Protobuf__Value)
+            >> Maybe.withDefault Json.Encode.null
+        )
+    )
+        value.fields
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Struct`. This is mostly useful for internals, like documentation generation.
@@ -1919,7 +1896,7 @@ jsonDecodeProto__Google__Protobuf__FieldMask =
 -}
 jsonEncodeProto__Google__Protobuf__FieldMask : Proto__Google__Protobuf__FieldMask -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__FieldMask value =
-    Json.Encode.object <| List.concat [ [ ( "paths", (Json.Encode.list Json.Encode.string) value.paths ) ] ]
+    Json.Encode.object <| [ ( "paths", (Json.Encode.list Json.Encode.string) value.paths ) ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__FieldMask`. This is mostly useful for internals, like documentation generation.
@@ -1976,7 +1953,7 @@ jsonDecodeProto__Google__Protobuf__Empty =
 -}
 jsonEncodeProto__Google__Protobuf__Empty : Proto__Google__Protobuf__Empty -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Empty _ =
-    Json.Encode.object <| List.concat []
+    Json.Encode.object <| []
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Empty`. This is mostly useful for internals, like documentation generation.
@@ -2051,10 +2028,9 @@ jsonDecodeProto__Google__Protobuf__Duration =
 jsonEncodeProto__Google__Protobuf__Duration : Proto__Google__Protobuf__Duration -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Duration value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "seconds", (Protobuf.Utils.Int64.toSignedString >> Json.Encode.string) value.seconds ) ]
-            , [ ( "nanos", Json.Encode.int value.nanos ) ]
-            ]
+        [ ( "seconds", (Protobuf.Utils.Int64.toSignedString >> Json.Encode.string) value.seconds )
+        , ( "nanos", Json.Encode.int value.nanos )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Duration`. This is mostly useful for internals, like documentation generation.
@@ -2119,12 +2095,10 @@ jsonDecodeProto__Google__Protobuf__GeneratedCodeInfo =
 jsonEncodeProto__Google__Protobuf__GeneratedCodeInfo : Proto__Google__Protobuf__GeneratedCodeInfo -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__GeneratedCodeInfo value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "annotation"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__GeneratedCodeInfo__Annotation) value.annotation
-                )
-              ]
-            ]
+        [ ( "annotation"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__GeneratedCodeInfo__Annotation) value.annotation
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__GeneratedCodeInfo`. This is mostly useful for internals, like documentation generation.
@@ -2190,12 +2164,8 @@ jsonDecodeProto__Google__Protobuf__SourceCodeInfo =
 jsonEncodeProto__Google__Protobuf__SourceCodeInfo : Proto__Google__Protobuf__SourceCodeInfo -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__SourceCodeInfo value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "location"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__SourceCodeInfo__Location) value.location
-                )
-              ]
-            ]
+        [ ( "location", (Json.Encode.list jsonEncodeProto__Google__Protobuf__SourceCodeInfo__Location) value.location )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__SourceCodeInfo`. This is mostly useful for internals, like documentation generation.
@@ -2307,24 +2277,14 @@ jsonEncodeProto__Google__Protobuf__UninterpretedOption :
     Proto__Google__Protobuf__UninterpretedOption -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__UninterpretedOption value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption__NamePart) value.name
-                )
-              ]
-            , [ ( "identifierValue", Json.Encode.string value.identifierValue ) ]
-            , [ ( "positiveIntValue"
-                , (Protobuf.Utils.Int64.toUnsignedString >> Json.Encode.string) value.positiveIntValue
-                )
-              ]
-            , [ ( "negativeIntValue"
-                , (Protobuf.Utils.Int64.toSignedString >> Json.Encode.string) value.negativeIntValue
-                )
-              ]
-            , [ ( "doubleValue", Json.Encode.float value.doubleValue ) ]
-            , [ ( "stringValue", Protobuf.Utils.Bytes.jsonEncoder value.stringValue ) ]
-            , [ ( "aggregateValue", Json.Encode.string value.aggregateValue ) ]
-            ]
+        [ ( "name", (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption__NamePart) value.name )
+        , ( "identifierValue", Json.Encode.string value.identifierValue )
+        , ( "positiveIntValue", (Protobuf.Utils.Int64.toUnsignedString >> Json.Encode.string) value.positiveIntValue )
+        , ( "negativeIntValue", (Protobuf.Utils.Int64.toSignedString >> Json.Encode.string) value.negativeIntValue )
+        , ( "doubleValue", Json.Encode.float value.doubleValue )
+        , ( "stringValue", Protobuf.Utils.Bytes.jsonEncoder value.stringValue )
+        , ( "aggregateValue", Json.Encode.string value.aggregateValue )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__UninterpretedOption`. This is mostly useful for internals, like documentation generation.
@@ -2448,17 +2408,14 @@ jsonDecodeProto__Google__Protobuf__MethodOptions =
 jsonEncodeProto__Google__Protobuf__MethodOptions : Proto__Google__Protobuf__MethodOptions -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__MethodOptions value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "deprecated", Json.Encode.bool value.deprecated ) ]
-            , [ ( "idempotencyLevel"
-                , Proto.Google.Protobuf.MethodOptions.IdempotencyLevel.jsonEncodeIdempotencyLevel value.idempotencyLevel
-                )
-              ]
-            , [ ( "uninterpretedOption"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
-                )
-              ]
-            ]
+        [ ( "deprecated", Json.Encode.bool value.deprecated )
+        , ( "idempotencyLevel"
+          , Proto.Google.Protobuf.MethodOptions.IdempotencyLevel.jsonEncodeIdempotencyLevel value.idempotencyLevel
+          )
+        , ( "uninterpretedOption"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__MethodOptions`. This is mostly useful for internals, like documentation generation.
@@ -2545,13 +2502,11 @@ jsonDecodeProto__Google__Protobuf__ServiceOptions =
 jsonEncodeProto__Google__Protobuf__ServiceOptions : Proto__Google__Protobuf__ServiceOptions -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__ServiceOptions value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "deprecated", Json.Encode.bool value.deprecated ) ]
-            , [ ( "uninterpretedOption"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
-                )
-              ]
-            ]
+        [ ( "deprecated", Json.Encode.bool value.deprecated )
+        , ( "uninterpretedOption"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__ServiceOptions`. This is mostly useful for internals, like documentation generation.
@@ -2626,13 +2581,11 @@ jsonDecodeProto__Google__Protobuf__EnumValueOptions =
 jsonEncodeProto__Google__Protobuf__EnumValueOptions : Proto__Google__Protobuf__EnumValueOptions -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__EnumValueOptions value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "deprecated", Json.Encode.bool value.deprecated ) ]
-            , [ ( "uninterpretedOption"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
-                )
-              ]
-            ]
+        [ ( "deprecated", Json.Encode.bool value.deprecated )
+        , ( "uninterpretedOption"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__EnumValueOptions`. This is mostly useful for internals, like documentation generation.
@@ -2710,14 +2663,12 @@ jsonDecodeProto__Google__Protobuf__EnumOptions =
 jsonEncodeProto__Google__Protobuf__EnumOptions : Proto__Google__Protobuf__EnumOptions -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__EnumOptions value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "allowAlias", Json.Encode.bool value.allowAlias ) ]
-            , [ ( "deprecated", Json.Encode.bool value.deprecated ) ]
-            , [ ( "uninterpretedOption"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
-                )
-              ]
-            ]
+        [ ( "allowAlias", Json.Encode.bool value.allowAlias )
+        , ( "deprecated", Json.Encode.bool value.deprecated )
+        , ( "uninterpretedOption"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__EnumOptions`. This is mostly useful for internals, like documentation generation.
@@ -2791,12 +2742,10 @@ jsonDecodeProto__Google__Protobuf__OneofOptions =
 jsonEncodeProto__Google__Protobuf__OneofOptions : Proto__Google__Protobuf__OneofOptions -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__OneofOptions value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "uninterpretedOption"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
-                )
-              ]
-            ]
+        [ ( "uninterpretedOption"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__OneofOptions`. This is mostly useful for internals, like documentation generation.
@@ -2877,18 +2826,16 @@ jsonDecodeProto__Google__Protobuf__FieldOptions =
 jsonEncodeProto__Google__Protobuf__FieldOptions : Proto__Google__Protobuf__FieldOptions -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__FieldOptions value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "ctype", Proto.Google.Protobuf.FieldOptions.CType.jsonEncodeCType value.ctype ) ]
-            , [ ( "packed", Json.Encode.bool value.packed ) ]
-            , [ ( "jstype", Proto.Google.Protobuf.FieldOptions.JSType.jsonEncodeJSType value.jstype ) ]
-            , [ ( "lazy", Json.Encode.bool value.lazy ) ]
-            , [ ( "deprecated", Json.Encode.bool value.deprecated ) ]
-            , [ ( "weak", Json.Encode.bool value.weak ) ]
-            , [ ( "uninterpretedOption"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
-                )
-              ]
-            ]
+        [ ( "ctype", Proto.Google.Protobuf.FieldOptions.CType.jsonEncodeCType value.ctype )
+        , ( "packed", Json.Encode.bool value.packed )
+        , ( "jstype", Proto.Google.Protobuf.FieldOptions.JSType.jsonEncodeJSType value.jstype )
+        , ( "lazy", Json.Encode.bool value.lazy )
+        , ( "deprecated", Json.Encode.bool value.deprecated )
+        , ( "weak", Json.Encode.bool value.weak )
+        , ( "uninterpretedOption"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__FieldOptions`. This is mostly useful for internals, like documentation generation.
@@ -2995,16 +2942,14 @@ jsonDecodeProto__Google__Protobuf__MessageOptions =
 jsonEncodeProto__Google__Protobuf__MessageOptions : Proto__Google__Protobuf__MessageOptions -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__MessageOptions value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "messageSetWireFormat", Json.Encode.bool value.messageSetWireFormat ) ]
-            , [ ( "noStandardDescriptorAccessor", Json.Encode.bool value.noStandardDescriptorAccessor ) ]
-            , [ ( "deprecated", Json.Encode.bool value.deprecated ) ]
-            , [ ( "mapEntry", Json.Encode.bool value.mapEntry ) ]
-            , [ ( "uninterpretedOption"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
-                )
-              ]
-            ]
+        [ ( "messageSetWireFormat", Json.Encode.bool value.messageSetWireFormat )
+        , ( "noStandardDescriptorAccessor", Json.Encode.bool value.noStandardDescriptorAccessor )
+        , ( "deprecated", Json.Encode.bool value.deprecated )
+        , ( "mapEntry", Json.Encode.bool value.mapEntry )
+        , ( "uninterpretedOption"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__MessageOptions`. This is mostly useful for internals, like documentation generation.
@@ -3172,35 +3117,30 @@ jsonDecodeProto__Google__Protobuf__FileOptions =
 jsonEncodeProto__Google__Protobuf__FileOptions : Proto__Google__Protobuf__FileOptions -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__FileOptions value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "javaPackage", Json.Encode.string value.javaPackage ) ]
-            , [ ( "javaOuterClassname", Json.Encode.string value.javaOuterClassname ) ]
-            , [ ( "javaMultipleFiles", Json.Encode.bool value.javaMultipleFiles ) ]
-            , [ ( "javaGenerateEqualsAndHash", Json.Encode.bool value.javaGenerateEqualsAndHash ) ]
-            , [ ( "javaStringCheckUtf8", Json.Encode.bool value.javaStringCheckUtf8 ) ]
-            , [ ( "optimizeFor"
-                , Proto.Google.Protobuf.FileOptions.OptimizeMode.jsonEncodeOptimizeMode value.optimizeFor
-                )
-              ]
-            , [ ( "goPackage", Json.Encode.string value.goPackage ) ]
-            , [ ( "ccGenericServices", Json.Encode.bool value.ccGenericServices ) ]
-            , [ ( "javaGenericServices", Json.Encode.bool value.javaGenericServices ) ]
-            , [ ( "pyGenericServices", Json.Encode.bool value.pyGenericServices ) ]
-            , [ ( "phpGenericServices", Json.Encode.bool value.phpGenericServices ) ]
-            , [ ( "deprecated", Json.Encode.bool value.deprecated ) ]
-            , [ ( "ccEnableArenas", Json.Encode.bool value.ccEnableArenas ) ]
-            , [ ( "objcClassPrefix", Json.Encode.string value.objcClassPrefix ) ]
-            , [ ( "csharpNamespace", Json.Encode.string value.csharpNamespace ) ]
-            , [ ( "swiftPrefix", Json.Encode.string value.swiftPrefix ) ]
-            , [ ( "phpClassPrefix", Json.Encode.string value.phpClassPrefix ) ]
-            , [ ( "phpNamespace", Json.Encode.string value.phpNamespace ) ]
-            , [ ( "phpMetadataNamespace", Json.Encode.string value.phpMetadataNamespace ) ]
-            , [ ( "rubyPackage", Json.Encode.string value.rubyPackage ) ]
-            , [ ( "uninterpretedOption"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
-                )
-              ]
-            ]
+        [ ( "javaPackage", Json.Encode.string value.javaPackage )
+        , ( "javaOuterClassname", Json.Encode.string value.javaOuterClassname )
+        , ( "javaMultipleFiles", Json.Encode.bool value.javaMultipleFiles )
+        , ( "javaGenerateEqualsAndHash", Json.Encode.bool value.javaGenerateEqualsAndHash )
+        , ( "javaStringCheckUtf8", Json.Encode.bool value.javaStringCheckUtf8 )
+        , ( "optimizeFor", Proto.Google.Protobuf.FileOptions.OptimizeMode.jsonEncodeOptimizeMode value.optimizeFor )
+        , ( "goPackage", Json.Encode.string value.goPackage )
+        , ( "ccGenericServices", Json.Encode.bool value.ccGenericServices )
+        , ( "javaGenericServices", Json.Encode.bool value.javaGenericServices )
+        , ( "pyGenericServices", Json.Encode.bool value.pyGenericServices )
+        , ( "phpGenericServices", Json.Encode.bool value.phpGenericServices )
+        , ( "deprecated", Json.Encode.bool value.deprecated )
+        , ( "ccEnableArenas", Json.Encode.bool value.ccEnableArenas )
+        , ( "objcClassPrefix", Json.Encode.string value.objcClassPrefix )
+        , ( "csharpNamespace", Json.Encode.string value.csharpNamespace )
+        , ( "swiftPrefix", Json.Encode.string value.swiftPrefix )
+        , ( "phpClassPrefix", Json.Encode.string value.phpClassPrefix )
+        , ( "phpNamespace", Json.Encode.string value.phpNamespace )
+        , ( "phpMetadataNamespace", Json.Encode.string value.phpMetadataNamespace )
+        , ( "rubyPackage", Json.Encode.string value.rubyPackage )
+        , ( "uninterpretedOption"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__FileOptions`. This is mostly useful for internals, like documentation generation.
@@ -3410,18 +3350,16 @@ jsonEncodeProto__Google__Protobuf__MethodDescriptorProto :
     Proto__Google__Protobuf__MethodDescriptorProto -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__MethodDescriptorProto value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "inputType", Json.Encode.string value.inputType ) ]
-            , [ ( "outputType", Json.Encode.string value.outputType ) ]
-            , [ ( "options"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__MethodOptions >> Maybe.withDefault Json.Encode.null)
-                    value.options
-                )
-              ]
-            , [ ( "clientStreaming", Json.Encode.bool value.clientStreaming ) ]
-            , [ ( "serverStreaming", Json.Encode.bool value.serverStreaming ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "inputType", Json.Encode.string value.inputType )
+        , ( "outputType", Json.Encode.string value.outputType )
+        , ( "options"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__MethodOptions >> Maybe.withDefault Json.Encode.null)
+                value.options
+          )
+        , ( "clientStreaming", Json.Encode.bool value.clientStreaming )
+        , ( "serverStreaming", Json.Encode.bool value.serverStreaming )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__MethodDescriptorProto`. This is mostly useful for internals, like documentation generation.
@@ -3516,15 +3454,13 @@ jsonEncodeProto__Google__Protobuf__ServiceDescriptorProto :
     Proto__Google__Protobuf__ServiceDescriptorProto -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__ServiceDescriptorProto value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "method", (Json.Encode.list jsonEncodeProto__Google__Protobuf__MethodDescriptorProto) value.method ) ]
-            , [ ( "options"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__ServiceOptions >> Maybe.withDefault Json.Encode.null)
-                    value.options
-                )
-              ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "method", (Json.Encode.list jsonEncodeProto__Google__Protobuf__MethodDescriptorProto) value.method )
+        , ( "options"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__ServiceOptions >> Maybe.withDefault Json.Encode.null)
+                value.options
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__ServiceDescriptorProto`. This is mostly useful for internals, like documentation generation.
@@ -3613,15 +3549,13 @@ jsonEncodeProto__Google__Protobuf__EnumValueDescriptorProto :
     Proto__Google__Protobuf__EnumValueDescriptorProto -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__EnumValueDescriptorProto value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "number", Json.Encode.int value.number ) ]
-            , [ ( "options"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__EnumValueOptions >> Maybe.withDefault Json.Encode.null)
-                    value.options
-                )
-              ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "number", Json.Encode.int value.number )
+        , ( "options"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__EnumValueOptions >> Maybe.withDefault Json.Encode.null)
+                value.options
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__EnumValueDescriptorProto`. This is mostly useful for internals, like documentation generation.
@@ -3708,22 +3642,18 @@ jsonEncodeProto__Google__Protobuf__EnumDescriptorProto :
     Proto__Google__Protobuf__EnumDescriptorProto -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__EnumDescriptorProto value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "value", (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumValueDescriptorProto) value.value )
-              ]
-            , [ ( "options"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__EnumOptions >> Maybe.withDefault Json.Encode.null)
-                    value.options
-                )
-              ]
-            , [ ( "reservedRange"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange)
-                    value.reservedRange
-                )
-              ]
-            , [ ( "reservedName", (Json.Encode.list Json.Encode.string) value.reservedName ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "value", (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumValueDescriptorProto) value.value )
+        , ( "options"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__EnumOptions >> Maybe.withDefault Json.Encode.null)
+                value.options
+          )
+        , ( "reservedRange"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange)
+                value.reservedRange
+          )
+        , ( "reservedName", (Json.Encode.list Json.Encode.string) value.reservedName )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__EnumDescriptorProto`. This is mostly useful for internals, like documentation generation.
@@ -3825,14 +3755,12 @@ jsonEncodeProto__Google__Protobuf__OneofDescriptorProto :
     Proto__Google__Protobuf__OneofDescriptorProto -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__OneofDescriptorProto value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "options"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__OneofOptions >> Maybe.withDefault Json.Encode.null)
-                    value.options
-                )
-              ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "options"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__OneofOptions >> Maybe.withDefault Json.Encode.null)
+                value.options
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__OneofDescriptorProto`. This is mostly useful for internals, like documentation generation.
@@ -3938,23 +3866,21 @@ jsonEncodeProto__Google__Protobuf__FieldDescriptorProto :
     Proto__Google__Protobuf__FieldDescriptorProto -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__FieldDescriptorProto value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "number", Json.Encode.int value.number ) ]
-            , [ ( "label", Proto.Google.Protobuf.FieldDescriptorProto.Label.jsonEncodeLabel value.label ) ]
-            , [ ( "type", Proto.Google.Protobuf.FieldDescriptorProto.Type.jsonEncodeType value.type_ ) ]
-            , [ ( "typeName", Json.Encode.string value.typeName ) ]
-            , [ ( "extendee", Json.Encode.string value.extendee ) ]
-            , [ ( "defaultValue", Json.Encode.string value.defaultValue ) ]
-            , [ ( "oneofIndex", Json.Encode.int value.oneofIndex ) ]
-            , [ ( "jsonName", Json.Encode.string value.jsonName ) ]
-            , [ ( "options"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__FieldOptions >> Maybe.withDefault Json.Encode.null)
-                    value.options
-                )
-              ]
-            , [ ( "proto3Optional", Json.Encode.bool value.proto3Optional ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "number", Json.Encode.int value.number )
+        , ( "label", Proto.Google.Protobuf.FieldDescriptorProto.Label.jsonEncodeLabel value.label )
+        , ( "type", Proto.Google.Protobuf.FieldDescriptorProto.Type.jsonEncodeType value.type_ )
+        , ( "typeName", Json.Encode.string value.typeName )
+        , ( "extendee", Json.Encode.string value.extendee )
+        , ( "defaultValue", Json.Encode.string value.defaultValue )
+        , ( "oneofIndex", Json.Encode.int value.oneofIndex )
+        , ( "jsonName", Json.Encode.string value.jsonName )
+        , ( "options"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__FieldOptions >> Maybe.withDefault Json.Encode.null)
+                value.options
+          )
+        , ( "proto3Optional", Json.Encode.bool value.proto3Optional )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__FieldDescriptorProto`. This is mostly useful for internals, like documentation generation.
@@ -4101,12 +4027,10 @@ jsonEncodeProto__Google__Protobuf__ExtensionRangeOptions :
     Proto__Google__Protobuf__ExtensionRangeOptions -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__ExtensionRangeOptions value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "uninterpretedOption"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
-                )
-              ]
-            ]
+        [ ( "uninterpretedOption"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__UninterpretedOption) value.uninterpretedOption
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__ExtensionRangeOptions`. This is mostly useful for internals, like documentation generation.
@@ -4204,45 +4128,29 @@ jsonDecodeProto__Google__Protobuf__DescriptorProto =
 jsonEncodeProto__Google__Protobuf__DescriptorProto : Proto__Google__Protobuf__DescriptorProto -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__DescriptorProto value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "field", (Json.Encode.list jsonEncodeProto__Google__Protobuf__FieldDescriptorProto) value.field ) ]
-            , [ ( "extension"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__FieldDescriptorProto) value.extension
-                )
-              ]
-            , [ ( "nestedType"
-                , (Json.Encode.list
-                      (unwrapProto__Google__Protobuf__DescriptorProto
-                          >> jsonEncodeProto__Google__Protobuf__DescriptorProto
-                      )
-                  )
-                    value.nestedType
-                )
-              ]
-            , [ ( "enumType", (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumDescriptorProto) value.enumType )
-              ]
-            , [ ( "extensionRange"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__DescriptorProto__ExtensionRange)
-                    value.extensionRange
-                )
-              ]
-            , [ ( "oneofDecl"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__OneofDescriptorProto) value.oneofDecl
-                )
-              ]
-            , [ ( "options"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__MessageOptions >> Maybe.withDefault Json.Encode.null)
-                    value.options
-                )
-              ]
-            , [ ( "reservedRange"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__DescriptorProto__ReservedRange)
-                    value.reservedRange
-                )
-              ]
-            , [ ( "reservedName", (Json.Encode.list Json.Encode.string) value.reservedName ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "field", (Json.Encode.list jsonEncodeProto__Google__Protobuf__FieldDescriptorProto) value.field )
+        , ( "extension", (Json.Encode.list jsonEncodeProto__Google__Protobuf__FieldDescriptorProto) value.extension )
+        , ( "nestedType"
+          , (Json.Encode.list
+                (unwrapProto__Google__Protobuf__DescriptorProto >> jsonEncodeProto__Google__Protobuf__DescriptorProto)
+            )
+                value.nestedType
+          )
+        , ( "enumType", (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumDescriptorProto) value.enumType )
+        , ( "extensionRange"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__DescriptorProto__ExtensionRange) value.extensionRange
+          )
+        , ( "oneofDecl", (Json.Encode.list jsonEncodeProto__Google__Protobuf__OneofDescriptorProto) value.oneofDecl )
+        , ( "options"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__MessageOptions >> Maybe.withDefault Json.Encode.null)
+                value.options
+          )
+        , ( "reservedRange"
+          , (Json.Encode.list jsonEncodeProto__Google__Protobuf__DescriptorProto__ReservedRange) value.reservedRange
+          )
+        , ( "reservedName", (Json.Encode.list Json.Encode.string) value.reservedName )
+        ]
 
 
 {-| Unwrap a `DescriptorProto` from its wrapper `DescriptorProto_.`
@@ -4462,38 +4370,25 @@ jsonEncodeProto__Google__Protobuf__FileDescriptorProto :
     Proto__Google__Protobuf__FileDescriptorProto -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__FileDescriptorProto value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "package", Json.Encode.string value.package ) ]
-            , [ ( "dependency", (Json.Encode.list Json.Encode.string) value.dependency ) ]
-            , [ ( "publicDependency", (Json.Encode.list Json.Encode.int) value.publicDependency ) ]
-            , [ ( "weakDependency", (Json.Encode.list Json.Encode.int) value.weakDependency ) ]
-            , [ ( "messageType"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__DescriptorProto) value.messageType
-                )
-              ]
-            , [ ( "enumType", (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumDescriptorProto) value.enumType )
-              ]
-            , [ ( "service"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__ServiceDescriptorProto) value.service
-                )
-              ]
-            , [ ( "extension"
-                , (Json.Encode.list jsonEncodeProto__Google__Protobuf__FieldDescriptorProto) value.extension
-                )
-              ]
-            , [ ( "options"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__FileOptions >> Maybe.withDefault Json.Encode.null)
-                    value.options
-                )
-              ]
-            , [ ( "sourceCodeInfo"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__SourceCodeInfo >> Maybe.withDefault Json.Encode.null)
-                    value.sourceCodeInfo
-                )
-              ]
-            , [ ( "syntax", Json.Encode.string value.syntax ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "package", Json.Encode.string value.package )
+        , ( "dependency", (Json.Encode.list Json.Encode.string) value.dependency )
+        , ( "publicDependency", (Json.Encode.list Json.Encode.int) value.publicDependency )
+        , ( "weakDependency", (Json.Encode.list Json.Encode.int) value.weakDependency )
+        , ( "messageType", (Json.Encode.list jsonEncodeProto__Google__Protobuf__DescriptorProto) value.messageType )
+        , ( "enumType", (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumDescriptorProto) value.enumType )
+        , ( "service", (Json.Encode.list jsonEncodeProto__Google__Protobuf__ServiceDescriptorProto) value.service )
+        , ( "extension", (Json.Encode.list jsonEncodeProto__Google__Protobuf__FieldDescriptorProto) value.extension )
+        , ( "options"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__FileOptions >> Maybe.withDefault Json.Encode.null)
+                value.options
+          )
+        , ( "sourceCodeInfo"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__SourceCodeInfo >> Maybe.withDefault Json.Encode.null)
+                value.sourceCodeInfo
+          )
+        , ( "syntax", Json.Encode.string value.syntax )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__FileDescriptorProto`. This is mostly useful for internals, like documentation generation.
@@ -4657,8 +4552,7 @@ jsonDecodeProto__Google__Protobuf__FileDescriptorSet =
 jsonEncodeProto__Google__Protobuf__FileDescriptorSet : Proto__Google__Protobuf__FileDescriptorSet -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__FileDescriptorSet value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "file", (Json.Encode.list jsonEncodeProto__Google__Protobuf__FileDescriptorProto) value.file ) ] ]
+        [ ( "file", (Json.Encode.list jsonEncodeProto__Google__Protobuf__FileDescriptorProto) value.file ) ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__FileDescriptorSet`. This is mostly useful for internals, like documentation generation.
@@ -4720,8 +4614,7 @@ jsonDecodeProto__Google__Protobuf__Mixin =
 -}
 jsonEncodeProto__Google__Protobuf__Mixin : Proto__Google__Protobuf__Mixin -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Mixin value =
-    Json.Encode.object <|
-        List.concat [ [ ( "name", Json.Encode.string value.name ) ], [ ( "root", Json.Encode.string value.root ) ] ]
+    Json.Encode.object <| [ ( "name", Json.Encode.string value.name ), ( "root", Json.Encode.string value.root ) ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Mixin`. This is mostly useful for internals, like documentation generation.
@@ -4799,15 +4692,14 @@ jsonDecodeProto__Google__Protobuf__Method =
 jsonEncodeProto__Google__Protobuf__Method : Proto__Google__Protobuf__Method -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Method value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "requestTypeUrl", Json.Encode.string value.requestTypeUrl ) ]
-            , [ ( "requestStreaming", Json.Encode.bool value.requestStreaming ) ]
-            , [ ( "responseTypeUrl", Json.Encode.string value.responseTypeUrl ) ]
-            , [ ( "responseStreaming", Json.Encode.bool value.responseStreaming ) ]
-            , [ ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options ) ]
-            , [ ( "syntax", Proto.Google.Protobuf.Syntax.jsonEncodeSyntax value.syntax ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "requestTypeUrl", Json.Encode.string value.requestTypeUrl )
+        , ( "requestStreaming", Json.Encode.bool value.requestStreaming )
+        , ( "responseTypeUrl", Json.Encode.string value.responseTypeUrl )
+        , ( "responseStreaming", Json.Encode.bool value.responseStreaming )
+        , ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options )
+        , ( "syntax", Proto.Google.Protobuf.Syntax.jsonEncodeSyntax value.syntax )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Method`. This is mostly useful for internals, like documentation generation.
@@ -4922,19 +4814,17 @@ jsonDecodeProto__Google__Protobuf__Api =
 jsonEncodeProto__Google__Protobuf__Api : Proto__Google__Protobuf__Api -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Api value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "methods", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Method) value.methods ) ]
-            , [ ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options ) ]
-            , [ ( "version", Json.Encode.string value.version ) ]
-            , [ ( "sourceContext"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__SourceContext >> Maybe.withDefault Json.Encode.null)
-                    value.sourceContext
-                )
-              ]
-            , [ ( "mixins", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Mixin) value.mixins ) ]
-            , [ ( "syntax", Proto.Google.Protobuf.Syntax.jsonEncodeSyntax value.syntax ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "methods", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Method) value.methods )
+        , ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options )
+        , ( "version", Json.Encode.string value.version )
+        , ( "sourceContext"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__SourceContext >> Maybe.withDefault Json.Encode.null)
+                value.sourceContext
+          )
+        , ( "mixins", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Mixin) value.mixins )
+        , ( "syntax", Proto.Google.Protobuf.Syntax.jsonEncodeSyntax value.syntax )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Api`. This is mostly useful for internals, like documentation generation.
@@ -5033,13 +4923,11 @@ jsonDecodeProto__Google__Protobuf__Option =
 jsonEncodeProto__Google__Protobuf__Option : Proto__Google__Protobuf__Option -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Option value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "value"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__Any >> Maybe.withDefault Json.Encode.null) value.value
-                )
-              ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "value"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__Any >> Maybe.withDefault Json.Encode.null) value.value
+          )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Option`. This is mostly useful for internals, like documentation generation.
@@ -5109,11 +4997,10 @@ jsonDecodeProto__Google__Protobuf__EnumValue =
 jsonEncodeProto__Google__Protobuf__EnumValue : Proto__Google__Protobuf__EnumValue -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__EnumValue value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "number", Json.Encode.int value.number ) ]
-            , [ ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "number", Json.Encode.int value.number )
+        , ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__EnumValue`. This is mostly useful for internals, like documentation generation.
@@ -5189,17 +5076,15 @@ jsonDecodeProto__Google__Protobuf__Enum =
 jsonEncodeProto__Google__Protobuf__Enum : Proto__Google__Protobuf__Enum -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Enum value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "enumvalue", (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumValue) value.enumvalue ) ]
-            , [ ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options ) ]
-            , [ ( "sourceContext"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__SourceContext >> Maybe.withDefault Json.Encode.null)
-                    value.sourceContext
-                )
-              ]
-            , [ ( "syntax", Proto.Google.Protobuf.Syntax.jsonEncodeSyntax value.syntax ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "enumvalue", (Json.Encode.list jsonEncodeProto__Google__Protobuf__EnumValue) value.enumvalue )
+        , ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options )
+        , ( "sourceContext"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__SourceContext >> Maybe.withDefault Json.Encode.null)
+                value.sourceContext
+          )
+        , ( "syntax", Proto.Google.Protobuf.Syntax.jsonEncodeSyntax value.syntax )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Enum`. This is mostly useful for internals, like documentation generation.
@@ -5310,18 +5195,17 @@ jsonDecodeProto__Google__Protobuf__Field =
 jsonEncodeProto__Google__Protobuf__Field : Proto__Google__Protobuf__Field -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Field value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "kind", Proto.Google.Protobuf.Field.Kind.jsonEncodeKind value.kind ) ]
-            , [ ( "cardinality", Proto.Google.Protobuf.Field.Cardinality.jsonEncodeCardinality value.cardinality ) ]
-            , [ ( "number", Json.Encode.int value.number ) ]
-            , [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "typeUrl", Json.Encode.string value.typeUrl ) ]
-            , [ ( "oneofIndex", Json.Encode.int value.oneofIndex ) ]
-            , [ ( "packed", Json.Encode.bool value.packed ) ]
-            , [ ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options ) ]
-            , [ ( "jsonName", Json.Encode.string value.jsonName ) ]
-            , [ ( "defaultValue", Json.Encode.string value.defaultValue ) ]
-            ]
+        [ ( "kind", Proto.Google.Protobuf.Field.Kind.jsonEncodeKind value.kind )
+        , ( "cardinality", Proto.Google.Protobuf.Field.Cardinality.jsonEncodeCardinality value.cardinality )
+        , ( "number", Json.Encode.int value.number )
+        , ( "name", Json.Encode.string value.name )
+        , ( "typeUrl", Json.Encode.string value.typeUrl )
+        , ( "oneofIndex", Json.Encode.int value.oneofIndex )
+        , ( "packed", Json.Encode.bool value.packed )
+        , ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options )
+        , ( "jsonName", Json.Encode.string value.jsonName )
+        , ( "defaultValue", Json.Encode.string value.defaultValue )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Field`. This is mostly useful for internals, like documentation generation.
@@ -5456,18 +5340,16 @@ jsonDecodeProto__Google__Protobuf__Type =
 jsonEncodeProto__Google__Protobuf__Type : Proto__Google__Protobuf__Type -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Type value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "name", Json.Encode.string value.name ) ]
-            , [ ( "fields", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Field) value.fields ) ]
-            , [ ( "oneofs", (Json.Encode.list Json.Encode.string) value.oneofs ) ]
-            , [ ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options ) ]
-            , [ ( "sourceContext"
-                , (Maybe.map jsonEncodeProto__Google__Protobuf__SourceContext >> Maybe.withDefault Json.Encode.null)
-                    value.sourceContext
-                )
-              ]
-            , [ ( "syntax", Proto.Google.Protobuf.Syntax.jsonEncodeSyntax value.syntax ) ]
-            ]
+        [ ( "name", Json.Encode.string value.name )
+        , ( "fields", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Field) value.fields )
+        , ( "oneofs", (Json.Encode.list Json.Encode.string) value.oneofs )
+        , ( "options", (Json.Encode.list jsonEncodeProto__Google__Protobuf__Option) value.options )
+        , ( "sourceContext"
+          , (Maybe.map jsonEncodeProto__Google__Protobuf__SourceContext >> Maybe.withDefault Json.Encode.null)
+                value.sourceContext
+          )
+        , ( "syntax", Proto.Google.Protobuf.Syntax.jsonEncodeSyntax value.syntax )
+        ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Type`. This is mostly useful for internals, like documentation generation.
@@ -5558,7 +5440,7 @@ jsonDecodeProto__Google__Protobuf__SourceContext =
 -}
 jsonEncodeProto__Google__Protobuf__SourceContext : Proto__Google__Protobuf__SourceContext -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__SourceContext value =
-    Json.Encode.object <| List.concat [ [ ( "fileName", Json.Encode.string value.fileName ) ] ]
+    Json.Encode.object <| [ ( "fileName", Json.Encode.string value.fileName ) ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__SourceContext`. This is mostly useful for internals, like documentation generation.
@@ -5621,10 +5503,7 @@ jsonDecodeProto__Google__Protobuf__Any =
 jsonEncodeProto__Google__Protobuf__Any : Proto__Google__Protobuf__Any -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Any value =
     Json.Encode.object <|
-        List.concat
-            [ [ ( "typeUrl", Json.Encode.string value.typeUrl ) ]
-            , [ ( "value", Protobuf.Utils.Bytes.jsonEncoder value.value ) ]
-            ]
+        [ ( "typeUrl", Json.Encode.string value.typeUrl ), ( "value", Protobuf.Utils.Bytes.jsonEncoder value.value ) ]
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Any`. This is mostly useful for internals, like documentation generation.
