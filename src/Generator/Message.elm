@@ -634,7 +634,10 @@ toJsonDecoder ( fieldName, field ) =
                     C.apply
                         [ Meta.JsonDecode.field
                         , C.string fieldName.jsonName
-                        , C.apply [ Meta.JsonDecode.list, fieldTypeToJsonDecoder fieldType cardinality ]
+                        , Meta.JsonDecode.oneOf
+                            [ C.apply [ Meta.JsonDecode.list, fieldTypeToJsonDecoder fieldType cardinality ]
+                            , C.apply [ Meta.JsonDecode.null, C.list [] ]
+                            ]
                         ]
 
         MapField _ key value ->

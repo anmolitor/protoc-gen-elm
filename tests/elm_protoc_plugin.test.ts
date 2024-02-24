@@ -765,6 +765,16 @@ describe("protoc-gen-elm", () => {
     });
   });
 
+  describe("repeated", () => {
+    it("json decoding accepts null as an empty list", async () => {
+      await repl.importModules("Proto.Rep");
+      const output = await repl.write(
+        `Ok { ints = [] } == JD.decodeString Proto.Rep.jsonDecodeRepeat "{\\"ints\\":null}"`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+
   describe("well-known-types", () => {
     it("json timestamp encoding", async () => {
       await repl.importModules("Proto.Time");

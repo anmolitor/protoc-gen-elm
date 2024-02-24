@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package rep;
+
+message Repeat {
+  repeated int32 ints = 1;
+}

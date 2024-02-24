@@ -202,7 +202,11 @@ jsonDecodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse =
         )
         (Json.Decode.field
             "file"
-            (Json.Decode.list jsonDecodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File)
+            (Json.Decode.oneOf
+                [ Json.Decode.list jsonDecodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse__File
+                , Json.Decode.null []
+                ]
+            )
         )
 
 
@@ -288,11 +292,19 @@ jsonDecodeProto__Google__Protobuf__Compiler__CodeGeneratorRequest :
 jsonDecodeProto__Google__Protobuf__Compiler__CodeGeneratorRequest =
     Json.Decode.map4
         Proto__Google__Protobuf__Compiler__CodeGeneratorRequest
-        (Json.Decode.field "fileToGenerate" (Json.Decode.list Json.Decode.string))
+        (Json.Decode.field
+            "fileToGenerate"
+            (Json.Decode.oneOf [ Json.Decode.list Json.Decode.string, Json.Decode.null [] ])
+        )
         (Json.Decode.maybe (Json.Decode.field "parameter" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault ""))
         (Json.Decode.field
             "protoFile"
-            (Json.Decode.list Proto.Google.Protobuf.Internals_.jsonDecodeProto__Google__Protobuf__FileDescriptorProto)
+            (Json.Decode.oneOf
+                [ Json.Decode.list
+                    Proto.Google.Protobuf.Internals_.jsonDecodeProto__Google__Protobuf__FileDescriptorProto
+                , Json.Decode.null []
+                ]
+            )
         )
         (Json.Decode.maybe
             (Json.Decode.field

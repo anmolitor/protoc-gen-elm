@@ -77,8 +77,10 @@ Below is a list which ones have been implemented so far.
 - Using json_name option to override field names ✔️
 - Enum decoding via enum variant names in .proto file ✔️
 - Enum decoding via field numbers in .proto file ✔️
-- Accepting `null` as the empty list ❌
-- Accepting `Infinity`, `-Infinity`, `NaN` as floats ❌
+- Accepting `null` as the empty list ✔️
+- Accepting `Infinity`, `-Infinity`, `NaN` as floats/doubles ❌
+- Accepting floats/doubles in String format ❌
+- Accepting floats/doubles in Exponent Notation ❌
 - Encoding/Decoding Timestamps in ISO Format ✔️
 - Encoding/Decoding Durations in fractional second-based format ❌
 - Encoding/Decoding `google.protobuf.Struct` as a JSON object ✔️
