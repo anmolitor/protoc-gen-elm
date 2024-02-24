@@ -834,5 +834,17 @@ describe("protoc-gen-elm", () => {
       );
       expect(output).toEqual(expect.stringContaining("True"));
     });
+
+    it("json value type encodes/decodes any json", async () => {
+      const anyJson = JSON.stringify({
+        hi: ["test", 5, true, null, 6.8, { obj: "abc" }],
+        wow: null,
+      }).replace(/"/g, '\\"');
+      await repl.importModules("Proto.Google.Protobuf");
+      const jsonOutput = await repl.write(
+        `JD.decodeString Proto.Google.Protobuf.jsonDecodeValue "${anyJson}" |> Result.map (Proto.Google.Protobuf.jsonEncodeValue >> JE.encode 0)`
+      );
+      expect(jsonOutput).toEqual(expect.stringContaining(anyJson));
+    });
   });
 });

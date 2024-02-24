@@ -382,7 +382,6 @@ import Bytes
 import Dict
 import Json.Decode
 import Json.Encode
-import List
 import Maybe
 import Proto.Google.Protobuf.Field.Cardinality
 import Proto.Google.Protobuf.Field.Kind
@@ -406,62 +405,48 @@ import Protobuf.Utils.Timestamp
 {-| Decode a `Proto__Google__Protobuf__Value__Kind__Kind` from JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
 
 -}
-jsonDecodeProto__Google__Protobuf__Value__Kind__Kind :
-    Json.Decode.Decoder (Maybe Proto__Google__Protobuf__Value__Kind__Kind)
+jsonDecodeProto__Google__Protobuf__Value__Kind__Kind : Json.Decode.Decoder Proto__Google__Protobuf__Value__Kind__Kind
 jsonDecodeProto__Google__Protobuf__Value__Kind__Kind =
     Json.Decode.oneOf
-        [ Json.Decode.map
-            (Proto.Google.Protobuf.Value.Kind.NullValue >> Just)
-            Proto.Google.Protobuf.NullValue.jsonDecodeNullValue
-        , Json.Decode.map (Proto.Google.Protobuf.Value.Kind.NumberValue >> Just) Json.Decode.float
-        , Json.Decode.map (Proto.Google.Protobuf.Value.Kind.StringValue >> Just) Json.Decode.string
-        , Json.Decode.map (Proto.Google.Protobuf.Value.Kind.BoolValue >> Just) Json.Decode.bool
+        [ Json.Decode.map Proto.Google.Protobuf.Value.Kind.NullValue Proto.Google.Protobuf.NullValue.jsonDecodeNullValue
+        , Json.Decode.map Proto.Google.Protobuf.Value.Kind.NumberValue Json.Decode.float
+        , Json.Decode.map Proto.Google.Protobuf.Value.Kind.StringValue Json.Decode.string
+        , Json.Decode.map Proto.Google.Protobuf.Value.Kind.BoolValue Json.Decode.bool
+        , Json.Decode.lazy <|
+            \_ -> Json.Decode.map Proto.Google.Protobuf.Value.Kind.StructValue jsonDecodeProto__Google__Protobuf__Struct
         , Json.Decode.lazy <|
             \_ ->
                 Json.Decode.map
-                    (Proto.Google.Protobuf.Value.Kind.StructValue >> Just)
-                    jsonDecodeProto__Google__Protobuf__Struct
-        , Json.Decode.lazy <|
-            \_ ->
-                Json.Decode.map
-                    (Proto.Google.Protobuf.Value.Kind.ListValue >> Just)
+                    Proto.Google.Protobuf.Value.Kind.ListValue
                     (Json.Decode.map Proto__Google__Protobuf__ListValue_ <|
                          Json.Decode.lazy <| \_ -> jsonDecodeProto__Google__Protobuf__ListValue
                     )
-        , Json.Decode.succeed Nothing
         ]
 
 
 {-| Encode a `Proto__Google__Protobuf__Value__Kind__Kind` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
 
 -}
-jsonEncodeProto__Google__Protobuf__Value__Kind__Kind :
-    Maybe Proto__Google__Protobuf__Value__Kind__Kind -> List ( String, Json.Encode.Value )
+jsonEncodeProto__Google__Protobuf__Value__Kind__Kind : Proto__Google__Protobuf__Value__Kind__Kind -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Value__Kind__Kind value =
     case value of
-        Nothing ->
-            []
+        Proto.Google.Protobuf.Value.Kind.NullValue innerValue ->
+            Proto.Google.Protobuf.NullValue.jsonEncodeNullValue innerValue
 
-        Just (Proto.Google.Protobuf.Value.Kind.NullValue innerValue) ->
-            [ ( "nullValue", Proto.Google.Protobuf.NullValue.jsonEncodeNullValue innerValue ) ]
+        Proto.Google.Protobuf.Value.Kind.NumberValue innerValue ->
+            Json.Encode.float innerValue
 
-        Just (Proto.Google.Protobuf.Value.Kind.NumberValue innerValue) ->
-            [ ( "numberValue", Json.Encode.float innerValue ) ]
+        Proto.Google.Protobuf.Value.Kind.StringValue innerValue ->
+            Json.Encode.string innerValue
 
-        Just (Proto.Google.Protobuf.Value.Kind.StringValue innerValue) ->
-            [ ( "stringValue", Json.Encode.string innerValue ) ]
+        Proto.Google.Protobuf.Value.Kind.BoolValue innerValue ->
+            Json.Encode.bool innerValue
 
-        Just (Proto.Google.Protobuf.Value.Kind.BoolValue innerValue) ->
-            [ ( "boolValue", Json.Encode.bool innerValue ) ]
+        Proto.Google.Protobuf.Value.Kind.StructValue innerValue ->
+            jsonEncodeProto__Google__Protobuf__Struct innerValue
 
-        Just (Proto.Google.Protobuf.Value.Kind.StructValue innerValue) ->
-            [ ( "structValue", jsonEncodeProto__Google__Protobuf__Struct innerValue ) ]
-
-        Just (Proto.Google.Protobuf.Value.Kind.ListValue innerValue) ->
-            [ ( "listValue"
-              , (unwrapProto__Google__Protobuf__ListValue >> jsonEncodeProto__Google__Protobuf__ListValue) innerValue
-              )
-            ]
+        Proto.Google.Protobuf.Value.Kind.ListValue innerValue ->
+            (unwrapProto__Google__Protobuf__ListValue >> jsonEncodeProto__Google__Protobuf__ListValue) innerValue
 
 
 {-| Unwrap a `ListValue` from its wrapper `ListValue_.`
@@ -532,28 +517,25 @@ decodeProto__Google__Protobuf__Value__Kind__Kind =
 
 -}
 encodeProto__Google__Protobuf__Value__Kind__Kind :
-    Maybe Proto__Google__Protobuf__Value__Kind__Kind -> ( Int, Protobuf.Encode.Encoder )
+    Proto__Google__Protobuf__Value__Kind__Kind -> ( Int, Protobuf.Encode.Encoder )
 encodeProto__Google__Protobuf__Value__Kind__Kind value =
     case value of
-        Nothing ->
-            ( 0, Protobuf.Encode.none )
-
-        Just (Proto.Google.Protobuf.Value.Kind.NullValue innerValue) ->
+        Proto.Google.Protobuf.Value.Kind.NullValue innerValue ->
             ( 1, Proto.Google.Protobuf.NullValue.encodeNullValue innerValue )
 
-        Just (Proto.Google.Protobuf.Value.Kind.NumberValue innerValue) ->
+        Proto.Google.Protobuf.Value.Kind.NumberValue innerValue ->
             ( 2, Protobuf.Encode.double innerValue )
 
-        Just (Proto.Google.Protobuf.Value.Kind.StringValue innerValue) ->
+        Proto.Google.Protobuf.Value.Kind.StringValue innerValue ->
             ( 3, Protobuf.Encode.string innerValue )
 
-        Just (Proto.Google.Protobuf.Value.Kind.BoolValue innerValue) ->
+        Proto.Google.Protobuf.Value.Kind.BoolValue innerValue ->
             ( 4, Protobuf.Encode.bool innerValue )
 
-        Just (Proto.Google.Protobuf.Value.Kind.StructValue innerValue) ->
+        Proto.Google.Protobuf.Value.Kind.StructValue innerValue ->
             ( 5, encodeProto__Google__Protobuf__Struct innerValue )
 
-        Just (Proto.Google.Protobuf.Value.Kind.ListValue innerValue) ->
+        Proto.Google.Protobuf.Value.Kind.ListValue innerValue ->
             ( 6, (unwrapProto__Google__Protobuf__ListValue >> encodeProto__Google__Protobuf__ListValue) innerValue )
 
 
@@ -1736,7 +1718,7 @@ jsonDecodeProto__Google__Protobuf__Value =
 -}
 jsonEncodeProto__Google__Protobuf__Value : Proto__Google__Protobuf__Value -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Value value =
-    Json.Encode.object <| List.concat [ jsonEncodeProto__Google__Protobuf__Value__Kind__Kind value.kind ]
+    jsonEncodeProto__Google__Protobuf__Value__Kind__Kind value.kind
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Value`. This is mostly useful for internals, like documentation generation.
@@ -1752,7 +1734,7 @@ fieldNumbersProto__Google__Protobuf__Value =
 -}
 defaultProto__Google__Protobuf__Value : Proto__Google__Protobuf__Value
 defaultProto__Google__Protobuf__Value =
-    { kind = Nothing }
+    { kind = Proto.Google.Protobuf.Value.Kind.NullValue Proto.Google.Protobuf.NullValue.NULLVALUE }
 
 
 {-| Declares how to decode a `Proto__Google__Protobuf__Value` from Bytes. To actually perform the conversion from Bytes, you need to use Protobuf.Decode.decode from eriktim/elm-protocol-buffers.
@@ -1762,7 +1744,16 @@ decodeProto__Google__Protobuf__Value : Protobuf.Decode.Decoder Proto__Google__Pr
 decodeProto__Google__Protobuf__Value =
     Protobuf.Decode.message
         defaultProto__Google__Protobuf__Value
-        [ decodeProto__Google__Protobuf__Value__Kind__Kind (\a r -> { r | kind = a }) ]
+        [ decodeProto__Google__Protobuf__Value__Kind__Kind
+            (\a r ->
+                case a of
+                    Just i ->
+                        { r | kind = i }
+
+                    Nothing ->
+                        r
+            )
+        ]
 
 
 {-| Declares how to encode a `Proto__Google__Protobuf__Value` to Bytes. To actually perform the conversion to Bytes, you need to use Protobuf.Encode.encode from eriktim/elm-protocol-buffers.
@@ -1777,7 +1768,7 @@ encodeProto__Google__Protobuf__Value value =
 
 -}
 type alias Proto__Google__Protobuf__Value =
-    { kind : Maybe Proto__Google__Protobuf__Value__Kind__Kind }
+    { kind : Proto__Google__Protobuf__Value__Kind__Kind }
 
 
 {-| Decode a `Proto__Google__Protobuf__Struct` from JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json

@@ -76,163 +76,278 @@ toAST opts { oneOfName, options } =
                 )
 
         encoder =
-            C.funDecl (Just <| Common.encoderDocumentation dataType)
-                (Just <| C.funAnn (C.maybeAnn <| C.typed dataType []) (C.tupleAnn [ C.intAnn, C.fqTyped Meta.Encode.moduleName "Encoder" [] ]))
-                (Common.encoderName dataType)
-                [ C.varPattern "value" ]
-            <|
-                C.caseExpr
-                    (C.val "value")
-                    (( C.namedPattern "Nothing" [], C.tuple [ C.int 0, Meta.Encode.none ] )
-                        :: List.map
-                            (\o ->
-                                let
-                                    ( optModName, optDataType ) =
-                                        Mapper.Name.externalize o.dataType
-                                in
-                                ( C.namedPattern "Just" [ C.parensPattern (C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]) ]
-                                , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required o.fieldType, C.val "innerValue" ] ]
+            case dataType of
+                "Proto__Google__Protobuf__Value__Kind__Kind" ->
+                    C.funDecl (Just <| Common.encoderDocumentation dataType)
+                        (Just <| C.funAnn (C.typed dataType []) (C.tupleAnn [ C.intAnn, C.fqTyped Meta.Encode.moduleName "Encoder" [] ]))
+                        (Common.encoderName dataType)
+                        [ C.varPattern "value" ]
+                    <|
+                        C.caseExpr
+                            (C.val "value")
+                            (List.map
+                                (\o ->
+                                    let
+                                        ( optModName, optDataType ) =
+                                            Mapper.Name.externalize o.dataType
+                                    in
+                                    ( C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]
+                                    , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required o.fieldType, C.val "innerValue" ] ]
+                                    )
                                 )
+                                options
                             )
-                            options
-                    )
+
+                _ ->
+                    C.funDecl (Just <| Common.encoderDocumentation dataType)
+                        (Just <| C.funAnn (C.maybeAnn <| C.typed dataType []) (C.tupleAnn [ C.intAnn, C.fqTyped Meta.Encode.moduleName "Encoder" [] ]))
+                        (Common.encoderName dataType)
+                        [ C.varPattern "value" ]
+                    <|
+                        C.caseExpr
+                            (C.val "value")
+                            (( C.namedPattern "Nothing" [], C.tuple [ C.int 0, Meta.Encode.none ] )
+                                :: List.map
+                                    (\o ->
+                                        let
+                                            ( optModName, optDataType ) =
+                                                Mapper.Name.externalize o.dataType
+                                        in
+                                        ( C.namedPattern "Just" [ C.parensPattern (C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]) ]
+                                        , C.tuple [ C.int o.fieldNumber, C.apply [ fieldTypeToEncoder Required o.fieldType, C.val "innerValue" ] ]
+                                        )
+                                    )
+                                    options
+                            )
 
         jsonEncoder =
-            C.funDecl (Just <| Common.jsonEncoderDocumentation dataType)
-                (Just <| C.funAnn (C.maybeAnn <| C.typed dataType []) <| C.listAnn (C.tupleAnn [ C.stringAnn, Meta.JsonEncode.value ]))
-                (Common.jsonEncoderName dataType)
-                [ C.varPattern "value" ]
-            <|
-                C.caseExpr
-                    (C.val "value")
-                    (( C.namedPattern "Nothing" [], C.list [] )
-                        :: List.map
-                            (\o ->
-                                let
-                                    ( optModName, optDataType ) =
-                                        Mapper.Name.externalize o.dataType
-                                in
-                                ( C.namedPattern "Just" [ C.parensPattern (C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]) ]
-                                , C.list
-                                    [ C.tuple
-                                        [ C.string o.fieldName
-                                        , C.apply
-                                            [ fieldTypeToJsonEncoder Required o.fieldType
-                                            , C.val "innerValue"
-                                            ]
+            case dataType of
+                "Proto__Google__Protobuf__Value__Kind__Kind" ->
+                    C.funDecl (Just <| Common.jsonEncoderDocumentation dataType)
+                        (Just <| C.funAnn (C.typed dataType []) Meta.JsonEncode.value)
+                        (Common.jsonEncoderName dataType)
+                        [ C.varPattern "value" ]
+                    <|
+                        C.caseExpr
+                            (C.val "value")
+                            (List.map
+                                (\o ->
+                                    let
+                                        ( optModName, optDataType ) =
+                                            Mapper.Name.externalize o.dataType
+                                    in
+                                    ( C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]
+                                    , C.apply
+                                        [ fieldTypeToJsonEncoder Required o.fieldType
+                                        , C.val "innerValue"
                                         ]
-                                    ]
+                                    )
                                 )
+                                options
                             )
-                            options
-                    )
+
+                _ ->
+                    C.funDecl (Just <| Common.jsonEncoderDocumentation dataType)
+                        (Just <| C.funAnn (C.maybeAnn <| C.typed dataType []) <| C.listAnn (C.tupleAnn [ C.stringAnn, Meta.JsonEncode.value ]))
+                        (Common.jsonEncoderName dataType)
+                        [ C.varPattern "value" ]
+                    <|
+                        C.caseExpr
+                            (C.val "value")
+                            (( C.namedPattern "Nothing" [], C.list [] )
+                                :: List.map
+                                    (\o ->
+                                        let
+                                            ( optModName, optDataType ) =
+                                                Mapper.Name.externalize o.dataType
+                                        in
+                                        ( C.namedPattern "Just" [ C.parensPattern (C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]) ]
+                                        , C.list
+                                            [ C.tuple
+                                                [ C.string o.fieldName
+                                                , C.apply
+                                                    [ fieldTypeToJsonEncoder Required o.fieldType
+                                                    , C.val "innerValue"
+                                                    ]
+                                                ]
+                                            ]
+                                        )
+                                    )
+                                    options
+                            )
 
         setterAnn x =
             C.funAnn x <| C.funAnn (C.typeVar "a") (C.typeVar "a")
 
         decoder =
-            C.valDecl (Just <| Common.decoderDocumentation dataType)
-                (Just <|
-                    C.funAnn (setterAnn <| C.maybeAnn <| C.typed dataType []) <|
-                        C.fqTyped Meta.Decode.moduleName "FieldDecoder" [ C.typeVar "a" ]
-                )
-                (Common.decoderName dataType)
-            <|
-                C.apply
-                    [ Meta.Decode.oneOf
-                    , C.list
-                        (List.map
-                            (\o ->
-                                let
-                                    wrapEmbeddedWithLazy =
-                                        case o.fieldType of
-                                            Embedded _ ->
-                                                C.applyBinOp Meta.Decode.lazy C.pipel << C.lambda [ C.allPattern ]
-
-                                            _ ->
-                                                identity
-
-                                    ( optModName, optDataType ) =
-                                        Mapper.Name.externalize o.dataType
-                                in
-                                C.tuple
-                                    [ C.int o.fieldNumber
-                                    , wrapEmbeddedWithLazy <|
-                                        C.apply
-                                            [ Meta.Decode.map
-                                            , C.fqVal optModName optDataType
-                                            , case o.fieldType of
-                                                Primitive p _ ->
-                                                    Meta.Decode.forPrimitive p
-
-                                                Embedded e ->
-                                                    Generator.Message.embeddedDecoder e
-
-                                                Enumeration e ->
-                                                    C.fqFun (e.package ++ [ e.name ]) <|
-                                                        Common.decoderName e.name
-                                            ]
-                                    ]
-                            )
-                            options
+            case dataType of
+                "Proto__Google__Protobuf__Value__Kind__Kind" ->
+                    C.valDecl (Just <| Common.decoderDocumentation dataType)
+                        (Just <|
+                            C.funAnn (setterAnn <| C.maybeAnn <| C.typed dataType []) <|
+                                C.fqTyped Meta.Decode.moduleName "FieldDecoder" [ C.typeVar "a" ]
                         )
-                    ]
+                        (Common.decoderName dataType)
+                    <|
+                        C.apply
+                            [ Meta.Decode.oneOf
+                            , C.list
+                                (List.map
+                                    (\o ->
+                                        let
+                                            wrapEmbeddedWithLazy =
+                                                case o.fieldType of
+                                                    Embedded _ ->
+                                                        C.applyBinOp Meta.Decode.lazy C.pipel << C.lambda [ C.allPattern ]
+
+                                                    _ ->
+                                                        identity
+
+                                            ( optModName, optDataType ) =
+                                                Mapper.Name.externalize o.dataType
+                                        in
+                                        C.tuple
+                                            [ C.int o.fieldNumber
+                                            , wrapEmbeddedWithLazy <|
+                                                C.apply
+                                                    [ Meta.Decode.map
+                                                    , C.fqVal optModName optDataType
+                                                    , case o.fieldType of
+                                                        Primitive p _ ->
+                                                            Meta.Decode.forPrimitive p
+
+                                                        Embedded e ->
+                                                            Generator.Message.embeddedDecoder e
+
+                                                        Enumeration e ->
+                                                            C.fqFun (e.package ++ [ e.name ]) <|
+                                                                Common.decoderName e.name
+                                                    ]
+                                            ]
+                                    )
+                                    options
+                                )
+                            ]
+
+                _ ->
+                    C.valDecl (Just <| Common.decoderDocumentation dataType)
+                        (Just <|
+                            C.funAnn (setterAnn <| C.maybeAnn <| C.typed dataType []) <|
+                                C.fqTyped Meta.Decode.moduleName "FieldDecoder" [ C.typeVar "a" ]
+                        )
+                        (Common.decoderName dataType)
+                    <|
+                        C.apply
+                            [ Meta.Decode.oneOf
+                            , C.list
+                                (List.map
+                                    (\o ->
+                                        let
+                                            wrapEmbeddedWithLazy =
+                                                case o.fieldType of
+                                                    Embedded _ ->
+                                                        C.applyBinOp Meta.Decode.lazy C.pipel << C.lambda [ C.allPattern ]
+
+                                                    _ ->
+                                                        identity
+
+                                            ( optModName, optDataType ) =
+                                                Mapper.Name.externalize o.dataType
+                                        in
+                                        C.tuple
+                                            [ C.int o.fieldNumber
+                                            , wrapEmbeddedWithLazy <|
+                                                C.apply
+                                                    [ Meta.Decode.map
+                                                    , C.fqVal optModName optDataType
+                                                    , case o.fieldType of
+                                                        Primitive p _ ->
+                                                            Meta.Decode.forPrimitive p
+
+                                                        Embedded e ->
+                                                            Generator.Message.embeddedDecoder e
+
+                                                        Enumeration e ->
+                                                            C.fqFun (e.package ++ [ e.name ]) <|
+                                                                Common.decoderName e.name
+                                                    ]
+                                            ]
+                                    )
+                                    options
+                                )
+                            ]
 
         jsonDecoder =
-            C.valDecl (Just <| Common.jsonDecoderDocumentation dataType)
-                (Just <| Meta.JsonDecode.decoder (C.maybeAnn <| C.typed dataType []))
-                (Common.jsonDecoderName dataType)
-            <|
-                Meta.JsonDecode.oneOf
-                    (List.map
-                        (\o ->
-                            let
-                                wrapEmbeddedWithLazy =
-                                    case o.fieldType of
-                                        Embedded _ ->
-                                            C.applyBinOp Meta.JsonDecode.lazy C.pipel << C.lambda [ C.allPattern ]
+            let
+                wrapEmbeddedWithLazy o =
+                    case o.fieldType of
+                        Embedded _ ->
+                            C.applyBinOp Meta.JsonDecode.lazy C.pipel << C.lambda [ C.allPattern ]
 
-                                        _ ->
-                                            identity
+                        _ ->
+                            identity
 
-                                ( optModName, optDataType ) =
-                                    Mapper.Name.externalize o.dataType
+                optionFieldDecoder o =
+                    case o.fieldType of
+                        Primitive p _ ->
+                            Meta.JsonDecode.forPrimitive p
 
-                                optionFieldDecoder =
-                                    case o.fieldType of
-                                        Primitive p _ ->
-                                            Meta.JsonDecode.forPrimitive p
+                        Embedded e ->
+                            Generator.Message.embeddedJsonDecoder e
 
-                                        Embedded e ->
-                                            Generator.Message.embeddedJsonDecoder e
-
-                                        Enumeration e ->
-                                            C.fqFun (e.package ++ [ e.name ]) <|
-                                                Common.jsonDecoderName e.name
-                            in
-                            wrapEmbeddedWithLazy <|
-                                case oneOfName of
-                                    "Proto__Google__Protobuf__Value__Kind__Kind" ->
+                        Enumeration e ->
+                            C.fqFun (e.package ++ [ e.name ]) <|
+                                Common.jsonDecoderName e.name
+            in
+            case dataType of
+                "Proto__Google__Protobuf__Value__Kind__Kind" ->
+                    C.valDecl (Just <| Common.jsonDecoderDocumentation dataType)
+                        (Just <| Meta.JsonDecode.decoder (C.typed dataType []))
+                        (Common.jsonDecoderName dataType)
+                    <|
+                        Meta.JsonDecode.oneOf
+                            (List.map
+                                (\o ->
+                                    let
+                                        ( optModName, optDataType ) =
+                                            Mapper.Name.externalize o.dataType
+                                    in
+                                    wrapEmbeddedWithLazy o <|
                                         C.apply
                                             [ Meta.JsonDecode.map
-                                            , C.parens (C.applyBinOp (C.fqVal optModName optDataType) C.composer Meta.Basics.just)
-                                            , optionFieldDecoder
+                                            , C.fqVal optModName optDataType
+                                            , optionFieldDecoder o
                                             ]
+                                )
+                                options
+                            )
 
-                                    _ ->
+                _ ->
+                    C.valDecl (Just <| Common.jsonDecoderDocumentation dataType)
+                        (Just <| Meta.JsonDecode.decoder (C.maybeAnn <| C.typed dataType []))
+                        (Common.jsonDecoderName dataType)
+                    <|
+                        Meta.JsonDecode.oneOf
+                            (List.map
+                                (\o ->
+                                    let
+                                        ( optModName, optDataType ) =
+                                            Mapper.Name.externalize o.dataType
+                                    in
+                                    wrapEmbeddedWithLazy o <|
                                         C.apply
                                             [ Meta.JsonDecode.map
                                             , C.parens (C.applyBinOp (C.fqVal optModName optDataType) C.composer Meta.Basics.just)
                                             , C.apply
                                                 [ Meta.JsonDecode.field
                                                 , C.string o.fieldName
-                                                , optionFieldDecoder
+                                                , optionFieldDecoder o
                                                 ]
                                             ]
-                        )
-                        options
-                        ++ [ C.apply [ C.fqVal Meta.JsonDecode.moduleName "succeed", Meta.Basics.nothing ] ]
-                    )
+                                )
+                                options
+                                ++ [ C.apply [ C.fqVal Meta.JsonDecode.moduleName "succeed", Meta.Basics.nothing ] ]
+                            )
 
         fieldNumbersTypeDecl : C.Declaration
         fieldNumbersTypeDecl =

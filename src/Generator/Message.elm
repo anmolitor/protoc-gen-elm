@@ -162,6 +162,14 @@ toAST options msg =
                     "Proto__Google__Protobuf__Struct" ->
                         C.apply (List.map (Tuple.second >> fieldToJsonEncoder) msg.fields ++ [ C.access (C.val "value") "fields" ])
 
+                    "Proto__Google__Protobuf__Value" ->
+                        case msg.fields of
+                            [ ( fieldName, field ) ] ->
+                                C.apply [ fieldToJsonEncoder field, C.access (C.val "value") fieldName.protoName ]
+
+                            _ ->
+                                C.val "Expected well-known type Value to have a single oneof field"
+
                     _ ->
                         C.applyBinOp Meta.JsonEncode.object
                             C.pipel
@@ -489,8 +497,17 @@ toDefaultValue field =
         MapField _ _ _ ->
             C.fqFun [ "Dict" ] "empty"
 
-        OneOfField _ ->
-            Meta.Basics.nothing
+        OneOfField ref ->
+            case ( ref.package, ref.name ) of
+                ( [ "Proto", "Google", "Protobuf", "Value", "Kind" ], "Kind" ) ->
+                    -- TODO remove the hardcoded paths here
+                    C.apply
+                        [ C.fqVal [ "Proto", "Google", "Protobuf", "Value", "Kind" ] "NullValue"
+                        , C.fqVal [ "Proto", "Google", "Protobuf", "NullValue" ] "NULLVALUE"
+                        ]
+
+                _ ->
+                    Meta.Basics.nothing
 
 
 toDecoder : ( FieldName, Field ) -> C.Expression
@@ -555,10 +572,25 @@ toDecoder ( fieldName, field ) =
                 ]
 
         OneOfField ref ->
-            C.apply
-                [ C.fqFun (Common.internalsModule ref.rootPackage) (Common.decoderName <| Mapper.Name.internalize ( ref.package, ref.name ))
-                , Common.setter fieldName
-                ]
+            case ( ref.package, ref.name ) of
+                ( [ "Proto", "Google", "Protobuf", "Value", "Kind" ], "Kind" ) ->
+                    C.apply
+                        [ C.fqFun (Common.internalsModule ref.rootPackage) (Common.decoderName <| Mapper.Name.internalize ( ref.package, ref.name ))
+                        , C.parens <|
+                            C.lambda
+                                [ C.varPattern "a", C.varPattern "r" ]
+                            <|
+                                C.caseExpr (C.val "a")
+                                    [ ( C.namedPattern "Just" [ C.varPattern "i" ], C.update "r" [ ( fieldName.protoName, C.val "i" ) ] )
+                                    , ( C.namedPattern "Nothing" [], C.val "r" )
+                                    ]
+                        ]
+
+                _ ->
+                    C.apply
+                        [ C.fqFun (Common.internalsModule ref.rootPackage) (Common.decoderName <| Mapper.Name.internalize ( ref.package, ref.name ))
+                        , Common.setter fieldName
+                        ]
 
 
 toJsonDecoder : ( FieldName, Field ) -> C.Expression
@@ -1067,7 +1099,12 @@ fieldToTypeAnnotation field =
                 (fieldTypeToTypeAnnotation value)
 
         OneOfField ref ->
-            C.maybeAnn <| C.fqTyped (Common.internalsModule ref.rootPackage) (Mapper.Name.internalize ( ref.package, ref.name )) []
+            case ( ref.package, ref.name ) of
+                ( [ "Proto", "Google", "Protobuf", "Value", "Kind" ], "Kind" ) ->
+                    C.fqTyped (Common.internalsModule ref.rootPackage) (Mapper.Name.internalize ( ref.package, ref.name )) []
+
+                _ ->
+                    C.maybeAnn <| C.fqTyped (Common.internalsModule ref.rootPackage) (Mapper.Name.internalize ( ref.package, ref.name )) []
 
 
 fieldNumberTypeForField : Field -> C.TypeAnnotation
