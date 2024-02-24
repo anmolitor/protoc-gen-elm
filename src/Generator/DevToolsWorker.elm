@@ -1,4 +1,4 @@
-module Generator.DevToolsWorker exposing (devToolsJsFile, generateDevToolsWorker, devToolsDTsFile)
+module Generator.DevToolsWorker exposing (devToolsDTsFile, devToolsJsFile, generateDevToolsWorker)
 
 import Elm.CodeGen as C
 import Generator.Common as Common
@@ -216,8 +216,13 @@ let responses = new Map();
 const client = {
   client_: {
     rpcCall: (method, req, metadata, info, callback) => {
-      // first argument is error
-      callback(null, responses.get(method));
+      const { body, isError } = responses.get(method);
+      if (isError) {
+        // first argument is error
+        callback(body, null);
+      } else {
+        callback(null, body);
+      }
       responses.delete(method);
     },
   },
@@ -281,21 +286,23 @@ function applyMonkeypatch(decoder) {
       });
       const responseStatus = original.getResponseHeader("grpc-status");
       let resAsJson;
+      let isError = false;
       if (responseStatus && responseStatus !== "0") {
         // error!
+        isError = true;
         const errorMessage = original.getResponseHeader("grpc-message");
         resAsJson = {
-          error: grpcStati[responseStatus],
+          status: grpcStati[responseStatus],
           message: decodeURIComponent(errorMessage),
         };
       } else {
-        resAsJson = await decoder({
+        resAsJson = wrapToObject(await decoder({
           url: serviceAndMethod,
           isRequest: false,
           bytes: bufferToArr(original.response),
-        });
+        }));
       }
-      responses.set(serviceAndMethod, wrapToObject(resAsJson));
+      responses.set(serviceAndMethod, { body: resAsJson, isError });
       client.client_.rpcCall(
         serviceAndMethod,
         wrapToObject(reqAsJson),
