@@ -269,47 +269,63 @@ function applyMonkeypatch(decoder) {
   window.XMLHttpRequest = function () {
     let serviceAndMethod;
     let reqBody;
+    let isGrpcRequest = false;
 
     const original = new ORIGINAL();
 
+    function sendToGrpcDevTools(req, res, isError) {
+      const resAsJson = isError ? res : wrapToObject(res);
+      responses.set(serviceAndMethod, { body: resAsJson, isError });
+      client.client_.rpcCall(
+        serviceAndMethod,
+        wrapToObject(req),
+        null,
+        null,
+        () => {}
+      );
+    }
+
     original.addEventListener("loadend", async () => {
-      if (
-        original.getResponseHeader("content-type") !==
-        "application/grpc-web+proto"
-      ) {
+      if (!isGrpcRequest) {
         return;
       }
+
       const reqAsJson = await decoder({
         url: serviceAndMethod,
         isRequest: true,
         bytes: bufferToArr(reqBody.buffer),
       });
       const responseStatus = original.getResponseHeader("grpc-status");
-      let resAsJson;
-      let isError = false;
-      if (responseStatus && responseStatus !== "0") {
-        // error!
-        isError = true;
-        const errorMessage = original.getResponseHeader("grpc-message");
-        resAsJson = {
-          status: grpcStati[responseStatus],
-          message: decodeURIComponent(errorMessage),
-        };
-      } else {
-        resAsJson = wrapToObject(await decoder({
-          url: serviceAndMethod,
-          isRequest: false,
-          bytes: bufferToArr(original.response),
-        }));
+
+      if (
+        original.getResponseHeader("content-type") !==
+        "application/grpc-web+proto"
+      ) {
+        sendToGrpcDevTools(
+          reqAsJson,
+          { status: original.status, statusText: original.statusText },
+          true
+        );
+        return;
       }
-      responses.set(serviceAndMethod, { body: resAsJson, isError });
-      client.client_.rpcCall(
-        serviceAndMethod,
-        wrapToObject(reqAsJson),
-        null,
-        null,
-        () => {}
-      );
+      if (responseStatus && responseStatus !== "0") {
+        const errorMessage = original.getResponseHeader("grpc-message");
+        sendToGrpcDevTools(
+          reqAsJson,
+          {
+            status: grpcStati[responseStatus],
+            message: decodeURIComponent(errorMessage),
+          },
+          true
+        );
+        return;
+      }
+      const resAsJson = await decoder({
+        url: serviceAndMethod,
+        isRequest: false,
+        bytes: bufferToArr(original.response),
+      });
+      sendToGrpcDevTools(reqAsJson, resAsJson, false);
     });
 
     const originalOpen = original.open.bind(original);
@@ -323,6 +339,17 @@ function applyMonkeypatch(decoder) {
     original.send = function (body) {
       reqBody = body;
       originalSend(body);
+    };
+
+    const originalSetHeader = original.setRequestHeader.bind(original);
+    original.setRequestHeader = function (name, value) {
+      if (
+        ["accept", "content-type"].includes(name.toLowerCase()) &&
+        value === "application/grpc-web+proto"
+      ) {
+        isGrpcRequest = true;
+      }
+      originalSetHeader(name, value);
     };
 
     return original;
