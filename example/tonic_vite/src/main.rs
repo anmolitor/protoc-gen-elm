@@ -56,12 +56,18 @@ impl TodoService for TodoServiceImpl {
         let mut todos = self.todos.write().map_err(into_status)?;
         let AddTodoRequest { todo, user_id } = request.into_inner();
 
-        if let Some(todo) = todo {
-            todos.insert(todo_id, (todo, user_id));
-            let response = AddTodoResponse { todo_id };
-            return Ok(Response::new(response));
+        let Some(todo) = todo else {
+            return Err(Status::invalid_argument("No todo given."));
+        };
+        if todo.title.len() < 3 {
+            return Err(Status::invalid_argument("Title too short (< 3 characters)"));
         }
-        Err(Status::invalid_argument("No todo given."))
+        if todo.description.len() < 3 {
+            return Err(Status::invalid_argument("Description too short (< 3 characters)"));
+        }
+        todos.insert(todo_id, (todo, user_id));
+        let response = AddTodoResponse { todo_id };
+        Ok(Response::new(response))
     }
 
     async fn delete_todo(
