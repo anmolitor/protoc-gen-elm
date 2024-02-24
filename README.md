@@ -2,7 +2,7 @@
 
 This [`protoc`](https://developers.google.com/protocol-buffers/) plug-in generates [Elm](https://elm-lang.org/) modules from `.proto` specification files. The generated modules make use of the [elm-protocol-buffers](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest/) library to handle the (de)serialization. They can be used to transmit bytes over HTTP(S) or via web-sockets. 
 
-Remote Procedure Call (RPC) generation is supported but experimental. If you encounter issues, please open a issue. In the meantime, you can disable gRPC generation with the option `--elm_opt=grpc=false`. If used, you need to add a dependency on the [elm-grpc](https://package.elm-lang.org/packages/anmolitor/elm-grpc/latest/) library.
+Remote Procedure Call (RPC) generation is supported and possible to disable with `--elm_opt=grpc=false`. If used, you need to add a dependency on the [elm-grpc](https://package.elm-lang.org/packages/anmolitor/elm-grpc/latest/) library.
 
 **Take a look [here](https://developers.google.com/protocol-buffers/) for a general introduction on Protocol Buffers.**
 
@@ -20,7 +20,7 @@ Alternatively, you can add protoc as a dev-dependency to your project. This shou
 npm install --save-dev protoc-gen-elm
 ```
 
-**You can now turn any `.proto` file into an Elm module**. A similar approach can be used to generate code for C++, Dart, Go, Java, Python, Ruby, C#, Objective C, JavaScript, PHP or [another language](https://github.com/protocolbuffers/protobuf/blob/master/docs/third_party.md) to build a compliant back-end server!
+**You can now turn any `.proto` file into an Elm module**. A similar approach can be used to generate code for C++, Dart, Go, Java, Python, Ruby, C#, Rust, JavaScript, PHP or [another language](https://github.com/protocolbuffers/protobuf/blob/master/docs/third_party.md) to build a compliant back-end server!
 
 ```
 protoc --elm_out=. api.proto
@@ -70,8 +70,25 @@ Protocol Buffers specify a [canonical json encoding](https://protobuf.dev/progra
 When you pass the additional option `--elm_opt=json` to the protoc invocation, you will get JSON Encoders and Decoders generated.
 If you want to be more granular `--elm_opt=json=encode` or `--elm_opt=json=decode` will only generate one or the other.
 
-**NOTE**: Json Decoding is not yet implemented. If you are interested, feel free to open a PR. Int64 decoding will be tricky and the main work
-will be done in this repository: https://github.com/anmolitor/elm-protoc-utils
+The canonical json encoding has quite a few special cases.
+Below is a list which ones have been implemented so far.
+
+- camelCased json field names as a default ✔️
+- Using json_name option to override field names ✔️
+- Enum decoding via enum variant names in .proto file ✔️
+- Enum decoding via field numbers in .proto file ✔️
+- Accepting `null` as the empty list ❌
+- Accepting `Infinity`, `-Infinity`, `NaN` as floats ❌
+- Encoding/Decoding Timestamps in ISO Format ✔️
+- Encoding/Decoding Durations in fractional second-based format ❌
+- Encoding/Decoding `google.protobuf.Struct` as a JSON object ✔️
+- Encoding/Decoding `google.protobuf.ListValue` as a JSON list ✔️
+- Encoding/Decoding `google.protobuf.ListValue` as a JSON list ✔️
+- Encoding/Decoding `google.protobuf.NullValue` as JSON null ✔️
+- Encoding/Decoding `google.protobuf.Empty` as `{}` ✔️
+- Encoding/Decoding `google.protobuf.Value` into/from any JSON object ✔️
+- Encoding/Decoding `google.protobuf.FieldMask` as list of field names instead of field numbers ❌
+- Special support for `google.protobuf.Any` ❌
 
 ## Grpc Dev Tools
 
@@ -103,9 +120,8 @@ Elm's concept of "Only one solution to solve" a problem has several consequences
 - Protobufs `message`s are product types, `enum`s and `oneof`s are union types. 
 - Each `message` and `enum` generates `encode[name]` and `decode[name]` functions, which integrate seamlessly with elm-protocol-buffers
 - Each `message` and `enum` generates a `default[name]` function, which sets the defaults as seen in the table above
-- `enum`s and `oneof`s generate `fromInternal[name]` and `toInternal[name]` functions. These are needed for use inside of other messages (you will see why in the section "Module Nesting")
-- For serialization, using `toInternal[name]` can be skipped by using lowercase enum constructor functions. I.e. for an ADT constructor `MyCons`
-  of a data type `MyDataType` a function `myCons` is generated, which is equivalent to `MyCons >> toInternalMyDataType`.
+- `enum`s and `oneof`s generate seperate modules, to avoid naming collisions. 
+- `oneof`s come in two forms, one where every constructor includes a generic type and one where all types are applied. These are needed for use inside of other messages (you will see why in the section "Module Nesting")
 
 ### Module Nesting
 
@@ -168,7 +184,7 @@ This might look fine on first glance, but if we try to compile this we get a com
 The only solution to this problem is making a large module for each package, so this is exactly what we do. But if we want to keep the nice, short names, we will get name conflicts. Protoc has no problems with identical names as long as they are in different scopes.
 
 Therefore, we hide the large modules as `.Internals_.elm` modules, which you should not need to use and re-export from other modules with nicer names from there. The only downside: We lose the ability to pattern match on types, since we can not alias constructors.
-So that's the complete explanation why the `fromInternal` and `toInternal` functions exist.
+To not have to generate mapping functions (our solution from v3.x), we instead generate generic union types and apply them in the `.Internals_.elm` module.
 
 ### Recursive Data Types
 
@@ -241,7 +257,6 @@ protoc --elm_out=. test.proto /usr/local/include/google/protobuf/timestamp.proto
 ## Limitations
 
 - All limitations of [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest#known-limitations) apply;
-- This is still a **beta** release. Please report any issues you have generating your Elm modules;
 
 ## Development
 
