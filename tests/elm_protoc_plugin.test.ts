@@ -775,6 +775,40 @@ describe("protoc-gen-elm", () => {
     });
   });
 
+  describe("floats", () => {
+    it('json decoding accepts exponent notation', async () => {
+      await repl.importModules("Proto.Float");
+      const output = await repl.write(
+        `Ok { f = 3.14e3, d = 2.02e5 } == JD.decodeString Proto.Float.jsonDecodeFloats "{\\"f\\":3.14e3,\\"d\\":2.02e5}"`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("json decoding accepts strings", async () => {
+      await repl.importModules("Proto.Float");
+      const output = await repl.write(
+        `Ok { f = 3.14, d = 2.02e5 } == JD.decodeString Proto.Float.jsonDecodeFloats "{\\"f\\":\\"3.14\\",\\"d\\":\\"2.02e5\\"}"`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("json decoding accepts Infinity/-Infinity", async () => {
+      await repl.importModules("Proto.Float");
+      const output = await repl.write(
+        `Ok { f = 1/0, d = -1/0 } == JD.decodeString Proto.Float.jsonDecodeFloats "{\\"f\\":\\"Infinity\\",\\"d\\":\\"-Infinity\\"}"`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+
+    it("json decoding accepts 'NaN'", async () => {
+      await repl.importModules("Proto.Float");
+      const output = await repl.write(
+        `Ok True == (JD.decodeString Proto.Float.jsonDecodeFloats "{\\"f\\":\\"NaN\\",\\"d\\":\\"NaN\\"}" |> Result.map (.f >> isNaN))`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+
   describe("well-known-types", () => {
     it("json timestamp encoding", async () => {
       await repl.importModules("Proto.Time");

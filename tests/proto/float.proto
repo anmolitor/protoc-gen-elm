@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package float;
+
+message Floats {
+  float f = 1;
+  double d = 2;
+}

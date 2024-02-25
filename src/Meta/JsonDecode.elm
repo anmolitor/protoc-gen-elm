@@ -227,7 +227,15 @@ bool =
 
 float : Expression
 float =
-    C.fqFun moduleName "float"
+    oneOf [C.fqFun moduleName "float",
+        C.pipe (string) [
+            C.apply [andThen, C.lambda [C.varPattern "str"] <|
+                C.ifExpr (C.applyBinOp (C.val "str") C.equals (C.string "NaN")) (C.apply [succeed, C.applyBinOp (C.float 0) C.div (C.float 0)]) <|
+                C.caseExpr (C.apply [C.fqFun ["String"] "toFloat", C.val "str"]) [
+                    (C.namedPattern "Just" [C.varPattern "f"], C.apply [succeed, C.val "f"]),
+                    (C.namedPattern "Nothing" [], C.apply [C.fqFun moduleName "fail", C.string "Expected float"])
+                ]]
+        ]]
 
 
 bytes : Expression
