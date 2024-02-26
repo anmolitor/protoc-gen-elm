@@ -833,6 +833,31 @@ describe("protoc-gen-elm", () => {
     });
   });
 
+  describe("json name", () => {
+    it("respects the json_name property when encoding/decoding from json", async () => {
+      await repl.importModules(
+        "Proto.JsonName",
+        "Proto.JsonName.CustomJsonNames.O"
+      );
+      const msg = repl.getFreshVariable();
+      await repl.write(
+        `${msg} = { protoIntName = 42, o = Just <| Proto.JsonName.CustomJsonNames.O.OptB "test" }`
+      );
+      const jsonOutput = await repl.write(
+        `Proto.JsonName.jsonEncodeCustomJsonNames ${msg} |> JE.encode 0`
+      );
+      expect(jsonOutput).toEqual(
+        expect.stringContaining(
+          `{\\"my_int_name\\":42,\\"my_opt_b\\":\\"test\\"}`
+        )
+      );
+      const output = await repl.write(
+        `Ok ${msg} == (Proto.JsonName.jsonEncodeCustomJsonNames ${msg} |> JD.decodeValue Proto.JsonName.jsonDecodeCustomJsonNames)`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
+  });
+
   describe("well-known-types", () => {
     it("json timestamp encoding", async () => {
       await repl.importModules("Proto.Time");

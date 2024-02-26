@@ -211,7 +211,7 @@ enum ctx sourceCodePath descriptor =
             descriptor.value
                 |> List.map (\value -> ( value.number, { protoName = Name.type_ value.name, jsonName = value.name } ))
                 |> List.Extra.uncons
-                |> Maybe.withDefault ( ( 0, { protoName = name, jsonName = descriptor.name }), [] )
+                |> Maybe.withDefault ( ( 0, { protoName = name, jsonName = descriptor.name } ), [] )
     in
     { dataType = name
     , withUnrecognized = ctx.syntax == Proto3
@@ -541,7 +541,7 @@ oneOfFieldPackage ctx messageSourceCodePath fields index name =
                         Just
                             ( { fieldNumber = fieldNumber
                               , fieldType = type_
-                              , fieldName = fieldName.protoName
+                              , fieldName = fieldName
                               , dataType = Name.type_ fieldName.protoName
                               }
                             , o.docs

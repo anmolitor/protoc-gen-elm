@@ -8,7 +8,8 @@
   - Enum/OneOf constructors can now be imported from the specific module for that enum
   - OneOf Types should be imported from the parent module (the type declared in the specific module has type parameters - otherwise we couldn't have removed the internal conversion functions)
 - Moved some generated code into elm-protoc-utils to generate less duplicated code
-- Fixed elm-ls warning on generated code for structs without oneof fields   
+- Fixed elm-ls warning on generated code for structs without oneof fields
+- Changed generated Dict type for `map<string, SomeMsg>` to be `Dict String SomeMsg` instead of `Dict String (Maybe SomeMsg)`   
 
 ## 3.4.4
 

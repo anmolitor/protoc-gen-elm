@@ -164,7 +164,7 @@ toAST opts { oneOfName, options } =
                                         ( C.namedPattern "Just" [ C.parensPattern (C.fqNamedPattern optModName optDataType [ C.varPattern "innerValue" ]) ]
                                         , C.list
                                             [ C.tuple
-                                                [ C.string o.fieldName
+                                                [ C.string o.fieldName.jsonName
                                                 , C.apply
                                                     [ fieldTypeToJsonEncoder Required o.fieldType
                                                     , C.val "innerValue"
@@ -340,7 +340,7 @@ toAST opts { oneOfName, options } =
                                             , C.parens (C.applyBinOp (C.fqVal optModName optDataType) C.composer Meta.Basics.just)
                                             , C.apply
                                                 [ Meta.JsonDecode.field
-                                                , C.string o.fieldName
+                                                , C.string o.fieldName.jsonName
                                                 , optionFieldDecoder o
                                                 ]
                                             ]
@@ -353,14 +353,14 @@ toAST opts { oneOfName, options } =
         fieldNumbersTypeDecl =
             C.aliasDecl (Just <| Common.fieldNumbersDocumentation dataType) (Common.fieldNumbersTypeName dataType) [] <|
                 C.recordAnn <|
-                    List.map (\o -> ( o.fieldName, C.intAnn )) options
+                    List.map (\o -> ( o.fieldName.protoName, C.intAnn )) options
 
         fieldNumbersDecl : C.Declaration
         fieldNumbersDecl =
             C.valDecl (Just <| Common.fieldNumbersDocumentation dataType)
                 (Just <| C.typed (Common.fieldNumbersTypeName dataType) [])
                 (Common.fieldNumbersName dataType)
-                (C.record <| List.map (\o -> ( o.fieldName, C.int o.fieldNumber )) options)
+                (C.record <| List.map (\o -> ( o.fieldName.protoName, C.int o.fieldNumber )) options)
 
         recursiveFieldDecls =
             List.concatMap (\o -> Generator.Message.fieldTypeDeclarations o.fieldType) options

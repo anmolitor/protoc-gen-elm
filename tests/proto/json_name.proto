@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package json_name;
+
+message CustomJsonNames {
+  int32 protoIntName = 1 [json_name = "my_int_name"];
+  oneof o {
+    uint32 optA = 2 [json_name = "my_opt_a"];
+    string optB = 3 [json_name = "my_opt_b"];
+  }
+}
