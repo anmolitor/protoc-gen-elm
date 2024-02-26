@@ -1,3 +1,15 @@
+## 4.0.0
+
+- Improved grpc dev tools integration to handle both http and grpc errors and concurrent requests
+- Added all of the custom requirements for JSON encoding/decoding in the canonical encoding documentation
+- Added JSON Decoder code generation
+- Removed fromInternal/toInternal functions in generated code
+  - Generate a module for each enum/oneof so that this is possible
+  - Enum/OneOf constructors can now be imported from the specific module for that enum
+  - OneOf Types should be imported from the parent module (the type declared in the specific module has type parameters - otherwise we couldn't have removed the internal conversion functions)
+- Moved some generated code into elm-protoc-utils to generate less duplicated code
+- Fixed elm-ls warning on generated code for structs without oneof fields   
+
 ## 3.4.4
 
 - Fixed JSON encoder code that did not compile for map<int64, string>, since Protobuf.Types.Int64 is not comparable. Uses the (Int, Int) representation now instead.
