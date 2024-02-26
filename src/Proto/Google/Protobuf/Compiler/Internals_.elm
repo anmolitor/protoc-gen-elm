@@ -61,6 +61,7 @@ import Proto.Google.Protobuf.Internals_
 import Protobuf.Decode
 import Protobuf.Encode
 import Protobuf.Types.Int64
+import Protobuf.Utils.Int32
 import Protobuf.Utils.Int64
 
 
@@ -183,21 +184,7 @@ jsonDecodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse =
     Json.Decode.map3
         Proto__Google__Protobuf__Compiler__CodeGeneratorResponse
         (Json.Decode.maybe (Json.Decode.field "error" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault ""))
-        (Json.Decode.maybe
-            (Json.Decode.field
-                "supportedFeatures"
-                (Json.Decode.string
-                    |> Json.Decode.andThen
-                        (\str ->
-                            case Protobuf.Utils.Int64.fromUnsignedString str of
-                                Maybe.Just t ->
-                                    Json.Decode.succeed t
-
-                                Maybe.Nothing ->
-                                    Json.Decode.fail ("Expected uint64 but received: " ++ str)
-                        )
-                )
-            )
+        (Json.Decode.maybe (Json.Decode.field "supportedFeatures" Protobuf.Utils.Int64.uint64JsonDecoder)
             |> Json.Decode.map (Maybe.withDefault (Protobuf.Types.Int64.fromInts 0 0))
         )
         (Json.Decode.field
@@ -412,9 +399,15 @@ jsonDecodeProto__Google__Protobuf__Compiler__Version : Json.Decode.Decoder Proto
 jsonDecodeProto__Google__Protobuf__Compiler__Version =
     Json.Decode.map4
         Proto__Google__Protobuf__Compiler__Version
-        (Json.Decode.maybe (Json.Decode.field "major" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
-        (Json.Decode.maybe (Json.Decode.field "minor" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
-        (Json.Decode.maybe (Json.Decode.field "patch" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "major" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
+        (Json.Decode.maybe (Json.Decode.field "minor" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
+        (Json.Decode.maybe (Json.Decode.field "patch" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
         (Json.Decode.maybe (Json.Decode.field "suffix" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault ""))
 
 

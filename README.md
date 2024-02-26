@@ -80,8 +80,8 @@ Below is a list which ones have been implemented so far.
 - Accepting `null` as the empty list ✔️
 - Accepting `Infinity`, `-Infinity`, `NaN` as floats/doubles ✔️
 - Accepting floats/doubles in String format ✔️
-- Accepting int32 in String format ❌
-- Accepting int64 in Number format ❌
+- Accepting int32 in String format ✔️
+- Accepting int64 in Number format ✔️
 - Accepting floats/doubles in Exponent Notation ✔️
 - Encoding/Decoding Timestamps in ISO Format ✔️
 - Encoding/Decoding Durations in fractional second-based format ❌

@@ -398,6 +398,8 @@ import Protobuf.Decode
 import Protobuf.Encode
 import Protobuf.Types.Int64
 import Protobuf.Utils.Bytes
+import Protobuf.Utils.Float
+import Protobuf.Utils.Int32
 import Protobuf.Utils.Int64
 import Protobuf.Utils.Timestamp
 
@@ -409,7 +411,7 @@ jsonDecodeProto__Google__Protobuf__Value__Kind__Kind : Json.Decode.Decoder Proto
 jsonDecodeProto__Google__Protobuf__Value__Kind__Kind =
     Json.Decode.oneOf
         [ Json.Decode.map Proto.Google.Protobuf.Value.Kind.NullValue Proto.Google.Protobuf.NullValue.jsonDecodeNullValue
-        , Json.Decode.map Proto.Google.Protobuf.Value.Kind.NumberValue Json.Decode.float
+        , Json.Decode.map Proto.Google.Protobuf.Value.Kind.NumberValue Protobuf.Utils.Float.stringOrFloatJsonDecoder
         , Json.Decode.map Proto.Google.Protobuf.Value.Kind.StringValue Json.Decode.string
         , Json.Decode.map Proto.Google.Protobuf.Value.Kind.BoolValue Json.Decode.bool
         , Json.Decode.lazy <|
@@ -622,8 +624,14 @@ jsonDecodeProto__Google__Protobuf__SourceCodeInfo__Location :
 jsonDecodeProto__Google__Protobuf__SourceCodeInfo__Location =
     Json.Decode.map5
         Proto__Google__Protobuf__SourceCodeInfo__Location
-        (Json.Decode.field "path" (Json.Decode.oneOf [ Json.Decode.list Json.Decode.int, Json.Decode.null [] ]))
-        (Json.Decode.field "span" (Json.Decode.oneOf [ Json.Decode.list Json.Decode.int, Json.Decode.null [] ]))
+        (Json.Decode.field
+            "path"
+            (Json.Decode.oneOf [ Json.Decode.list Protobuf.Utils.Int32.int32JsonDecoder, Json.Decode.null [] ])
+        )
+        (Json.Decode.field
+            "span"
+            (Json.Decode.oneOf [ Json.Decode.list Protobuf.Utils.Int32.int32JsonDecoder, Json.Decode.null [] ])
+        )
         (Json.Decode.maybe (Json.Decode.field "leadingComments" Json.Decode.string)
             |> Json.Decode.map (Maybe.withDefault "")
         )
@@ -723,11 +731,18 @@ jsonDecodeProto__Google__Protobuf__GeneratedCodeInfo__Annotation :
 jsonDecodeProto__Google__Protobuf__GeneratedCodeInfo__Annotation =
     Json.Decode.map4
         Proto__Google__Protobuf__GeneratedCodeInfo__Annotation
-        (Json.Decode.field "path" (Json.Decode.oneOf [ Json.Decode.list Json.Decode.int, Json.Decode.null [] ]))
+        (Json.Decode.field
+            "path"
+            (Json.Decode.oneOf [ Json.Decode.list Protobuf.Utils.Int32.int32JsonDecoder, Json.Decode.null [] ])
+        )
         (Json.Decode.maybe (Json.Decode.field "sourceFile" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault "")
         )
-        (Json.Decode.maybe (Json.Decode.field "begin" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
-        (Json.Decode.maybe (Json.Decode.field "end" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "begin" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
+        (Json.Decode.maybe (Json.Decode.field "end" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
 
 
 {-| Encode a `Proto__Google__Protobuf__GeneratedCodeInfo__Annotation` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -805,8 +820,12 @@ jsonDecodeProto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange :
 jsonDecodeProto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange =
     Json.Decode.map2
         Proto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange
-        (Json.Decode.maybe (Json.Decode.field "start" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
-        (Json.Decode.maybe (Json.Decode.field "end" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "start" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
+        (Json.Decode.maybe (Json.Decode.field "end" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
 
 
 {-| Encode a `Proto__Google__Protobuf__EnumDescriptorProto__EnumReservedRange` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -872,8 +891,12 @@ jsonDecodeProto__Google__Protobuf__DescriptorProto__ReservedRange :
 jsonDecodeProto__Google__Protobuf__DescriptorProto__ReservedRange =
     Json.Decode.map2
         Proto__Google__Protobuf__DescriptorProto__ReservedRange
-        (Json.Decode.maybe (Json.Decode.field "start" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
-        (Json.Decode.maybe (Json.Decode.field "end" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "start" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
+        (Json.Decode.maybe (Json.Decode.field "end" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
 
 
 {-| Encode a `Proto__Google__Protobuf__DescriptorProto__ReservedRange` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -938,8 +961,12 @@ jsonDecodeProto__Google__Protobuf__DescriptorProto__ExtensionRange :
 jsonDecodeProto__Google__Protobuf__DescriptorProto__ExtensionRange =
     Json.Decode.map3
         Proto__Google__Protobuf__DescriptorProto__ExtensionRange
-        (Json.Decode.maybe (Json.Decode.field "start" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
-        (Json.Decode.maybe (Json.Decode.field "end" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "start" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
+        (Json.Decode.maybe (Json.Decode.field "end" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
         (Json.Decode.maybe
             (Json.Decode.field "options" (Json.Decode.map Just jsonDecodeProto__Google__Protobuf__ExtensionRangeOptions)
             )
@@ -1196,7 +1223,7 @@ type alias Proto__Google__Protobuf__BoolValue =
 -}
 jsonDecodeProto__Google__Protobuf__UInt32Value : Json.Decode.Decoder Proto__Google__Protobuf__UInt32Value
 jsonDecodeProto__Google__Protobuf__UInt32Value =
-    Json.Decode.map Proto__Google__Protobuf__UInt32Value Json.Decode.int
+    Json.Decode.map Proto__Google__Protobuf__UInt32Value Protobuf.Utils.Int32.uint32JsonDecoder
 
 
 {-| Encode a `Proto__Google__Protobuf__UInt32Value` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1253,7 +1280,7 @@ type alias Proto__Google__Protobuf__UInt32Value =
 -}
 jsonDecodeProto__Google__Protobuf__Int32Value : Json.Decode.Decoder Proto__Google__Protobuf__Int32Value
 jsonDecodeProto__Google__Protobuf__Int32Value =
-    Json.Decode.map Proto__Google__Protobuf__Int32Value Json.Decode.int
+    Json.Decode.map Proto__Google__Protobuf__Int32Value Protobuf.Utils.Int32.int32JsonDecoder
 
 
 {-| Encode a `Proto__Google__Protobuf__Int32Value` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1310,19 +1337,7 @@ type alias Proto__Google__Protobuf__Int32Value =
 -}
 jsonDecodeProto__Google__Protobuf__UInt64Value : Json.Decode.Decoder Proto__Google__Protobuf__UInt64Value
 jsonDecodeProto__Google__Protobuf__UInt64Value =
-    Json.Decode.map
-        Proto__Google__Protobuf__UInt64Value
-        (Json.Decode.string
-            |> Json.Decode.andThen
-                (\str ->
-                    case Protobuf.Utils.Int64.fromUnsignedString str of
-                        Maybe.Just t ->
-                            Json.Decode.succeed t
-
-                        Maybe.Nothing ->
-                            Json.Decode.fail ("Expected uint64 but received: " ++ str)
-                )
-        )
+    Json.Decode.map Proto__Google__Protobuf__UInt64Value Protobuf.Utils.Int64.uint64JsonDecoder
 
 
 {-| Encode a `Proto__Google__Protobuf__UInt64Value` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1379,19 +1394,7 @@ type alias Proto__Google__Protobuf__UInt64Value =
 -}
 jsonDecodeProto__Google__Protobuf__Int64Value : Json.Decode.Decoder Proto__Google__Protobuf__Int64Value
 jsonDecodeProto__Google__Protobuf__Int64Value =
-    Json.Decode.map
-        Proto__Google__Protobuf__Int64Value
-        (Json.Decode.string
-            |> Json.Decode.andThen
-                (\str ->
-                    case Protobuf.Utils.Int64.fromSignedString str of
-                        Maybe.Just t ->
-                            Json.Decode.succeed t
-
-                        Maybe.Nothing ->
-                            Json.Decode.fail ("Expected int64 but received: " ++ str)
-                )
-        )
+    Json.Decode.map Proto__Google__Protobuf__Int64Value Protobuf.Utils.Int64.int64JsonDecoder
 
 
 {-| Encode a `Proto__Google__Protobuf__Int64Value` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1448,7 +1451,7 @@ type alias Proto__Google__Protobuf__Int64Value =
 -}
 jsonDecodeProto__Google__Protobuf__FloatValue : Json.Decode.Decoder Proto__Google__Protobuf__FloatValue
 jsonDecodeProto__Google__Protobuf__FloatValue =
-    Json.Decode.map Proto__Google__Protobuf__FloatValue Json.Decode.float
+    Json.Decode.map Proto__Google__Protobuf__FloatValue Protobuf.Utils.Float.stringOrFloatJsonDecoder
 
 
 {-| Encode a `Proto__Google__Protobuf__FloatValue` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1505,7 +1508,7 @@ type alias Proto__Google__Protobuf__FloatValue =
 -}
 jsonDecodeProto__Google__Protobuf__DoubleValue : Json.Decode.Decoder Proto__Google__Protobuf__DoubleValue
 jsonDecodeProto__Google__Protobuf__DoubleValue =
-    Json.Decode.map Proto__Google__Protobuf__DoubleValue Json.Decode.float
+    Json.Decode.map Proto__Google__Protobuf__DoubleValue Protobuf.Utils.Float.stringOrFloatJsonDecoder
 
 
 {-| Encode a `Proto__Google__Protobuf__DoubleValue` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1975,24 +1978,12 @@ jsonDecodeProto__Google__Protobuf__Duration : Json.Decode.Decoder Proto__Google_
 jsonDecodeProto__Google__Protobuf__Duration =
     Json.Decode.map2
         Proto__Google__Protobuf__Duration
-        (Json.Decode.maybe
-            (Json.Decode.field
-                "seconds"
-                (Json.Decode.string
-                    |> Json.Decode.andThen
-                        (\str ->
-                            case Protobuf.Utils.Int64.fromSignedString str of
-                                Maybe.Just t ->
-                                    Json.Decode.succeed t
-
-                                Maybe.Nothing ->
-                                    Json.Decode.fail ("Expected int64 but received: " ++ str)
-                        )
-                )
-            )
+        (Json.Decode.maybe (Json.Decode.field "seconds" Protobuf.Utils.Int64.int64JsonDecoder)
             |> Json.Decode.map (Maybe.withDefault (Protobuf.Types.Int64.fromInts 0 0))
         )
-        (Json.Decode.maybe (Json.Decode.field "nanos" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "nanos" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
 
 
 {-| Encode a `Proto__Google__Protobuf__Duration` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -2216,41 +2207,15 @@ jsonDecodeProto__Google__Protobuf__UninterpretedOption =
         (Json.Decode.maybe (Json.Decode.field "identifierValue" Json.Decode.string)
             |> Json.Decode.map (Maybe.withDefault "")
         )
-        (Json.Decode.maybe
-            (Json.Decode.field
-                "positiveIntValue"
-                (Json.Decode.string
-                    |> Json.Decode.andThen
-                        (\str ->
-                            case Protobuf.Utils.Int64.fromUnsignedString str of
-                                Maybe.Just t ->
-                                    Json.Decode.succeed t
-
-                                Maybe.Nothing ->
-                                    Json.Decode.fail ("Expected uint64 but received: " ++ str)
-                        )
-                )
-            )
+        (Json.Decode.maybe (Json.Decode.field "positiveIntValue" Protobuf.Utils.Int64.uint64JsonDecoder)
             |> Json.Decode.map (Maybe.withDefault (Protobuf.Types.Int64.fromInts 0 0))
         )
-        (Json.Decode.maybe
-            (Json.Decode.field
-                "negativeIntValue"
-                (Json.Decode.string
-                    |> Json.Decode.andThen
-                        (\str ->
-                            case Protobuf.Utils.Int64.fromSignedString str of
-                                Maybe.Just t ->
-                                    Json.Decode.succeed t
-
-                                Maybe.Nothing ->
-                                    Json.Decode.fail ("Expected int64 but received: " ++ str)
-                        )
-                )
-            )
+        (Json.Decode.maybe (Json.Decode.field "negativeIntValue" Protobuf.Utils.Int64.int64JsonDecoder)
             |> Json.Decode.map (Maybe.withDefault (Protobuf.Types.Int64.fromInts 0 0))
         )
-        (Json.Decode.maybe (Json.Decode.field "doubleValue" Json.Decode.float) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "doubleValue" Protobuf.Utils.Float.stringOrFloatJsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
         (Json.Decode.maybe (Json.Decode.field "stringValue" Protobuf.Utils.Bytes.jsonDecoder)
             |> Json.Decode.map (Maybe.withDefault (Protobuf.Encode.encode <| Protobuf.Encode.string ""))
         )
@@ -3547,7 +3512,9 @@ jsonDecodeProto__Google__Protobuf__EnumValueDescriptorProto =
     Json.Decode.map3
         Proto__Google__Protobuf__EnumValueDescriptorProto
         (Json.Decode.maybe (Json.Decode.field "name" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault ""))
-        (Json.Decode.maybe (Json.Decode.field "number" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "number" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
         (Json.Decode.maybe
             (Json.Decode.field "options" (Json.Decode.map Just jsonDecodeProto__Google__Protobuf__EnumValueOptions))
             |> Json.Decode.map (Maybe.withDefault Nothing)
@@ -3850,7 +3817,9 @@ jsonDecodeProto__Google__Protobuf__FieldDescriptorProto =
     Json.Decode.map8
         Proto__Google__Protobuf__FieldDescriptorProto
         (Json.Decode.maybe (Json.Decode.field "name" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault ""))
-        (Json.Decode.maybe (Json.Decode.field "number" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "number" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
         (Json.Decode.maybe (Json.Decode.field "label" Proto.Google.Protobuf.FieldDescriptorProto.Label.jsonDecodeLabel)
             |> Json.Decode.map (Maybe.withDefault Proto.Google.Protobuf.FieldDescriptorProto.Label.defaultLabel)
         )
@@ -3862,7 +3831,9 @@ jsonDecodeProto__Google__Protobuf__FieldDescriptorProto =
         (Json.Decode.maybe (Json.Decode.field "defaultValue" Json.Decode.string)
             |> Json.Decode.map (Maybe.withDefault "")
         )
-        (Json.Decode.maybe (Json.Decode.field "oneofIndex" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "oneofIndex" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
         |> Json.Decode.andThen
             (\f ->
                 Json.Decode.map3
@@ -4393,11 +4364,11 @@ jsonDecodeProto__Google__Protobuf__FileDescriptorProto =
         )
         (Json.Decode.field
             "publicDependency"
-            (Json.Decode.oneOf [ Json.Decode.list Json.Decode.int, Json.Decode.null [] ])
+            (Json.Decode.oneOf [ Json.Decode.list Protobuf.Utils.Int32.int32JsonDecoder, Json.Decode.null [] ])
         )
         (Json.Decode.field
             "weakDependency"
-            (Json.Decode.oneOf [ Json.Decode.list Json.Decode.int, Json.Decode.null [] ])
+            (Json.Decode.oneOf [ Json.Decode.list Protobuf.Utils.Int32.int32JsonDecoder, Json.Decode.null [] ])
         )
         (Json.Decode.field
             "messageType"
@@ -5090,7 +5061,9 @@ jsonDecodeProto__Google__Protobuf__EnumValue =
     Json.Decode.map3
         Proto__Google__Protobuf__EnumValue
         (Json.Decode.maybe (Json.Decode.field "name" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault ""))
-        (Json.Decode.maybe (Json.Decode.field "number" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "number" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
         (Json.Decode.field
             "options"
             (Json.Decode.oneOf [ Json.Decode.list jsonDecodeProto__Google__Protobuf__Option, Json.Decode.null [] ])
@@ -5282,10 +5255,14 @@ jsonDecodeProto__Google__Protobuf__Field =
             (Json.Decode.field "cardinality" Proto.Google.Protobuf.Field.Cardinality.jsonDecodeCardinality)
             |> Json.Decode.map (Maybe.withDefault Proto.Google.Protobuf.Field.Cardinality.defaultCardinality)
         )
-        (Json.Decode.maybe (Json.Decode.field "number" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "number" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
         (Json.Decode.maybe (Json.Decode.field "name" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault ""))
         (Json.Decode.maybe (Json.Decode.field "typeUrl" Json.Decode.string) |> Json.Decode.map (Maybe.withDefault ""))
-        (Json.Decode.maybe (Json.Decode.field "oneofIndex" Json.Decode.int) |> Json.Decode.map (Maybe.withDefault 0))
+        (Json.Decode.maybe (Json.Decode.field "oneofIndex" Protobuf.Utils.Int32.int32JsonDecoder)
+            |> Json.Decode.map (Maybe.withDefault 0)
+        )
         (Json.Decode.maybe (Json.Decode.field "packed" Json.Decode.bool) |> Json.Decode.map (Maybe.withDefault False))
         (Json.Decode.field
             "options"

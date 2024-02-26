@@ -747,6 +747,30 @@ describe("protoc-gen-elm", () => {
         }
       );
     });
+
+    it("json decoding accepts numbers and strings", async () => {
+      let json = JSON.stringify({
+        int32: 123,
+        sint32: "-123",
+        sfixed32: "-456",
+        uint32: 456,
+        fixed32: "456",
+        int64: 8589934592,
+        sint64: "-8589934592",
+        sfixed64: "-18589934592",
+        uint64: 18589934592,
+        fixed64: "18589934592",
+      }).replace(/"/g, '\\"');
+      await repl.importModules("Proto.Ints", "Protobuf.Types.Int64 as Int64");
+      const expected =
+        "{ int32 = 123, sint32 = -123, sfixed32 = -456, uint32 = 456, fixed32 = 456, " +
+        "int64 = Int64.fromInts 2 0, sint64 = Int64.fromInts -2 0, sfixed64 = Int64.fromInts -5 -1410065408, " +
+        "uint64 = Int64.fromInts 4 1410065408, fixed64 = Int64.fromInts 4 1410065408 }";
+      const output = await repl.write(
+        `JD.decodeString Proto.Ints.jsonDecodeInts "${json}" == Ok ${expected}`
+      );
+      expect(output).toEqual(expect.stringContaining("True"));
+    });
   });
 
   describe("grpc", () => {
@@ -776,7 +800,7 @@ describe("protoc-gen-elm", () => {
   });
 
   describe("floats", () => {
-    it('json decoding accepts exponent notation', async () => {
+    it("json decoding accepts exponent notation", async () => {
       await repl.importModules("Proto.Float");
       const output = await repl.write(
         `Ok { f = 3.14e3, d = 2.02e5 } == JD.decodeString Proto.Float.jsonDecodeFloats "{\\"f\\":3.14e3,\\"d\\":2.02e5}"`

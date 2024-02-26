@@ -127,10 +127,10 @@ forPrimitive prim =
             int32
 
         Prim_Int32 UInt ->
-            int32
+            uint32
 
         Prim_Int32 Fixed ->
-            int32
+            uint32
 
         Prim_Int32 SFixed ->
             int32
@@ -145,7 +145,7 @@ forPrimitive prim =
             uint64
 
         Prim_Int64 Fixed ->
-            int64
+            uint64
 
         Prim_Int64 SFixed ->
             int64
@@ -194,7 +194,7 @@ primitiveFromMapKey prim =
             uint64_fromMapKey
 
         Prim_Int64 Fixed ->
-            int64_fromMapKey
+            uint64_fromMapKey
 
         Prim_Int64 SFixed ->
             int64_fromMapKey
@@ -217,7 +217,12 @@ primitiveFromMapKey prim =
 
 int32 : Expression
 int32 =
-    C.fqFun moduleName "int"
+    C.fqFun [ "Protobuf", "Utils", "Int32" ] "int32JsonDecoder"
+
+
+uint32 : Expression
+uint32 =
+    C.fqFun [ "Protobuf", "Utils", "Int32" ] "uint32JsonDecoder"
 
 
 bool : Expression
@@ -227,15 +232,7 @@ bool =
 
 float : Expression
 float =
-    oneOf [C.fqFun moduleName "float",
-        C.pipe (string) [
-            C.apply [andThen, C.lambda [C.varPattern "str"] <|
-                C.ifExpr (C.applyBinOp (C.val "str") C.equals (C.string "NaN")) (C.apply [succeed, C.applyBinOp (C.float 0) C.div (C.float 0)]) <|
-                C.caseExpr (C.apply [C.fqFun ["String"] "toFloat", C.val "str"]) [
-                    (C.namedPattern "Just" [C.varPattern "f"], C.apply [succeed, C.val "f"]),
-                    (C.namedPattern "Nothing" [], C.apply [C.fqFun moduleName "fail", C.string "Expected float"])
-                ]]
-        ]]
+    C.fqFun [ "Protobuf", "Utils", "Float" ] "stringOrFloatJsonDecoder"
 
 
 bytes : Expression
@@ -245,7 +242,7 @@ bytes =
 
 int64 : Expression
 int64 =
-    maybeToStringDecoder int64_fromString "int64"
+    C.fqFun [ "Protobuf", "Utils", "Int64" ] "int64JsonDecoder"
 
 
 int32_fromMapKey : Expression
@@ -281,32 +278,4 @@ uint64_fromString =
 
 uint64 : Expression
 uint64 =
-    maybeToStringDecoder uint64_fromString "uint64"
-
-
-maybeToStringDecoder : Expression -> String -> Expression
-maybeToStringDecoder stringToMaybeT typeTAsString =
-    let
-        errorMessage =
-            C.parens
-                (C.applyBinOp (C.string ("Expected " ++ typeTAsString ++ " but received: "))
-                    C.append
-                    (C.val "str")
-                )
-    in
-    C.applyBinOp
-        string
-        C.piper
-        (C.apply
-            [ andThen
-            , C.lambda [ C.varPattern "str" ]
-                (C.caseExpr (C.apply [ stringToMaybeT, C.val "str" ])
-                    [ ( C.fqNamedPattern [ "Maybe" ] "Just" [ C.varPattern "t" ], C.apply [ C.fqFun moduleName "succeed", C.val "t" ] )
-                    , ( C.fqNamedPattern [ "Maybe" ] "Nothing" []
-                      , C.apply
-                            [ C.fqFun moduleName "fail", errorMessage ]
-                      )
-                    ]
-                )
-            ]
-        )
+    C.fqFun [ "Protobuf", "Utils", "Int64" ] "uint64JsonDecoder"

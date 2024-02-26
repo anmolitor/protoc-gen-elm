@@ -18,6 +18,7 @@ import Json.Decode
 import Json.Encode
 import Protobuf.Decode
 import Protobuf.Encode
+import Protobuf.Utils.Int32
 import String
 
 
@@ -40,7 +41,7 @@ jsonDecodeSyntax =
                         _ ->
                             SYNTAXPROTO2
                 )
-        , Json.Decode.int
+        , Protobuf.Utils.Int32.int32JsonDecoder
             |> Json.Decode.map
                 (\i ->
                     case i of

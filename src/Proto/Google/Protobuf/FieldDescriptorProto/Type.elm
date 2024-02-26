@@ -18,6 +18,7 @@ import Json.Decode
 import Json.Encode
 import Protobuf.Decode
 import Protobuf.Encode
+import Protobuf.Utils.Int32
 
 
 {-| Decode a `Type` from JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -87,7 +88,7 @@ jsonDecodeType =
                         _ ->
                             TYPEDOUBLE
                 )
-        , Json.Decode.int
+        , Protobuf.Utils.Int32.int32JsonDecoder
             |> Json.Decode.map
                 (\i ->
                     case i of
