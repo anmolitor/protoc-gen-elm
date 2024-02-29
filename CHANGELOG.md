@@ -2,6 +2,7 @@
 
 - Improved grpc dev tools integration to handle both http and grpc errors and concurrent requests
 - Added all of the custom requirements for JSON encoding/decoding in the canonical encoding documentation
+  - Except the Any type which is unclear to me anyways currently.
 - Added JSON Decoder code generation
 - Removed fromInternal/toInternal functions in generated code
   - Generate a module for each enum/oneof so that this is possible

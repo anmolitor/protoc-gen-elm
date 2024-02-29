@@ -874,6 +874,39 @@ describe("protoc-gen-elm", () => {
       );
     });
 
+    it("json duration encoding", async () => {
+      await repl.importModules("Proto.Time");
+      const duration = repl.getFreshVariable();
+      const durationInSeconds = "1234567.891s";
+      await repl.write(
+        `${duration} = JD.decodeString Proto.Time.jsonDecodeDurationMsg """{ "duration": "${durationInSeconds}" }"""`
+      );
+      const output = await repl.write(
+        `Result.map (Proto.Time.jsonEncodeDurationMsg >> JE.encode 0) ${duration}`
+      );
+      expect(output).toEqual(
+        expect.stringContaining(`{\\"duration\\":\\"${durationInSeconds}\\"}`)
+      );
+    });
+
+    it("json field mask encoding", async () => {
+      await repl.importModules("Proto.Mask");
+      const mask = repl.getFreshVariable();
+      const fieldMaskInCommaSeperatedForm =
+        "fieldA.fieldB,fieldC,fieldD.fieldE.fieldF";
+      await repl.write(
+        `${mask} = JD.decodeString Proto.Mask.jsonDecodeWithMask """{ "mask": "${fieldMaskInCommaSeperatedForm}" }"""`
+      );
+      const output = await repl.write(
+        `Result.map (Proto.Mask.jsonEncodeWithMask >> JE.encode 0) ${mask}`
+      );
+      expect(output).toEqual(
+        expect.stringContaining(
+          `{\\"mask\\":\\"${fieldMaskInCommaSeperatedForm}\\"}`
+        )
+      );
+    });
+
     it("json wrapper types encoding", async () => {
       await repl.importModules(
         "Proto.Wrapper",

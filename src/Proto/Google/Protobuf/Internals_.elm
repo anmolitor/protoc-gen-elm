@@ -398,10 +398,12 @@ import Protobuf.Decode
 import Protobuf.Encode
 import Protobuf.Types.Int64
 import Protobuf.Utils.Bytes
+import Protobuf.Utils.Duration
 import Protobuf.Utils.Float
 import Protobuf.Utils.Int32
 import Protobuf.Utils.Int64
 import Protobuf.Utils.Timestamp
+import String
 
 
 {-| Decode a `Proto__Google__Protobuf__Value__Kind__Kind` from JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1862,9 +1864,7 @@ type alias Proto__Google__Protobuf__Struct =
 -}
 jsonDecodeProto__Google__Protobuf__FieldMask : Json.Decode.Decoder Proto__Google__Protobuf__FieldMask
 jsonDecodeProto__Google__Protobuf__FieldMask =
-    Json.Decode.map
-        Proto__Google__Protobuf__FieldMask
-        (Json.Decode.field "paths" (Json.Decode.oneOf [ Json.Decode.list Json.Decode.string, Json.Decode.null [] ]))
+    Json.Decode.map (String.split "," >> Proto__Google__Protobuf__FieldMask) Json.Decode.string
 
 
 {-| Encode a `Proto__Google__Protobuf__FieldMask` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1872,7 +1872,7 @@ jsonDecodeProto__Google__Protobuf__FieldMask =
 -}
 jsonEncodeProto__Google__Protobuf__FieldMask : Proto__Google__Protobuf__FieldMask -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__FieldMask value =
-    Json.Encode.object <| [ ( "paths", (Json.Encode.list Json.Encode.string) value.paths ) ]
+    String.join "," value.paths |> Json.Encode.string
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__FieldMask`. This is mostly useful for internals, like documentation generation.
@@ -1976,14 +1976,7 @@ type alias Proto__Google__Protobuf__Empty =
 -}
 jsonDecodeProto__Google__Protobuf__Duration : Json.Decode.Decoder Proto__Google__Protobuf__Duration
 jsonDecodeProto__Google__Protobuf__Duration =
-    Json.Decode.map2
-        Proto__Google__Protobuf__Duration
-        (Json.Decode.maybe (Json.Decode.field "seconds" Protobuf.Utils.Int64.int64JsonDecoder)
-            |> Json.Decode.map (Maybe.withDefault (Protobuf.Types.Int64.fromInts 0 0))
-        )
-        (Json.Decode.maybe (Json.Decode.field "nanos" Protobuf.Utils.Int32.int32JsonDecoder)
-            |> Json.Decode.map (Maybe.withDefault 0)
-        )
+    Protobuf.Utils.Duration.durationJsonDecoder
 
 
 {-| Encode a `Proto__Google__Protobuf__Duration` to JSON. Uses the canonical encoding described here: https://protobuf.dev/programming-guides/proto3/#json
@@ -1991,10 +1984,7 @@ jsonDecodeProto__Google__Protobuf__Duration =
 -}
 jsonEncodeProto__Google__Protobuf__Duration : Proto__Google__Protobuf__Duration -> Json.Encode.Value
 jsonEncodeProto__Google__Protobuf__Duration value =
-    Json.Encode.object <|
-        [ ( "seconds", (Protobuf.Utils.Int64.toSignedString >> Json.Encode.string) value.seconds )
-        , ( "nanos", Json.Encode.int value.nanos )
-        ]
+    Protobuf.Utils.Duration.durationJsonEncoder value
 
 
 {-| The field numbers for the fields of `Proto__Google__Protobuf__Duration`. This is mostly useful for internals, like documentation generation.

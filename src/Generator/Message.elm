@@ -129,6 +129,12 @@ toAST options msg =
                     "Proto__Google__Protobuf__Timestamp" ->
                         C.apply [ C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonEncoder", C.val "value" ]
 
+                    "Proto__Google__Protobuf__Duration" ->
+                        C.apply [ C.fqFun [ "Protobuf", "Utils", "Duration" ] "durationJsonEncoder", C.val "value" ]
+
+                    "Proto__Google__Protobuf__FieldMask" ->
+                        C.pipe (C.apply [ C.fqFun [ "String" ] "join", C.string ",", C.access (C.val "value") "paths" ]) [ Meta.JsonEncode.string ]
+
                     "Proto__Google__Protobuf__BoolValue" ->
                         C.apply [ Meta.JsonEncode.forPrimitive Prim_Bool, C.access (C.val "value") "value" ]
 
@@ -201,6 +207,19 @@ toAST options msg =
                 (case msg.dataType of
                     "Proto__Google__Protobuf__Timestamp" ->
                         C.fqFun [ "Protobuf", "Utils", "Timestamp" ] "timestampJsonDecoder"
+
+                    "Proto__Google__Protobuf__Duration" ->
+                        C.fqFun [ "Protobuf", "Utils", "Duration" ] "durationJsonDecoder"
+
+                    "Proto__Google__Protobuf__FieldMask" ->
+                        C.apply
+                            [ Meta.JsonDecode.map
+                            , C.chain
+                                (C.apply [ C.fqFun [ "String" ] "split", C.string "," ])
+                                [ C.val msg.dataType
+                                ]
+                            , Meta.JsonDecode.string
+                            ]
 
                     "Proto__Google__Protobuf__BoolValue" ->
                         C.apply [ Meta.JsonDecode.map, C.val msg.dataType, Meta.JsonDecode.forPrimitive Prim_Bool ]

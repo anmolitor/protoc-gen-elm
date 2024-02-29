@@ -5,7 +5,7 @@
   "dependencies": {
     "direct": {
       "anmolitor/elm-grpc": "1.0.0",
-      "anmolitor/elm-protoc-utils": "2.2.0",
+      "anmolitor/elm-protoc-utils": "2.3.0",
       "danfishgold/base64-bytes": "1.1.0",
       "elm/bytes": "1.0.8",
       "elm/core": "1.0.5",

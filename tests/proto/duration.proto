@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package time;
+
+import "google/protobuf/duration.proto";
+
+message DurationMsg {
+  google.protobuf.Duration duration = 1;
+}

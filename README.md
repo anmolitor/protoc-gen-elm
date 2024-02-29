@@ -84,14 +84,14 @@ Below is a list which ones have been implemented so far.
 - Accepting int64 in Number format ✔️
 - Accepting floats/doubles in Exponent Notation ✔️
 - Encoding/Decoding Timestamps in ISO Format ✔️
-- Encoding/Decoding Durations in fractional second-based format ❌
+- Encoding/Decoding Durations in fractional second-based format ✔️
 - Encoding/Decoding `google.protobuf.Struct` as a JSON object ✔️
 - Encoding/Decoding `google.protobuf.ListValue` as a JSON list ✔️
 - Encoding/Decoding `google.protobuf.ListValue` as a JSON list ✔️
 - Encoding/Decoding `google.protobuf.NullValue` as JSON null ✔️
 - Encoding/Decoding `google.protobuf.Empty` as `{}` ✔️
 - Encoding/Decoding `google.protobuf.Value` into/from any JSON object ✔️
-- Encoding/Decoding `google.protobuf.FieldMask` as list of field names instead of field numbers ❌
+- Encoding/Decoding `google.protobuf.FieldMask` as a comma-seperated list of dot-seperated field names ✔️
 - Special support for `google.protobuf.Any` ❌
 
 ## Grpc Dev Tools
@@ -112,7 +112,6 @@ all you need to do is import the file at the top of your html file or your main 
 ```
 
 You can see a vite setup example in the /example directory, which also makes sure it does not get added in the production bundle.
-
 
 ## Explanations about the generated code
 
@@ -260,7 +259,7 @@ protoc --elm_out=. test.proto /usr/local/include/google/protobuf/timestamp.proto
 
 ## Limitations
 
-- All limitations of [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest#known-limitations) apply;
+- All limitations of [`elm-protocol-buffers`](https://package.elm-lang.org/packages/eriktim/elm-protocol-buffers/latest#known-limitations) apply
 
 ## Development
 
