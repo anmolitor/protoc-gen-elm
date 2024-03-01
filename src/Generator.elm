@@ -124,11 +124,12 @@ convert versions options fileNames descriptors =
                     rootModName ++ [ "Internals_" ]
 
                 declarations =
-                    List.concatMap (Enum.toAST options packageName) struct.enums
-                        ++ List.concatMap (Message.reexportAST options internalsModule packageName) struct.messages
-                        ++ List.concatMap OneOf.reexportAST struct.oneOfs
-                        ++ List.concatMap (OneOf.reexportDataType internalsModule packageName) struct.oneOfReexports
-                        ++ List.concatMap Service.toAST struct.services
+                    removeDuplicateDeclarations <|
+                        List.concatMap (Enum.toAST options packageName) struct.enums
+                            ++ List.concatMap (Message.reexportAST options internalsModule packageName) struct.messages
+                            ++ List.concatMap OneOf.reexportAST struct.oneOfs
+                            ++ List.concatMap (OneOf.reexportDataType internalsModule packageName) struct.oneOfReexports
+                            ++ List.concatMap Service.toAST struct.services
 
                 exports =
                     Export.fromDeclarations declarations
@@ -140,7 +141,7 @@ convert versions options fileNames descriptors =
             C.file
                 (C.normalModule packageName exports)
                 (List.map (\importedModule -> C.importStmt importedModule Nothing Nothing) (Set.toList <| Import.extractImports declarations))
-                (removeDuplicateDeclarations declarations)
+                declarations
                 (C.emptyFileComment
                     |> fileComment versions struct.originFiles
                     |> Common.addDocs fileDocs

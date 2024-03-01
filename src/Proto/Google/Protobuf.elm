@@ -61,53 +61,53 @@ To run it, add a dependency via `elm install` on [`elm-protocol-buffers`](https:
  individual entries of a map or fields of a oneof can already detect presence.
 
 
-@docs Any, Api, BoolValue, BytesValue, DescriptorProto, DescriptorProto_, DescriptorProto_, DoubleValue, Duration, Empty, Enum, EnumDescriptorProto
+@docs Any, Api, BoolValue, BytesValue, DescriptorProto, DescriptorProto_, DoubleValue, Duration, Empty, Enum, EnumDescriptorProto, EnumOptions
 
-@docs EnumOptions, EnumValue, EnumValueDescriptorProto, EnumValueOptions, ExtensionRangeOptions, Field, FieldDescriptorProto, FieldMask
+@docs EnumValue, EnumValueDescriptorProto, EnumValueOptions, ExtensionRangeOptions, Field, FieldDescriptorProto, FieldMask, FieldOptions
 
-@docs FieldOptions, FileDescriptorProto, FileDescriptorSet, FileOptions, FloatValue, GeneratedCodeInfo, Int32Value, Int64Value, ListValue
+@docs FileDescriptorProto, FileDescriptorSet, FileOptions, FloatValue, GeneratedCodeInfo, Int32Value, Int64Value, ListValue, ListValue_
 
-@docs ListValue_, MessageOptions, Method, MethodDescriptorProto, MethodOptions, Mixin, OneofDescriptorProto, OneofOptions, Option
+@docs MessageOptions, Method, MethodDescriptorProto, MethodOptions, Mixin, OneofDescriptorProto, OneofOptions, Option, ServiceDescriptorProto
 
-@docs ServiceDescriptorProto, ServiceOptions, SourceCodeInfo, SourceContext, StringValue, Struct, Timestamp, Type, UInt32Value, UInt64Value
+@docs ServiceOptions, SourceCodeInfo, SourceContext, StringValue, Struct, Timestamp, Type, UInt32Value, UInt64Value, UninterpretedOption, Value
 
-@docs UninterpretedOption, Value, Value_, Value_, decodeAny, decodeApi, decodeBoolValue, decodeBytesValue, decodeDescriptorProto
+@docs Value_, decodeAny, decodeApi, decodeBoolValue, decodeBytesValue, decodeDescriptorProto, decodeDoubleValue, decodeDuration, decodeEmpty
 
-@docs decodeDoubleValue, decodeDuration, decodeEmpty, decodeEnum, decodeEnumDescriptorProto, decodeEnumOptions, decodeEnumValue
+@docs decodeEnum, decodeEnumDescriptorProto, decodeEnumOptions, decodeEnumValue, decodeEnumValueDescriptorProto, decodeEnumValueOptions
 
-@docs decodeEnumValueDescriptorProto, decodeEnumValueOptions, decodeExtensionRangeOptions, decodeField, decodeFieldDescriptorProto
+@docs decodeExtensionRangeOptions, decodeField, decodeFieldDescriptorProto, decodeFieldMask, decodeFieldOptions
 
-@docs decodeFieldMask, decodeFieldOptions, decodeFileDescriptorProto, decodeFileDescriptorSet, decodeFileOptions, decodeFloatValue
+@docs decodeFileDescriptorProto, decodeFileDescriptorSet, decodeFileOptions, decodeFloatValue, decodeGeneratedCodeInfo, decodeInt32Value
 
-@docs decodeGeneratedCodeInfo, decodeInt32Value, decodeInt64Value, decodeListValue, decodeMessageOptions, decodeMethod
+@docs decodeInt64Value, decodeListValue, decodeMessageOptions, decodeMethod, decodeMethodDescriptorProto, decodeMethodOptions, decodeMixin
 
-@docs decodeMethodDescriptorProto, decodeMethodOptions, decodeMixin, decodeOneofDescriptorProto, decodeOneofOptions, decodeOption
+@docs decodeOneofDescriptorProto, decodeOneofOptions, decodeOption, decodeServiceDescriptorProto, decodeServiceOptions
 
-@docs decodeServiceDescriptorProto, decodeServiceOptions, decodeSourceCodeInfo, decodeSourceContext, decodeStringValue, decodeStruct
+@docs decodeSourceCodeInfo, decodeSourceContext, decodeStringValue, decodeStruct, decodeTimestamp, decodeType, decodeUInt32Value
 
-@docs decodeTimestamp, decodeType, decodeUInt32Value, decodeUInt64Value, decodeUninterpretedOption, decodeValue, defaultAny, defaultApi
+@docs decodeUInt64Value, decodeUninterpretedOption, decodeValue, defaultAny, defaultApi, defaultBoolValue, defaultBytesValue
 
-@docs defaultBoolValue, defaultBytesValue, defaultDescriptorProto, defaultDoubleValue, defaultDuration, defaultEmpty, defaultEnum
+@docs defaultDescriptorProto, defaultDoubleValue, defaultDuration, defaultEmpty, defaultEnum, defaultEnumDescriptorProto
 
-@docs defaultEnumDescriptorProto, defaultEnumOptions, defaultEnumValue, defaultEnumValueDescriptorProto, defaultEnumValueOptions
+@docs defaultEnumOptions, defaultEnumValue, defaultEnumValueDescriptorProto, defaultEnumValueOptions, defaultExtensionRangeOptions
 
-@docs defaultExtensionRangeOptions, defaultField, defaultFieldDescriptorProto, defaultFieldMask, defaultFieldOptions
+@docs defaultField, defaultFieldDescriptorProto, defaultFieldMask, defaultFieldOptions, defaultFileDescriptorProto
 
-@docs defaultFileDescriptorProto, defaultFileDescriptorSet, defaultFileOptions, defaultFloatValue, defaultGeneratedCodeInfo
+@docs defaultFileDescriptorSet, defaultFileOptions, defaultFloatValue, defaultGeneratedCodeInfo, defaultInt32Value, defaultInt64Value
 
-@docs defaultInt32Value, defaultInt64Value, defaultListValue, defaultMessageOptions, defaultMethod, defaultMethodDescriptorProto
+@docs defaultListValue, defaultMessageOptions, defaultMethod, defaultMethodDescriptorProto, defaultMethodOptions, defaultMixin
 
-@docs defaultMethodOptions, defaultMixin, defaultOneofDescriptorProto, defaultOneofOptions, defaultOption, defaultServiceDescriptorProto
+@docs defaultOneofDescriptorProto, defaultOneofOptions, defaultOption, defaultServiceDescriptorProto, defaultServiceOptions
 
-@docs defaultServiceOptions, defaultSourceCodeInfo, defaultSourceContext, defaultStringValue, defaultStruct, defaultTimestamp, defaultType
+@docs defaultSourceCodeInfo, defaultSourceContext, defaultStringValue, defaultStruct, defaultTimestamp, defaultType, defaultUInt32Value
 
-@docs defaultUInt32Value, defaultUInt64Value, defaultUninterpretedOption, defaultValue, encodeAny, encodeApi, encodeBoolValue
+@docs defaultUInt64Value, defaultUninterpretedOption, defaultValue, encodeAny, encodeApi, encodeBoolValue, encodeBytesValue
 
-@docs encodeBytesValue, encodeDescriptorProto, encodeDoubleValue, encodeDuration, encodeEmpty, encodeEnum, encodeEnumDescriptorProto
+@docs encodeDescriptorProto, encodeDoubleValue, encodeDuration, encodeEmpty, encodeEnum, encodeEnumDescriptorProto, encodeEnumOptions
 
-@docs encodeEnumOptions, encodeEnumValue, encodeEnumValueDescriptorProto, encodeEnumValueOptions, encodeExtensionRangeOptions
+@docs encodeEnumValue, encodeEnumValueDescriptorProto, encodeEnumValueOptions, encodeExtensionRangeOptions, encodeField
 
-@docs encodeField, encodeFieldDescriptorProto, encodeFieldMask, encodeFieldOptions, encodeFileDescriptorProto, encodeFileDescriptorSet
+@docs encodeFieldDescriptorProto, encodeFieldMask, encodeFieldOptions, encodeFileDescriptorProto, encodeFileDescriptorSet
 
 @docs encodeFileOptions, encodeFloatValue, encodeGeneratedCodeInfo, encodeInt32Value, encodeInt64Value, encodeListValue
 
@@ -175,9 +175,7 @@ To run it, add a dependency via `elm install` on [`elm-protocol-buffers`](https:
 
 @docs jsonEncodeTimestamp, jsonEncodeType, jsonEncodeUInt32Value, jsonEncodeUInt64Value, jsonEncodeUninterpretedOption, jsonEncodeValue
 
-@docs unwrapDescriptorProto, unwrapDescriptorProto, unwrapListValue, unwrapValue, unwrapValue, wrapDescriptorProto, wrapDescriptorProto
-
-@docs wrapListValue, wrapValue, wrapValue
+@docs unwrapDescriptorProto, unwrapListValue, unwrapValue, wrapDescriptorProto, wrapListValue, wrapValue
 
 -}
 
