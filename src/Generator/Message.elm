@@ -572,7 +572,7 @@ toDecoder ( fieldName, field ) =
             C.apply
                 [ Meta.Decode.mapped
                 , C.int number
-                , C.tuple [ C.apply [ C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts", defaultValue ], fieldTypeToDefaultValue value ]
+                , C.tuple [ C.apply [ C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts", defaultValue ], fieldTypeToDefaultValueRequired value ]
                 , C.parens <| C.apply [ Meta.Decode.map, C.fqFun [ "Protobuf", "Types", "Int64" ] "toInts", Meta.Decode.forPrimitive prim ]
                 , fieldTypeToDecoder value Required
                 , C.accessFun <| "." ++ fieldName.protoName
