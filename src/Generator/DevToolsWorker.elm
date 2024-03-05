@@ -18,11 +18,11 @@ generateDevToolsWorker services =
     let
         msgType : C.Declaration
         msgType =
-            C.aliasDecl Nothing "Msg" [] <| C.recordAnn [ ( "bytes", C.listAnn C.intAnn ), ( "url", C.stringAnn ), ( "isRequest", C.boolAnn ) ]
+            C.aliasDecl Nothing "Msg" [] <| C.recordAnn [ ( "bytes", C.listAnn C.intAnn ), ( "url", C.stringAnn ), ( "isRequest", C.boolAnn ), ( "reqId", C.intAnn ) ]
 
         outMsgType : C.Declaration
         outMsgType =
-            C.aliasDecl Nothing "OutMsg" [] <| C.recordAnn [ ( "json", Meta.JsonEncode.value ), ( "state", C.stringAnn ) ]
+            C.aliasDecl Nothing "OutMsg" [] <| C.recordAnn [ ( "json", Meta.JsonEncode.value ), ( "state", C.stringAnn ), ( "reqId", C.intAnn ) ]
 
         portOutDecl : C.Declaration
         portOutDecl =
@@ -52,7 +52,12 @@ generateDevToolsWorker services =
                                         [ C.apply [ C.fqFun [ "List" ] "map", C.fqFun [ "Bytes", "Encode" ] "unsignedInt8" ]
                                         , C.fqFun [ "Bytes", "Encode" ] "sequence"
                                         , C.fqFun [ "Bytes", "Encode" ] "encode"
-                                        , C.apply [ C.val toJsonFunctionName, C.access (C.val "msg") "url", C.access (C.val "msg") "isRequest" ]
+                                        , C.apply
+                                            [ C.val toJsonFunctionName
+                                            , C.access (C.val "msg") "reqId"
+                                            , C.access (C.val "msg") "url"
+                                            , C.access (C.val "msg") "isRequest"
+                                            ]
                                         , C.val portOutFunctionName
                                         ]
                                     ]
@@ -78,9 +83,9 @@ generateDevToolsWorker services =
         toJsonDecl : C.Declaration
         toJsonDecl =
             C.funDecl Nothing
-                (Just <| C.funAnn C.stringAnn <| C.funAnn C.boolAnn <| C.funAnn (C.fqTyped [ "Bytes" ] "Bytes" []) (C.typed "OutMsg" []))
+                (Just <| C.funAnn C.intAnn <| C.funAnn C.stringAnn <| C.funAnn C.boolAnn <| C.funAnn (C.fqTyped [ "Bytes" ] "Bytes" []) (C.typed "OutMsg" []))
                 toJsonFunctionName
-                [ C.varPattern "url", C.varPattern "isRequest", C.varPattern "bytes" ]
+                [ C.varPattern "reqId", C.varPattern "url", C.varPattern "isRequest", C.varPattern "bytes" ]
             <|
                 C.letExpr
                     [ C.letVal "urlSegments" <|
@@ -110,6 +115,7 @@ generateDevToolsWorker services =
                                         (C.record
                                             [ ( "json", C.apply [ C.val "encode", C.val "message" ] )
                                             , ( "state", C.string "success" )
+                                            , ( "reqId", C.val "reqId" )
                                             ]
                                         )
                                 ]
@@ -118,6 +124,7 @@ generateDevToolsWorker services =
                                 , C.record
                                     [ ( "json", Meta.JsonEncode.null )
                                     , ( "state", C.string "failure" )
+                                    , ( "reqId", C.val "reqId" )
                                     ]
                                 ]
                             ]
@@ -125,7 +132,7 @@ generateDevToolsWorker services =
                 <|
                     C.caseExpr (C.tuple [ C.val "urlSegments", C.val "isRequest" ])
                         (List.concatMap serviceMatch services
-                            ++ [ ( C.allPattern, C.record [ ( "json", Meta.JsonEncode.null ), ( "state", C.string "no_match" ) ] )
+                            ++ [ ( C.allPattern, C.record [ ( "json", Meta.JsonEncode.null ), ( "state", C.string "no_match" ), ( "reqId", C.val "reqId" ) ] )
                                ]
                         )
 
@@ -195,15 +202,27 @@ devToolsJsFileContent versions =
  *    The responseCallback can just be an empty function: () => {}
  */
 
-import { Elm } from "./DevToolsWorker.elm";
+import { Elm } from './DevToolsWorker.elm';
 
 const worker = Elm.Proto.DevToolsWorker.init();
+
+const reqIdGen = function* () {
+  let id = 0;
+  while (true) {
+    yield id++;
+  }
+};
+
+const reqIdGenInstance = reqIdGen();
 
 const workerDecoder = (workerRequest) =>
   new Promise((resolve, reject) => {
     function subscription(workerResponse) {
+      if (workerResponse.reqId !== workerRequest.reqId) {
+        return;
+      }
       worker.ports.out.unsubscribe(subscription);
-      if (workerResponse.state === "success") {
+      if (workerResponse.state === 'success') {
         resolve(workerResponse.json);
       }
       reject(workerResponse.state);
@@ -246,22 +265,22 @@ const bufferToArr = (buffer) => {
 };
 
 const grpcStati = {
-  1: "Cancelled",
-  2: "Unknown",
-  3: "InvalidArgument",
-  4: "DeadlineExceeded",
-  5: "NotFound",
-  6: "AlreadyExists",
-  7: "PermissionDenied",
-  8: "ResourceExhausted",
-  9: "FailedPrecondition",
-  10: "Aborted",
-  11: "OutOfRange",
-  12: "Unimplemented",
-  13: "Internal",
-  14: "Unavailable",
-  15: "DataLoss",
-  16: "Unauthenticated",
+  1: 'Cancelled',
+  2: 'Unknown',
+  3: 'InvalidArgument',
+  4: 'DeadlineExceeded',
+  5: 'NotFound',
+  6: 'AlreadyExists',
+  7: 'PermissionDenied',
+  8: 'ResourceExhausted',
+  9: 'FailedPrecondition',
+  10: 'Aborted',
+  11: 'OutOfRange',
+  12: 'Unimplemented',
+  13: 'Internal',
+  14: 'Unavailable',
+  15: 'DataLoss',
+  16: 'Unauthenticated',
 };
 
 function applyMonkeypatch(decoder) {
@@ -270,6 +289,7 @@ function applyMonkeypatch(decoder) {
     let serviceAndMethod;
     let reqBody;
     let isGrpcRequest = false;
+    let reqId;
 
     const original = new ORIGINAL();
 
@@ -285,7 +305,7 @@ function applyMonkeypatch(decoder) {
       );
     }
 
-    original.addEventListener("loadend", async () => {
+    original.addEventListener('loadend', async () => {
       if (!isGrpcRequest) {
         return;
       }
@@ -294,12 +314,13 @@ function applyMonkeypatch(decoder) {
         url: serviceAndMethod,
         isRequest: true,
         bytes: bufferToArr(reqBody.buffer),
+        reqId,
       });
-      const responseStatus = original.getResponseHeader("grpc-status");
+      const responseStatus = original.getResponseHeader('grpc-status');
 
       if (
-        original.getResponseHeader("content-type") !==
-        "application/grpc-web+proto"
+        original.getResponseHeader('content-type') !==
+        'application/grpc-web+proto'
       ) {
         sendToGrpcDevTools(
           reqAsJson,
@@ -308,8 +329,8 @@ function applyMonkeypatch(decoder) {
         );
         return;
       }
-      if (responseStatus && responseStatus !== "0") {
-        const errorMessage = original.getResponseHeader("grpc-message");
+      if (responseStatus && responseStatus !== '0') {
+        const errorMessage = original.getResponseHeader('grpc-message');
         sendToGrpcDevTools(
           reqAsJson,
           {
@@ -324,6 +345,7 @@ function applyMonkeypatch(decoder) {
         url: serviceAndMethod,
         isRequest: false,
         bytes: bufferToArr(original.response),
+        reqId,
       });
       sendToGrpcDevTools(reqAsJson, resAsJson, false);
     });
@@ -344,10 +366,11 @@ function applyMonkeypatch(decoder) {
     const originalSetHeader = original.setRequestHeader.bind(original);
     original.setRequestHeader = function (name, value) {
       if (
-        ["accept", "content-type"].includes(name.toLowerCase()) &&
-        value === "application/grpc-web+proto"
+        ['accept', 'content-type'].includes(name.toLowerCase()) &&
+        value === 'application/grpc-web+proto'
       ) {
         isGrpcRequest = true;
+        reqId = reqIdGenInstance.next().value;
       }
       originalSetHeader(name, value);
     };
