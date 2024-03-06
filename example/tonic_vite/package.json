@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "vite",
     "build": "vite build"
@@ -12,7 +13,7 @@
   "devDependencies": {
     "node-which": "^1.0.0",
     "protoc-gen-elm": "file:../..",
-    "vite": "^3.2.5",
-    "vite-plugin-elm": "^2.7.2"
+    "vite": "^5.1.5",
+    "vite-plugin-elm": "^3.0.0"
   }
 }
