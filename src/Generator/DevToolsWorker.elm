@@ -284,53 +284,74 @@ const grpcStati = {
 };
 
 function applyMonkeypatch(decoder) {
-  const ORIGINAL = XMLHttpRequest;
-  window.XMLHttpRequest = function () {
-    let serviceAndMethod;
-    let reqBody;
-    let isGrpcRequest = false;
-    let reqId;
+  const originalOpen = window.XMLHttpRequest.prototype.open;
+  const originalSend = window.XMLHttpRequest.prototype.send;
+  const originalSetRequestHeader =
+    window.XMLHttpRequest.prototype.setRequestHeader;
 
-    const original = new ORIGINAL();
+  window.XMLHttpRequest.prototype.open = function (
+    httpMethod,
+    url,
+    async,
+    username,
+    password
+  ) {
+    this.serviceAndMethod = url;
 
-    function sendToGrpcDevTools(req, res, isError) {
-      const resAsJson = isError ? res : wrapToObject(res);
-      responses.set(serviceAndMethod, { body: resAsJson, isError });
-      client.client_.rpcCall(
-        serviceAndMethod,
-        wrapToObject(req),
-        null,
-        null,
-        () => {}
-      );
+    return originalOpen.bind(this)(httpMethod, url, async, username, password);
+  };
+
+  window.XMLHttpRequest.prototype.setRequestHeader = function (name, value) {
+    if (
+      ['accept', 'content-type'].includes(name.toLowerCase()) &&
+      value === 'application/grpc-web+proto'
+    ) {
+      this.isGrpcRequest = true;
+      this.reqId = reqIdGenInstance.next().value;
     }
+    originalSetRequestHeader.bind(this)(name, value);
+  };
 
-    original.addEventListener('loadend', async () => {
-      if (!isGrpcRequest) {
+  window.XMLHttpRequest.prototype.send = function (body) {
+    const xhr = this;
+
+    this.addEventListener('loadend', async () => {
+      function sendToGrpcDevTools(req, res, isError) {
+        const resAsJson = isError ? res : wrapToObject(res);
+        responses.set(xhr.serviceAndMethod, { body: resAsJson, isError });
+        client.client_.rpcCall(
+          xhr.serviceAndMethod,
+          wrapToObject(req),
+          null,
+          null,
+          () => {}
+        );
+      }
+
+      if (!xhr.isGrpcRequest) {
         return;
       }
 
       const reqAsJson = await decoder({
-        url: serviceAndMethod,
+        url: xhr.serviceAndMethod,
         isRequest: true,
-        bytes: bufferToArr(reqBody.buffer),
-        reqId,
+        bytes: bufferToArr(body.buffer),
+        reqId: xhr.reqId,
       });
-      const responseStatus = original.getResponseHeader('grpc-status');
+      const responseStatus = xhr.getResponseHeader('grpc-status');
 
       if (
-        original.getResponseHeader('content-type') !==
-        'application/grpc-web+proto'
+        xhr.getResponseHeader('content-type') !== 'application/grpc-web+proto'
       ) {
         sendToGrpcDevTools(
           reqAsJson,
-          { status: original.status, statusText: original.statusText },
+          { status: xhr.status, statusText: xhr.statusText },
           true
         );
         return;
       }
       if (responseStatus && responseStatus !== '0') {
-        const errorMessage = original.getResponseHeader('grpc-message');
+        const errorMessage = xhr.getResponseHeader('grpc-message');
         sendToGrpcDevTools(
           reqAsJson,
           {
@@ -342,40 +363,14 @@ function applyMonkeypatch(decoder) {
         return;
       }
       const resAsJson = await decoder({
-        url: serviceAndMethod,
+        url: xhr.serviceAndMethod,
         isRequest: false,
-        bytes: bufferToArr(original.response),
-        reqId,
+        bytes: bufferToArr(xhr.response),
+        reqId: xhr.reqId,
       });
       sendToGrpcDevTools(reqAsJson, resAsJson, false);
     });
-
-    const originalOpen = original.open.bind(original);
-    original.open = function (httpMethod, url, async, username, password) {
-      serviceAndMethod = url;
-
-      return originalOpen(httpMethod, url, async, username, password);
-    };
-
-    const originalSend = original.send.bind(original);
-    original.send = function (body) {
-      reqBody = body;
-      originalSend(body);
-    };
-
-    const originalSetHeader = original.setRequestHeader.bind(original);
-    original.setRequestHeader = function (name, value) {
-      if (
-        ['accept', 'content-type'].includes(name.toLowerCase()) &&
-        value === 'application/grpc-web+proto'
-      ) {
-        isGrpcRequest = true;
-        reqId = reqIdGenInstance.next().value;
-      }
-      originalSetHeader(name, value);
-    };
-
-    return original;
+    originalSend.bind(this)(body);
   };
 }
 
