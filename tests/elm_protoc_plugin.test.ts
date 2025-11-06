@@ -642,6 +642,14 @@ describe("protoc-gen-elm", () => {
     });
   });
 
+  describe("oneof named 'result'", () => {
+      const expectedElmFileName = "Proto/OneofResult.elm";
+
+      it("generates a valid elm file for a oneof named 'result'", async () => {
+          await compileElm(expectedElmFileName);
+      });
+  })
+
   describe("oneof with enums", () => {
     it("generates working code for a oneof using enums", async () => {
       await repl.importModules(

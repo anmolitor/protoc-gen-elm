@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package oneof_result;
+
+message Foo {
+  oneof result {
+    string text = 1;
+    int32 code = 2;
+  }
+}
